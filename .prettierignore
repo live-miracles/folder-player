@@ -8,6 +8,3 @@ stable
 *.min.css
 *.min.js
 v
-dist
-build
-node_modules
