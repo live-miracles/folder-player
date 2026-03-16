@@ -1,4 +1,5 @@
 import { app, BrowserWindow } from 'electron';
+import { ipcMain, dialog } from 'electron';
 import path from 'path';
 
 function createWindow(): void {
@@ -19,4 +20,15 @@ app.on('window-all-closed', () => {
     if (process.platform !== 'darwin') {
         app.quit();
     }
+});
+
+ipcMain.handle('select-vmix-file', async () => {
+    const result = await dialog.showOpenDialog({
+        properties: ['openFile'],
+        filters: [{ name: 'vMix Presets', extensions: ['vmix'] }],
+    });
+
+    if (result.canceled) return null;
+
+    return result.filePaths[0];
 });
