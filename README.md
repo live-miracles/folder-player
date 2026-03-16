@@ -1,2 +1,3 @@
-# folder-player
-Just number files in the folder, and this App will automatically generate vMix playlist, and even provide a simplified UI, perfect for non-techy users
+# Folder Player
+
+Just number the files in the folder and this app will automatically generate a vMix playlist and provide a simplified UI that is perfect for non-techie users.
