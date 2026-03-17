@@ -2,9 +2,9 @@
     "name": "folder-player",
     "version": "0.1.0",
     "description": "",
-    "main": "dist/backend/main.js",
+    "main": "dist/main.js",
     "scripts": {
-        "dev": "concurrently \"tsc -p backend -w\" \"tsc -p ui -w\" \"npx tailwindcss -i ./ui/input.css -o ./ui/dist/output.css --watch\" \"electronmon .\"",
+        "dev": "concurrently \"tsc -p backend -w\" \"tsc -p preload -w\" \"tsc -p ui -w\" \"npx tailwindcss -i ./ui/input.css -o ./ui/dist/output.css --watch\" \"electronmon .\"",
         "format": "prettier --write ."
     },
     "repository": {
@@ -14,7 +14,7 @@
     "keywords": [],
     "author": "",
     "license": "ISC",
-    "type": "commonjs",
+    "type": "module",
     "devDependencies": {
         "@tailwindcss/cli": "^4.2.1",
         "@types/node": "^25.5.0",
@@ -26,5 +26,8 @@
         "prettier-plugin-tailwindcss": "^0.7.2",
         "tailwindcss": "^4.2.1",
         "typescript": "^5.9.3"
+    },
+    "dependencies": {
+        "electron-store": "^11.0.2"
     }
 }
