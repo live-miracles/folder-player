@@ -14,20 +14,20 @@
 
         <label class="input input-sm mt-3 w-fit">
           Slideshow Time:
-          <input type="text" class="grow w-10" placeholder="seconds" value="10" />
+          <input id="slideshow-time" type="number" min="1" min="1000" class="grow w-10" placeholder="seconds" value="10" />
           <span>sec</span>
         </label>
 
         <label class="input w-full mt-1">
           Base vMix Preset:
-          <input type="text" class="grow" id="base-file-path-input" readonly />
-          <button id="select-base-file-btn" class="btn btn-primary btn-xs">Select File</button>
+          <input type="text" class="grow" id="base-file-input" readonly />
+          <button id="base-file-btn" class="btn btn-primary btn-xs">Select File</button>
         </label>
 
         <label class="input w-full mt-1">
           Content Folder:
-          <input type="text" class="grow" id="folderPath" readonly />
-          <button id="selectFolder" class="btn btn-primary btn-xs">Select Folder</button>
+          <input type="text" class="grow" id="play-folder-input" readonly />
+          <button id="play-folder-btn" class="btn btn-primary btn-xs">Select Folder</button>
         </label>
 
         <div class="overflow-x-auto">
@@ -37,22 +37,12 @@
                 <th>Recent Folders</th>
               </tr>
             </thead>
-            <tbody>
-              <tr>
-                <td class="hover:bg-base-300/50 rounded-box cursor-pointer">C:\your\folder1\</td>
-              </tr>
-              <tr>
-                <th class="hover:bg-base-300/50 rounded-box cursor-pointer">C:\your\folder2\</th>
-              </tr>
-              <tr>
-                <th class="hover:bg-base-300/50 rounded-box cursor-pointer">C:\your\folder3\</th>
-              </tr>
-            </tbody>
+            <tbody id="recent-folders-table"></tbody>
           </table>
         </div>
 
         <div class="text-center mt-3">
-          <button class="btn btn-primary">Play Folder</button>
+          <button id="play-folder-btn" class="btn btn-primary">Play Folder</button>
         </div>
       </div>
 
