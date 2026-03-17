@@ -1,12 +1,12 @@
 console.log('UI loaded');
 
-const button = document.getElementById('selectFile')!;
-const pathBox = document.getElementById('vmixPath') as HTMLInputElement;
+const selectBaseFileElem = document.getElementById('select-base-file-btn')!;
+const baseFilePathElem = document.getElementById('base-file-path-input') as HTMLInputElement;
 
-button.addEventListener('click', async () => {
-    const path = await (window as any).api.selectVmixFile();
+selectBaseFileElem.addEventListener('click', async () => {
+    const path = await (window as any).api.selectBaseFile();
 
     if (path) {
-        pathBox.value = path;
+        baseFilePathElem.value = path;
     }
 });

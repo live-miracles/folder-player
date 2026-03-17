@@ -1,9 +1,15 @@
 import { app, BrowserWindow, ipcMain, dialog } from 'electron';
 import path from 'path';
-import fs from 'fs';
 import { fileURLToPath } from 'url';
+import {
+    getBaseFile,
+    setBaseFile,
+    getSlideshowTime,
+    setSlideshowTime,
+    getRecentFolders,
+    addRecentFolder,
+} from './settings.js';
 
-const configPath = path.join(app.getPath('userData'), 'config.json');
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
 
@@ -29,19 +35,41 @@ app.on('window-all-closed', () => {
     }
 });
 
-ipcMain.handle('select-vmix-file', async () => {
+// ===== Settings Storage =====
+
+ipcMain.handle('set-slideshow-time', (_, seconds: number) => {
+    setSlideshowTime(seconds);
+});
+
+ipcMain.handle('select-base-file', async () => {
     const result = await dialog.showOpenDialog({
         properties: ['openFile'],
-        filters: [{ name: 'vMix Preset', extensions: ['vmix'] }],
+        filters: [{ name: 'vMix preset', extensions: ['vmix'] }],
     });
 
     if (result.canceled) return null;
 
-    const vmixPath = result.filePaths[0];
+    const file = result.filePaths[0];
 
-    // save to config
-    fs.writeFileSync(configPath, JSON.stringify({ vmixPath }));
-    console.log(configPath);
+    setBaseFile(file ? file : '');
 
-    return vmixPath;
+    return file;
 });
+
+ipcMain.handle('select-folder', async () => {
+    const result = await dialog.showOpenDialog({
+        properties: ['openDirectory'],
+    });
+
+    if (result.canceled) return null;
+
+    const folder = result.filePaths[0];
+
+    addRecentFolder(folder);
+
+    return folder;
+});
+
+ipcMain.handle('get-slideshow-time', () => getSlideshowTime());
+ipcMain.handle('get-base-file', () => getBaseFile());
+ipcMain.handle('get-recent-folders', () => getRecentFolders());
