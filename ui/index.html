@@ -12,17 +12,44 @@
       <div class="mx-auto max-w-[700px] pt-5 bg-base-200/75 rounded-box mt-10 p-3">
         <h1 class="text-3xl font-bold text-ce">Folder Player</h1>
 
-        <label class="input w-full mt-3">
-          Base vMix Preset:
-          <input type="text" class="grow" placeholder="C:\your\folder\base.vmix" value="" id="vmixPath" readonly />
-          <button id="selectFile" class="btn btn-primary btn-xs">Select vMix File</button>
-        </label>
-
-        <label class="input input-sm mt-1 w-fit">
+        <label class="input input-sm mt-3 w-fit">
           Slideshow Time:
           <input type="text" class="grow w-10" placeholder="seconds" value="10" />
           <span>sec</span>
         </label>
+
+        <label class="input w-full mt-1">
+          Base vMix Preset:
+          <input type="text" class="grow" id="vmixPath" readonly />
+          <button id="selectFile" class="btn btn-primary btn-xs">Select File</button>
+        </label>
+
+        <label class="input w-full mt-1">
+          Content Folder:
+          <input type="text" class="grow" id="folderPath" readonly />
+          <button id="selectFolder" class="btn btn-primary btn-xs">Select Folder</button>
+        </label>
+
+        <div class="overflow-x-auto">
+          <table class="table table-xs">
+            <thead>
+              <tr>
+                <th>Recent Folders</th>
+              </tr>
+            </thead>
+            <tbody>
+              <tr>
+                <td class="hover:bg-base-300/50 rounded-box cursor-pointer">C:\your\folder1\</td>
+              </tr>
+              <tr>
+                <th class="hover:bg-base-300/50 rounded-box cursor-pointer">C:\your\folder2\</th>
+              </tr>
+              <tr>
+                <th class="hover:bg-base-300/50 rounded-box cursor-pointer">C:\your\folder3\</th>
+              </tr>
+            </tbody>
+          </table>
+        </div>
 
         <div class="text-center mt-3">
           <button class="btn btn-primary">Play Folder</button>
