@@ -2,6 +2,8 @@ import { app, BrowserWindow, ipcMain, dialog } from 'electron';
 import path from 'path';
 import { fileURLToPath } from 'url';
 
+import { setupVmix } from './presetGenerator.js';
+
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
 
@@ -27,7 +29,7 @@ app.on('window-all-closed', () => {
     }
 });
 
-// ===== Settings Storage =====
+// ===== File System API =====
 
 ipcMain.handle('select-base-file', async () => {
     const result = await dialog.showOpenDialog({
@@ -42,4 +44,9 @@ ipcMain.handle('select-play-folder', async () => {
     const result = await dialog.showOpenDialog({ properties: ['openDirectory'] });
     if (result.canceled) return null;
     return result.filePaths[0];
+});
+
+ipcMain.handle('play-folder', async (_, { folderPath, baseFile }) => {
+    const presetPath = await setupVmix(folderPath, baseFile);
+    return { success: true, presetPath };
 });

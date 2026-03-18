@@ -6,74 +6,85 @@
     <link href="./dist/output.css" rel="stylesheet" />
   </head>
 
-  <body class="min-h-screen bg-cover bg-center" style="background-image: url('./mountains.jpg')">
-    <div>&nbsp;</div>
-    <div class="mx-3">
-      <div class="mx-auto max-w-[700px] pt-5 bg-base-200/75 rounded-box mt-10 p-3">
-        <h1 class="text-3xl font-bold text-ce">Folder Player</h1>
+  <body>
+    <div id="home-page" class="min-h-screen bg-cover bg-center" style="background-image: url('./mountains.jpg')">
+      <div>&nbsp;</div>
+      <div class="mx-3">
+        <div class="mx-auto max-w-[700px] pt-5 bg-base-200/75 rounded-box mt-10 p-3">
+          <h1 class="text-3xl font-bold text-ce">Folder Player <span class="badge badge-outline">v0.1.0</span></h1>
 
-        <label class="input input-sm mt-3 w-fit">
-          Slideshow Time:
-          <input id="slideshow-time" type="number" min="1" min="1000" class="grow w-10" placeholder="seconds" value="10" />
-          <span>sec</span>
-        </label>
+          <label class="input input-sm mt-3 w-fit">
+            Slideshow Time:
+            <input id="slideshow-time" type="number" min="1" min="1000" class="grow w-10" placeholder="seconds" value="10" />
+            <span>sec</span>
+          </label>
 
-        <label class="input w-full mt-1">
-          Base vMix Preset:
-          <input type="text" class="grow" id="base-file-input" readonly />
-          <button id="base-file-btn" class="btn btn-primary btn-xs">Select File</button>
-        </label>
+          <label class="input w-full mt-1">
+            Base vMix Preset:
+            <input type="text" class="grow" id="base-file-input" readonly />
+            <button id="select-base-file-btn" class="btn btn-primary btn-xs">Select File</button>
+          </label>
 
-        <label class="input w-full mt-1">
-          Content Folder:
-          <input type="text" class="grow" id="play-folder-input" readonly />
-          <button id="play-folder-btn" class="btn btn-primary btn-xs">Select Folder</button>
-        </label>
+          <label class="input w-full mt-1">
+            Content Folder:
+            <input type="text" class="grow" id="play-folder-input" readonly />
+            <button id="select-play-folder-btn" class="btn btn-primary btn-xs">Select Folder</button>
+          </label>
 
-        <div class="overflow-x-auto">
-          <table class="table table-xs">
-            <thead>
-              <tr>
-                <th>Recent Folders</th>
-              </tr>
-            </thead>
-            <tbody id="recent-folders-table"></tbody>
-          </table>
+          <div class="overflow-x-auto">
+            <table class="table table-xs">
+              <thead>
+                <tr>
+                  <th>Recent Folders</th>
+                </tr>
+              </thead>
+              <tbody id="recent-folders-table"></tbody>
+            </table>
+          </div>
+
+          <div class="text-center mt-3">
+            <button id="play-folder-btn" class="btn btn-primary">Play Folder</button>
+          </div>
         </div>
 
-        <div class="text-center mt-3">
-          <button id="play-folder-btn" class="btn btn-primary">Play Folder</button>
+        <div class="mx-auto max-w-[700px] pt-5 bg-base-200/75 rounded-box mt-10 p-3">
+          <h2 class="text-xl font-semibold">Base vMix Preset</h2>
+          <p class="mt-1">
+            Select a base vMix preset. Camera input title should include the keyword <code>`Cam`</code>, for microphone <code>`Mic`</code>, and you
+            can specify the black slide with keyword <code>`Black`</code>.
+          </p>
+          <p class="mt-1">
+            <b>Note:</b> You can keep a file named <code>`base.vmix`</code> in the content folder or the parent folder, it will use it instead of the
+            default one.
+          </p>
+
+          <h2 class="text-xl font-semibold mt-5">Play Folder</h2>
+          <p class="mt-1">
+            Select the folder, and the App will automatically create a vMix playlist with the files inside. You can add numbers in the file names for
+            ordering, i.e <code>`05&nbsp;Video.mp4`</code>.
+          </p>
+
+          <p class="mt-2">
+            To overlay image over audio keep the same number, i.e. <code>`07&nbsp;Image.png`</code>. <code>`05 Audio.mp3`</code>. If there are more
+            then one image they will be shown as a slideshow.
+          </p>
+
+          <p class="mt-2">There are 3 special inputs: <code>`Cam`</code>, <code>`Mic`</code>, <code>`Black`</code>.</p>
+
+          <ul>
+            <li>• To enable microphone for a slide <code>`07&nbsp;Image.png`</code> create an empty file <code>`07&nbsp;Mic.txt`</code>.</li>
+            <li>• To add camera to a song <code>`09&nbsp;audio.mp3`</code> create an empty file <code>`09&nbsp;Cam.txt`</code>.</li>
+          </ul>
         </div>
       </div>
+    </div>
 
-      <div class="mx-auto max-w-[700px] pt-5 bg-base-200/75 rounded-box mt-10 p-3">
-        <h2 class="text-xl font-semibold">Base vMix Preset</h2>
-        <p class="mt-1">
-          Select a base vMix preset. Camera input title should include the keyword <code>`Cam`</code>, for microphone <code>`Mic`</code>, and you can
-          specify the black slide with keyword <code>`Black`</code>.
-        </p>
-        <p class="mt-1">
-          <b>Note:</b> You can keep a file named <code>`base.vmix`</code> in the content folder or the parent folder, it will use it instead of the
-          default one.
-        </p>
+    <div id="vmix-page">
+      <div class="p-4">
+        <h1 class="text-2xl font-bold">Web vMix</h1>
+        <p class="mt-2 text-sm opacity-70">vMix controls will go here later</p>
 
-        <h2 class="text-xl font-semibold mt-5">Play Folder</h2>
-        <p class="mt-1">
-          Select the folder, and the App will automatically create a vMix playlist with the files inside. You can add numbers in the file names for
-          ordering, i.e <code>`05&nbsp;Video.mp4`</code>.
-        </p>
-
-        <p class="mt-2">
-          To overlay image over audio keep the same number, i.e. <code>`07&nbsp;Image.png`</code>. <code>`05 Audio.mp3`</code>. If there are more then
-          one image they will be shown as a slideshow.
-        </p>
-
-        <p class="mt-2">There are 3 special inputs: <code>`Cam`</code>, <code>`Mic`</code>, <code>`Black`</code>.</p>
-
-        <ul>
-          <li>• To enable microphone for a slide <code>`07&nbsp;Image.png`</code> create an empty file <code>`07&nbsp;Mic.txt`</code>.</li>
-          <li>• To add camera to a song <code>`09&nbsp;audio.mp3`</code> create an empty file <code>`09&nbsp;Cam.txt`</code>.</li>
-        </ul>
+        <button id="backBtn" class="btn btn-sm mt-4">Back</button>
       </div>
     </div>
 

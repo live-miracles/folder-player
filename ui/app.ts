@@ -1,13 +1,16 @@
 console.log('UI loaded');
 
 // ===== UI Elements =====
+const homePage = document.getElementById('home-page')!;
+const vmixPage = document.getElementById('vmix-page')!;
 
 const slideshowInput = document.getElementById('slideshow-time') as HTMLInputElement;
 const baseFileInput = document.getElementById('base-file-input') as HTMLInputElement;
 const playFolderInput = document.getElementById('play-folder-input') as HTMLInputElement;
 
+const selectBaseFileBtn = document.getElementById('select-base-file-btn')!;
+const selectPlayFolderBtn = document.getElementById('select-play-folder-btn')!;
 const playFolderBtn = document.getElementById('play-folder-btn')!;
-const baseFileBtn = document.getElementById('base-file-btn')!;
 
 const recentTable = document.getElementById('recent-folders-table')!;
 
@@ -64,7 +67,7 @@ slideshowInput.addEventListener('input', () => {
     localStorage.setItem(STORAGE_KEYS.SLIDESHOW_TIME, slideshowInput.value);
 });
 
-baseFileBtn.addEventListener('click', async () => {
+selectBaseFileBtn.addEventListener('click', async () => {
     const file = await (window as any).api.selectBaseFile();
 
     if (file) {
@@ -73,12 +76,41 @@ baseFileBtn.addEventListener('click', async () => {
     }
 });
 
-playFolderBtn.addEventListener('click', async () => {
+selectPlayFolderBtn.addEventListener('click', async () => {
     const folder = await (window as any).api.selectPlayFolder();
 
     if (folder) {
         playFolderInput.value = folder;
         addRecentFolder(folder);
+    }
+});
+
+function goToVmixPage() {
+    homePage.classList.add('hidden');
+    vmixPage.classList.remove('hidden');
+}
+
+function goToHomePage() {
+    vmixPage.classList.add('hidden');
+    homePage.classList.remove('hidden');
+}
+
+playFolderBtn.addEventListener('click', async () => {
+    const baseFile = baseFileInput.value;
+    const folderPath = playFolderInput.value;
+
+    if (!folderPath || !baseFile) {
+        alert('Select folder and base file first');
+        return;
+    }
+
+    try {
+        await (window as any).api.playFolder({ folderPath, baseFile });
+
+        goToVmixPage();
+    } catch (err) {
+        console.error(err);
+        alert(err);
     }
 });
 
