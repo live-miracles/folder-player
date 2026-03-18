@@ -1,5 +1,3 @@
-console.log('UI loaded');
-
 // ===== UI Elements =====
 const homePage = document.getElementById('home-page')!;
 const vmixPage = document.getElementById('vmix-page')!;
@@ -100,9 +98,22 @@ playFolderBtn.addEventListener('click', async () => {
     const folderPath = playFolderInput.value;
 
     if (!folderPath || !baseFile) {
-        alert('Select folder and base file first');
+        alert('Select folder and base file first.');
         return;
     }
+
+    const res = await (window as any).api.getVmixState();
+    console.log(res);
+
+    if (res.error) {
+        alert(
+            'Could not connect to vMix on port 8088. Make sure it is running and HTTP API is enabled.\n\n' +
+                res.error,
+        );
+        return;
+    }
+
+    addRecentFolder(folderPath);
 
     try {
         await (window as any).api.playFolder({ folderPath, baseFile });
@@ -115,3 +126,12 @@ playFolderBtn.addEventListener('click', async () => {
 });
 
 init();
+
+// setInterval(async () => {
+//     if (vmixPage.classList.contains('hidden')) return;
+
+//     const res = await fetchVmixInfo();
+//     if (res.error) return;
+
+//     console.log(res.value);
+// }, 10000);

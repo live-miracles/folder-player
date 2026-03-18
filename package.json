@@ -4,7 +4,8 @@
     "description": "",
     "main": "dist/main.js",
     "scripts": {
-        "dev": "concurrently \"tsc -p backend -w\" \"tsc -p preload -w\" \"tsc -p ui -w\" \"npx tailwindcss -i ./ui/input.css -o ./ui/dist/output.css --watch\" \"electronmon .\"",
+        "dev": "concurrently \"tsc -p backend -w\" \"tsc -p preload -w\" \"tsc -p ui -w\" \"electronmon .\"",
+        "css": "npx tailwindcss -i ./ui/input.css -o ./ui/dist/output.css --watch",
         "format": "prettier --write ."
     },
     "repository": {
@@ -26,5 +27,8 @@
         "prettier-plugin-tailwindcss": "^0.7.2",
         "tailwindcss": "^4.2.1",
         "typescript": "^5.9.3"
+    },
+    "dependencies": {
+        "fast-xml-parser": "^5.5.6"
     }
 }

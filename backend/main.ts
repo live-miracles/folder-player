@@ -2,7 +2,8 @@ import { app, BrowserWindow, ipcMain, dialog } from 'electron';
 import path from 'path';
 import { fileURLToPath } from 'url';
 
-import { setupVmix } from './presetGenerator.js';
+import { setupVmix } from './preset-generator.js';
+import { getVmixState } from './vmix-api.js';
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
@@ -50,3 +51,5 @@ ipcMain.handle('play-folder', async (_, { folderPath, baseFile }) => {
     const presetPath = await setupVmix(folderPath, baseFile);
     return { success: true, presetPath };
 });
+
+ipcMain.handle('get-vmix-state', async () => await getVmixState());
