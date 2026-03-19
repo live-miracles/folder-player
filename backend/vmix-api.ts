@@ -27,7 +27,6 @@ export async function getVmixState() {
 
     if (res.status === 200) {
         try {
-            console.log(res.data);
             const data = parser.parse(res.data);
             // await writeFile('test.txt', JSON.stringify(data, null, 2));
 
@@ -79,10 +78,7 @@ class VmixInfo {
     public audio: any;
 
     constructor(data: any) {
-        // this.preset = data.preset
-        //     ? data.vmix.preset['#text'].split('\\').pop().slice(0, -5)
-        //     : '';
-        this.preset = ''; // TODO
+        this.preset = data.preset ? data.preset.split('\\').pop().slice(0, -5) : '';
         this.preview = Number(data.preview);
         this.active = Number(data.active);
         this.recording = data.recording === 'True';

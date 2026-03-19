@@ -13,6 +13,7 @@ const playFolderInput = document.getElementById('play-folder-input') as HTMLInpu
 const selectBaseFileBtn = document.getElementById('select-base-file-btn')!;
 const selectPlayFolderBtn = document.getElementById('select-play-folder-btn')!;
 const playFolderBtn = document.getElementById('play-folder-btn')!;
+const closeVmixWebBtn = document.getElementById('close-vmix-web-btn')!;
 
 const recentTable = document.getElementById('recent-folders-table')!;
 
@@ -123,7 +124,6 @@ playFolderBtn.addEventListener('click', async () => {
     }
 
     const res = await (window as any).api.getVmixState();
-    console.log(res);
 
     if (res.error) {
         alert(
@@ -145,8 +145,13 @@ playFolderBtn.addEventListener('click', async () => {
     }
 });
 
+closeVmixWebBtn.addEventListener('click', () => {
+    const res = confirm('Are you sure you want to close vMix Web?');
+    if (res) goToHomePage();
+});
+
 async function loadDevices() {
-    await navigator.mediaDevices.getUserMedia({ video: true, audio: true });
+    //await navigator.mediaDevices.getUserMedia({ video: true, audio: true });
 
     const devices = await navigator.mediaDevices.enumerateDevices();
 

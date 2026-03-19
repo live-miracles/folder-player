@@ -15,28 +15,28 @@
 
           <fieldset class="fieldset inline-block w-fit">
             <legend class="fieldset-legend">Program Output</legend>
-            <select id="program-cam-input" class="select w-40">
+            <select id="program-cam-input" class="select w-36">
               <option value="" selected>None</option>
             </select>
           </fieldset>
 
           <fieldset class="fieldset inline-block w-fit ml-1">
             <legend class="fieldset-legend">Preview Output</legend>
-            <select id="preview-cam-input" class="select w-40">
+            <select id="preview-cam-input" class="select w-36">
               <option value="" selected>None</option>
             </select>
           </fieldset>
 
           <fieldset class="fieldset inline-block w-fit ml-1">
             <legend class="fieldset-legend">Audio Output</legend>
-            <select id="master-mic-input" class="select w-40">
+            <select id="master-mic-input" class="select w-36">
               <option value="" selected>None</option>
             </select>
           </fieldset>
 
           <fieldset class="fieldset inline-block w-fit ml-1">
             <legend class="fieldset-legend">Bell Before File Ends</legend>
-            <select id="bell-time-input" class="select w-40">
+            <select id="bell-time-input" class="select w-30">
               <option value="" selected>Off</option>
               <option value="5">5 sec</option>
               <option value="10">10 sec</option>
@@ -45,6 +45,19 @@
               <option value="120">2 min</option>
               <option value="30">5 min</option>
               <option value="600">10 min</option>
+            </select>
+          </fieldset>
+
+          <fieldset class="fieldset inline-block w-fit ml-1">
+            <legend class="fieldset-legend">Enable Bus</legend>
+            <select id="enable-bus-input" class="select w-20">
+              <option value="">None</option>
+              <option selected>A</option>
+              <option>B</option>
+              <option>C</option>
+              <option>D</option>
+              <option>E</option>
+              <option>F</option>
             </select>
           </fieldset>
 
@@ -103,7 +116,7 @@
         <h1 class="text-2xl font-bold">Web vMix</h1>
         <p class="mt-2 text-sm opacity-70">vMix controls will go here later</p>
 
-        <button id="backBtn" class="btn btn-sm mt-4">Back</button>
+        <button id="close-vmix-web-btn" class="btn btn-sm mt-4">Back</button>
       </div>
     </div>
 
