@@ -1,5 +1,7 @@
 import { XMLParser } from 'fast-xml-parser';
 
+const parser = new XMLParser({ ignoreAttributes: false, attributeNamePrefix: '' });
+
 async function fetchUrl(url: string) {
     try {
         const response = await fetch(url, { signal: AbortSignal.timeout(1000) });
@@ -20,7 +22,6 @@ export async function vMixCall(func = '', params: Record<string, any> = {}, host
 
 // import { writeFile } from 'fs/promises';
 
-const parser = new XMLParser({ ignoreAttributes: false, attributeNamePrefix: '' });
 export async function getVmixState() {
     const res = await vMixCall();
 

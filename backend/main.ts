@@ -1,9 +1,9 @@
-import { app, BrowserWindow, ipcMain, dialog } from 'electron';
+import { app, BrowserWindow, ipcMain, dialog, session } from 'electron';
 import path from 'path';
 import { fileURLToPath } from 'url';
 
-import { setupVmix } from './preset-generator.js';
-import { getVmixState } from './vmix-api.js';
+import { createPresetFile } from './preset-generator.js';
+import { vMixCall, getVmixState } from './vmix-api.js';
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
@@ -20,6 +20,15 @@ function createWindow(): void {
     });
 
     win.loadFile(path.join(__dirname, '../ui/index.html'));
+
+    // For Camera / Mic permissions
+    session.defaultSession.setPermissionRequestHandler((webContents, permission, callback) => {
+        if (permission === 'media') {
+            callback(true);
+        } else {
+            callback(false);
+        }
+    });
 }
 
 app.whenReady().then(createWindow);
@@ -30,7 +39,7 @@ app.on('window-all-closed', () => {
     }
 });
 
-// ===== File System API =====
+// ===== Frontend API =====
 
 ipcMain.handle('select-base-file', async () => {
     const result = await dialog.showOpenDialog({
@@ -53,3 +62,24 @@ ipcMain.handle('play-folder', async (_, { folderPath, baseFile }) => {
 });
 
 ipcMain.handle('get-vmix-state', async () => await getVmixState());
+
+// ===== vMix =====
+
+async function setupVmix(folderPath: string, baseFile: string) {
+    const res = await vMixCall();
+    if (res.error) {
+        throw new Error('Failed connecting to vMix');
+    }
+
+    const presetPath = createPresetFile(folderPath, baseFile);
+
+    await vMixCall('OpenPreset', { Value: presetPath });
+
+    // await sleep(1000);
+    // await waitForVmixReady();
+    // await sleep(1000);
+
+    // await addFolderInputs(folderPath);
+
+    // await vmixCall('SavePreset');
+}

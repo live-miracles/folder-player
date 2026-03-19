@@ -2,7 +2,11 @@
 const homePage = document.getElementById('home-page')!;
 const vmixPage = document.getElementById('vmix-page')!;
 
-const slideshowInput = document.getElementById('slideshow-time') as HTMLInputElement;
+const programCamInput = document.getElementById('program-cam-input') as HTMLInputElement;
+const previewCamInput = document.getElementById('preview-cam-input') as HTMLInputElement;
+const masterMicInput = document.getElementById('master-mic-input') as HTMLInputElement;
+const bellTimeInput = document.getElementById('bell-time-input') as HTMLInputElement;
+
 const baseFileInput = document.getElementById('base-file-input') as HTMLInputElement;
 const playFolderInput = document.getElementById('play-folder-input') as HTMLInputElement;
 
@@ -14,7 +18,10 @@ const recentTable = document.getElementById('recent-folders-table')!;
 
 // ---- Storage Keys ----
 const STORAGE_KEYS = {
-    SLIDESHOW_TIME: 'slideshowTime',
+    PROGRAM_CAM: 'programCam',
+    PREVIEW_CAM: 'previewCam',
+    MASTER_MIC: 'masterMic',
+    BELL_TIME: 'bellTime',
     BASE_FILE: 'baseFile',
     RECENT_FOLDERS: 'recentFolders',
 };
@@ -34,7 +41,11 @@ function addRecentFolder(folder: string) {
 }
 
 function init() {
-    slideshowInput.value = localStorage.getItem(STORAGE_KEYS.SLIDESHOW_TIME) ?? '10';
+    programCamInput.value = localStorage.getItem(STORAGE_KEYS.PROGRAM_CAM) ?? '';
+    previewCamInput.value = localStorage.getItem(STORAGE_KEYS.PREVIEW_CAM) ?? '';
+    masterMicInput.value = localStorage.getItem(STORAGE_KEYS.MASTER_MIC) ?? '';
+    bellTimeInput.value = localStorage.getItem(STORAGE_KEYS.BELL_TIME) ?? '';
+
     baseFileInput.value = localStorage.getItem(STORAGE_KEYS.BASE_FILE) ?? '';
     renderRecentFolders();
 }
@@ -61,8 +72,17 @@ function renderRecentFolders() {
     });
 }
 
-slideshowInput.addEventListener('input', () => {
-    localStorage.setItem(STORAGE_KEYS.SLIDESHOW_TIME, slideshowInput.value);
+programCamInput.addEventListener('input', () => {
+    localStorage.setItem(STORAGE_KEYS.PROGRAM_CAM, programCamInput.value);
+});
+previewCamInput.addEventListener('input', () => {
+    localStorage.setItem(STORAGE_KEYS.PREVIEW_CAM, previewCamInput.value);
+});
+masterMicInput.addEventListener('input', () => {
+    localStorage.setItem(STORAGE_KEYS.MASTER_MIC, masterMicInput.value);
+});
+bellTimeInput.addEventListener('input', () => {
+    localStorage.setItem(STORAGE_KEYS.BELL_TIME, bellTimeInput.value);
 });
 
 selectBaseFileBtn.addEventListener('click', async () => {
@@ -125,7 +145,36 @@ playFolderBtn.addEventListener('click', async () => {
     }
 });
 
-init();
+async function loadDevices() {
+    await navigator.mediaDevices.getUserMedia({ video: true, audio: true });
+
+    const devices = await navigator.mediaDevices.enumerateDevices();
+
+    for (const device of devices) {
+        const option = document.createElement('option');
+        option.value = device.deviceId;
+        option.text = device.label || `${device.kind}`;
+
+        if (device.kind === 'videoinput') {
+            programCamInput.appendChild(option);
+
+            const option2 = document.createElement('option');
+            option2.value = device.deviceId;
+            option2.text = device.label || `${device.kind}`;
+            previewCamInput.appendChild(option2);
+        }
+
+        if (device.kind === 'audioinput') {
+            masterMicInput.appendChild(option);
+        }
+    }
+}
+
+(async () => {
+    await loadDevices();
+
+    init();
+})();
 
 // setInterval(async () => {
 //     if (vmixPage.classList.contains('hidden')) return;
