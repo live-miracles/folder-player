@@ -1,27 +1,30 @@
 // ===== UI Elements =====
 const homePage = document.getElementById('home-page')!;
 const vmixPage = document.getElementById('vmix-page')!;
+const configPage = document.getElementById('config-page')!;
+
+const baseFileInput = document.getElementById('base-file-input') as HTMLInputElement;
+const selectBaseFileBtn = document.getElementById('select-base-file-btn')!;
+const playFolderInput = document.getElementById('play-folder-input') as HTMLInputElement;
+const selectPlayFolderBtn = document.getElementById('select-play-folder-btn')!;
+const recentTable = document.getElementById('recent-folders-table')!;
+const playFolderBtn = document.getElementById('play-folder-btn')!;
+
+const editConfigBtn = document.getElementById('edit-config-btn')!;
+const cancelConfigBtn = document.getElementById('cancel-config-btn')!;
+const saveConfigBtn = document.getElementById('cancel-config-btn')!;
 
 const programCamInput = document.getElementById('program-cam-input') as HTMLInputElement;
 const previewCamInput = document.getElementById('preview-cam-input') as HTMLInputElement;
-const masterMicInput = document.getElementById('master-mic-input') as HTMLInputElement;
+const enableBusInput = document.getElementById('enable-bus-input') as HTMLInputElement;
 const bellTimeInput = document.getElementById('bell-time-input') as HTMLInputElement;
-
-const baseFileInput = document.getElementById('base-file-input') as HTMLInputElement;
-const playFolderInput = document.getElementById('play-folder-input') as HTMLInputElement;
-
-const selectBaseFileBtn = document.getElementById('select-base-file-btn')!;
-const selectPlayFolderBtn = document.getElementById('select-play-folder-btn')!;
-const playFolderBtn = document.getElementById('play-folder-btn')!;
 const closeVmixWebBtn = document.getElementById('close-vmix-web-btn')!;
-
-const recentTable = document.getElementById('recent-folders-table')!;
 
 // ---- Storage Keys ----
 const STORAGE_KEYS = {
     PROGRAM_CAM: 'programCam',
     PREVIEW_CAM: 'previewCam',
-    MASTER_MIC: 'masterMic',
+    ENABLE_BUS: 'enableBus',
     BELL_TIME: 'bellTime',
     BASE_FILE: 'baseFile',
     RECENT_FOLDERS: 'recentFolders',
@@ -44,7 +47,7 @@ function addRecentFolder(folder: string) {
 function init() {
     programCamInput.value = localStorage.getItem(STORAGE_KEYS.PROGRAM_CAM) ?? '';
     previewCamInput.value = localStorage.getItem(STORAGE_KEYS.PREVIEW_CAM) ?? '';
-    masterMicInput.value = localStorage.getItem(STORAGE_KEYS.MASTER_MIC) ?? '';
+    enableBusInput.value = localStorage.getItem(STORAGE_KEYS.ENABLE_BUS) ?? '';
     bellTimeInput.value = localStorage.getItem(STORAGE_KEYS.BELL_TIME) ?? '';
 
     baseFileInput.value = localStorage.getItem(STORAGE_KEYS.BASE_FILE) ?? '';
@@ -79,8 +82,8 @@ programCamInput.addEventListener('input', () => {
 previewCamInput.addEventListener('input', () => {
     localStorage.setItem(STORAGE_KEYS.PREVIEW_CAM, previewCamInput.value);
 });
-masterMicInput.addEventListener('input', () => {
-    localStorage.setItem(STORAGE_KEYS.MASTER_MIC, masterMicInput.value);
+enableBusInput.addEventListener('input', () => {
+    localStorage.setItem(STORAGE_KEYS.ENABLE_BUS, enableBusInput.value);
 });
 bellTimeInput.addEventListener('input', () => {
     localStorage.setItem(STORAGE_KEYS.BELL_TIME, bellTimeInput.value);
@@ -104,14 +107,22 @@ selectPlayFolderBtn.addEventListener('click', async () => {
     }
 });
 
-function goToVmixPage() {
-    homePage.classList.add('hidden');
-    vmixPage.classList.remove('hidden');
-}
-
 function goToHomePage() {
     vmixPage.classList.add('hidden');
+    configPage.classList.add('hidden');
     homePage.classList.remove('hidden');
+}
+
+function goToConfigPage() {
+    vmixPage.classList.add('hidden');
+    homePage.classList.add('hidden');
+    configPage.classList.remove('hidden');
+}
+
+function goToVmixPage() {
+    homePage.classList.add('hidden');
+    configPage.classList.add('hidden');
+    vmixPage.classList.remove('hidden');
 }
 
 playFolderBtn.addEventListener('click', async () => {
@@ -145,6 +156,101 @@ playFolderBtn.addEventListener('click', async () => {
     }
 });
 
+editConfigBtn.addEventListener('click', async () => {
+    const folderPath = playFolderInput.value;
+
+    if (!folderPath) {
+        alert('Select folder and base file first.');
+        return;
+    }
+
+    try {
+        const folderFiles = (await (window as any).api.getFolderFiles(folderPath)) as [
+            number,
+            { path: string; type: string }[],
+        ][];
+        folderFiles.sort((a, b) => {
+            if (a[0] === -1) return 1;
+            if (b[0] === -1) return -1;
+            return a[0] - b[0];
+        });
+
+        const config = await (window as any).api.getFolderConfig(folderPath);
+        renderTableBody(folderFiles, new Map(config));
+
+        console.log(JSON.stringify(folderFiles, null, 2), JSON.stringify(config, null, 2));
+
+        addRecentFolder(folderPath);
+
+        goToConfigPage();
+    } catch (err) {
+        console.log(err);
+        alert(err);
+    }
+});
+
+function getOptionHtml(name: string, type: string, value: string) {
+    if (type === 'bool') {
+        return `<label class="swap ml-2">
+            <input type="checkbox" ${value === 'true' ? 'checked="checked"' : ''} />
+            <div class="swap-on"><span class="badge badge-sm badge-primary">${name}</span></div>
+            <div class="swap-off"><span class="badge badge-sm">${name}</span></div>
+        </label>`;
+    }
+    return `<input type="text" class="input input-xs w-14 ml-2" value="${value}" />&nbsp;${name}`;
+}
+function renderTableBody(
+    folderFiles: [number, { path: string; type: string }[]][],
+    configMap: Map<number, string[]>,
+) {
+    let html = '';
+
+    for (const [index, files] of folderFiles) {
+        const types = files.map((f) => f.type);
+        const selectedOptions = configMap.get(index) ?? [];
+
+        let optionsHtml = '';
+        const isMic = selectedOptions.includes('mic') ? 'true' : 'false';
+        optionsHtml += getOptionHtml('mic', 'bool', isMic);
+
+        if (types.includes('Image')) {
+            const isCam = selectedOptions.includes('cam') ? 'true' : 'false';
+            optionsHtml += getOptionHtml('cam', 'bool', isCam);
+        }
+        if (types.includes('AudioFile') || types.includes('Video')) {
+            const isLoop = selectedOptions.includes('loop') ? 'true' : 'false';
+            optionsHtml += getOptionHtml('loop', 'bool', isLoop);
+
+            const opt = selectedOptions.find((opt) => opt.endsWith('%')) ?? '100';
+            const parsed = parseInt(opt);
+            optionsHtml += getOptionHtml('%', 'number', isNaN(parsed) ? '100' : String(parsed));
+        }
+        if (types.includes('Photos')) {
+            const opt = selectedOptions.find((opt) => opt.endsWith('s')) ?? '10';
+            const parsed = parseInt(opt);
+            optionsHtml += getOptionHtml('s', 'number', isNaN(parsed) ? '10' : String(parsed));
+        }
+
+        files.forEach((file, i) => {
+            html += `<tr>`;
+
+            if (i === 0) {
+                html += `<td rowspan="${files.length}" class="align-top font-semibold">${index === -1 ? '' : index}</td>`;
+            }
+
+            html += `<td class="break-all">${file.path}</td> <td class="break-all">${file.type}</td>`;
+
+            if (i === 0) html += `<td rowspan="${files.length}">${optionsHtml}</td>`;
+
+            html += `</tr>`;
+        });
+    }
+
+    document.getElementById('config-table')!.innerHTML = html;
+}
+
+cancelConfigBtn.addEventListener('click', goToHomePage);
+
 closeVmixWebBtn.addEventListener('click', () => {
     const res = confirm('Are you sure you want to close vMix Web?');
     if (res) goToHomePage();
@@ -167,10 +273,6 @@ async function loadDevices() {
             option2.value = device.deviceId;
             option2.text = device.label || `${device.kind}`;
             previewCamInput.appendChild(option2);
-        }
-
-        if (device.kind === 'audioinput') {
-            masterMicInput.appendChild(option);
         }
     }
 }
