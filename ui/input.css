@@ -2,18 +2,3 @@
 @plugin 'daisyui' {
     themes: dim --default;
 }
-
-html {
-    overflow: hidden;
-}
-
-body {
-    overflow-y: scroll;
-    height: 100vh;
-
-    scrollbar-width: none;
-}
-
-body::-webkit-scrollbar {
-    display: none;
-}

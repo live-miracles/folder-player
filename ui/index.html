@@ -6,148 +6,204 @@
     <link href="./dist/output.css" rel="stylesheet" />
   </head>
 
-  <body>
-    <div id="home-page" class="min-h-screen bg-cover bg-center bg-fixed" style="background-image: url('./mountains.jpg')">
-      <div class="mx-3">
-        <div>&nbsp;</div>
-        <div class="mx-auto max-w-[750px] pt-5 bg-base-200/75 rounded-box mt-10 p-3">
-          <h1 class="text-3xl font-bold text-ce mb-3">Folder Player <span class="badge badge-outline">v0.1.0</span></h1>
+  <body class="h-screen overflow-hidden">
+    <div class="relative w-full h-full">
+      <!-- HOME PAGE -->
+      <div id="home-page" class="absolute inset-0 overflow-y-auto bg-cover bg-center" style="background-image: url('./mountains.jpg')">
+        <div class="mx-3">
+          <div>&nbsp;</div>
+          <div class="mx-auto max-w-[750px] pt-5 bg-base-200/75 rounded-box mt-10 p-3">
+            <h1 class="text-3xl font-bold text-ce mb-3">Folder Player <span class="badge badge-outline">v0.1.0</span></h1>
 
-          <label class="input w-full mt-1">
-            Base vMix Preset:
-            <input type="text" class="grow" id="base-file-input" readonly />
-            <button id="select-base-file-btn" class="btn btn-primary btn-xs">Select</button>
-          </label>
+            <label class="input w-full mt-1">
+              Base vMix Preset:
+              <input type="text" class="grow" id="base-file-input" readonly />
+              <button id="select-base-file-btn" class="btn btn-primary btn-xs">Select</button>
+            </label>
 
-          <label class="input w-full mt-1">
-            Content Folder:
-            <input type="text" class="grow" id="play-folder-input" readonly />
-            <button id="select-play-folder-btn" class="btn btn-primary btn-xs">Select</button>
-          </label>
+            <label class="input w-full mt-1">
+              Content Folder:
+              <input type="text" class="grow" id="play-folder-input" readonly />
+              <button id="select-play-folder-btn" class="btn btn-primary btn-xs">Select</button>
+            </label>
 
-          <div class="overflow-x-auto">
-            <table class="table table-xs">
-              <thead>
-                <tr>
-                  <th>Recent Folders</th>
-                </tr>
-              </thead>
-              <tbody id="recent-folders-table"></tbody>
-            </table>
+            <div class="overflow-x-auto">
+              <table class="table table-xs">
+                <thead>
+                  <tr>
+                    <th>Recent Folders</th>
+                  </tr>
+                </thead>
+                <tbody id="recent-folders-table"></tbody>
+              </table>
+            </div>
+
+            <div class="text-center mt-3">
+              <button id="edit-config-btn" class="btn btn-accent">Edit Config</button>
+              <button id="play-folder-btn" class="btn btn-primary ml-2">Play Selected Folder</button>
+            </div>
           </div>
 
-          <div class="text-center mt-3">
-            <button id="edit-config-btn" class="btn btn-accent">Edit Config</button>
-            <button id="play-folder-btn" class="btn btn-primary ml-2">Play Selected Folder</button>
+          <div class="mx-auto max-w-[750px] pt-5 bg-base-200/75 rounded-box mt-10 p-3">
+            <fieldset class="fieldset inline-block w-fit">
+              <legend class="fieldset-legend">Program Output</legend>
+              <select id="program-cam-input" class="select w-36">
+                <option value="" selected>None</option>
+              </select>
+            </fieldset>
+
+            <fieldset class="fieldset inline-block w-fit ml-1">
+              <legend class="fieldset-legend">Preview Output</legend>
+              <select id="preview-cam-input" class="select w-36">
+                <option value="" selected>None</option>
+              </select>
+            </fieldset>
+
+            <fieldset class="fieldset inline-block w-fit ml-1">
+              <legend class="fieldset-legend">
+                <div class="tooltip" data-tip="A bell will ring before the video is over to wake you up 😙. If Mic is on it will not ring.">
+                  Bell Time
+                </div>
+              </legend>
+              <select id="bell-time-input" class="select w-24">
+                <option value="" selected>Off</option>
+                <option value="5">5 sec</option>
+                <option value="10">10 sec</option>
+                <option value="30">30 sec</option>
+                <option value="60">1 min</option>
+                <option value="120">2 min</option>
+                <option value="30">5 min</option>
+                <option value="600">10 min</option>
+              </select>
+            </fieldset>
+
+            <fieldset class="fieldset inline-block w-fit ml-1">
+              <legend class="fieldset-legend">
+                <div class="tooltip" data-tip="This Bus will be enabled for all the inputs in the playlist.">Enable Bus</div>
+              </legend>
+              <select id="enable-bus-input" class="select w-24">
+                <option value="">None</option>
+                <option selected>A</option>
+                <option>B</option>
+                <option>C</option>
+                <option>D</option>
+                <option>E</option>
+                <option>F</option>
+              </select>
+            </fieldset>
+
+            <div class="text-center mt-3">
+              <button id="open-vmix-btn" class="btn btn-primary">Open vMix Web</button>
+            </div>
+          </div>
+
+          <div class="mx-auto max-w-[750px] bg-base-200/75 rounded-box mt-10 p-3">
+            <h2 class="text-xl font-semibold">Base vMix Preset</h2>
+            <p class="mt-1">Select a base vMix preset. Camera input title should be <code>`Cam`</code> and microphone <code>`Mic`</code>.</p>
+            <p class="mt-1"><b>Tip:</b> Keep a file named <code>`base.vmix`</code> in the content or parent folder, it will be used instead.</p>
+
+            <h2 class="text-xl font-semibold mt-3">Playing Folder</h2>
+            <p class="mt-1">
+              App automatically creates a vMix playlist with the files inside. Use numbers in the file names to order, i.e.
+              <code>`05&nbsp;Video.mp4`</code>. To layer image over audio keep the same numbers, i.e. <code>`07&nbsp;Image.png`</code>,
+              <code>`05&nbsp;Audio.mp3`</code>. Add a folder with images to create a slideshow.
+            </p>
+            <p class="mt-1"><b>Tip:</b> Files numbered as <code>`0`</code> or <code>`00`</code> will be pinned for easy access.</p>
+          </div>
+        </div>
+        <div class="mt-5">&nbsp;</div>
+      </div>
+
+      <!-- CONFIG PAGE -->
+      <div id="config-page" class="absolute inset-0 overflow-y-auto bg-cover bg-center hidden" style="background-image: url('./mountains.jpg')">
+        <div class="mx-3">
+          <div>&nbsp;</div>
+          <div class="mx-auto max-w-[1200px] w-fit pt-5 bg-base-200/75 rounded-box mt-10 p-3">
+            <h2 class="text-xl font-semibold" id="config-title"></h2>
+            <div class="overflow-x-auto mt-3">
+              <table class="table table-xs">
+                <thead>
+                  <tr>
+                    <th></th>
+                    <th>File</th>
+                    <th>Type</th>
+                    <th>Options</th>
+                  </tr>
+                </thead>
+                <tbody id="config-table"></tbody>
+              </table>
+            </div>
+
+            <div class="divider"></div>
+            <div class="text-center mt-3 mb-1">
+              <button id="cancel-config-btn" class="btn btn-accent">Back</button>
+              <button id="save-config-btn" class="btn btn-primary ml-2">Save</button>
+            </div>
           </div>
         </div>
 
-        <div class="mx-auto max-w-[750px] pt-5 bg-base-200/75 rounded-box mt-10 p-3">
-          <fieldset class="fieldset inline-block w-fit">
-            <legend class="fieldset-legend">Program Output</legend>
-            <select id="program-cam-input" class="select w-36">
-              <option value="" selected>None</option>
-            </select>
-          </fieldset>
+        <div class="mt-5">&nbsp;</div>
+      </div>
 
-          <fieldset class="fieldset inline-block w-fit ml-1">
-            <legend class="fieldset-legend">Preview Output</legend>
-            <select id="preview-cam-input" class="select w-36">
-              <option value="" selected>None</option>
-            </select>
-          </fieldset>
+      <!-- VMIX PAGE -->
+      <div id="vmix-page" class="absolute inset-0 hidden">
+        <div class="flex h-screen">
+          <!-- LEFT PANEL -->
+          <div class="w-[35%] p-4 flex flex-col gap-3 bg-base-200">
+            <!-- Header -->
+            <div class="flex items-center gap-3">
+              <button id="close-vmix-web-btn" class="btn btn-sm">Back</button>
+              <h2 id="folderName" class="text-lg font-bold">Folder Name</h2>
+            </div>
 
-          <fieldset class="fieldset inline-block w-fit ml-1">
-            <legend class="fieldset-legend">
-              <div class="tooltip" data-tip="A bell will ring before the video is over to wake you up 😙. If Mic is on it will not ring.">
-                Bell Time
+            <!-- List -->
+            <div id="fileList" class="flex-1 flex flex-col gap-2 overflow-hidden">
+              <!-- Tiles will be injected here -->
+            </div>
+          </div>
+
+          <!-- DIVIDER -->
+          <div class="w-1 bg-base-300"></div>
+
+          <!-- RIGHT PANEL -->
+          <div class="flex-1 flex flex-col p-4 gap-3 bg-base-100">
+            <!-- Title -->
+            <div class="text-center font-semibold" id="currentTitle">title</div>
+
+            <!-- MAIN VIDEO -->
+            <div class="aspect-video bg-black rounded-box overflow-hidden">
+              <video id="mainVideo" class="w-full h-full" autoplay muted></video>
+            </div>
+
+            <!-- Info bar -->
+            <div class="text-center text-sm opacity-70" id="durationInfo">duration: 00:00 | left: 00:00 | ends at: --</div>
+
+            <!-- Controls -->
+            <div class="flex gap-4 items-start">
+              <!-- Buttons -->
+              <div class="flex flex-col gap-2">
+                <button class="btn">FTB</button>
+                <button class="btn" id="clockBtn">--:--</button>
+                <button class="btn">Clock</button>
               </div>
-            </legend>
-            <select id="bell-time-input" class="select w-24">
-              <option value="" selected>Off</option>
-              <option value="5">5 sec</option>
-              <option value="10">10 sec</option>
-              <option value="30">30 sec</option>
-              <option value="60">1 min</option>
-              <option value="120">2 min</option>
-              <option value="30">5 min</option>
-              <option value="600">10 min</option>
-            </select>
-          </fieldset>
 
-          <fieldset class="fieldset inline-block w-fit ml-1">
-            <legend class="fieldset-legend">
-              <div class="tooltip" data-tip="This Bus will be enabled for all the inputs in the playlist.">Enable Bus</div>
-            </legend>
-            <select id="enable-bus-input" class="select w-24">
-              <option value="">None</option>
-              <option selected>A</option>
-              <option>B</option>
-              <option>C</option>
-              <option>D</option>
-              <option>E</option>
-              <option>F</option>
-            </select>
-          </fieldset>
+              <!-- Preview -->
+              <div class="aspect-video w-48 bg-black rounded-box overflow-hidden">
+                <video id="previewVideo" class="w-full h-full"></video>
+              </div>
 
-          <div class="text-center mt-3">
-            <button id="open-vmix-btn" class="btn btn-primary">Open vMix Web</button>
+              <!-- Audio meters -->
+              <div class="flex gap-2">
+                <div class="w-16 h-40 bg-base-300 rounded-box flex items-end">
+                  <div id="audio1" class="w-full bg-green-500" style="height: 30%"></div>
+                </div>
+                <div class="w-16 h-40 bg-base-300 rounded-box flex items-end">
+                  <div id="audio2" class="w-full bg-green-500" style="height: 50%"></div>
+                </div>
+              </div>
+            </div>
           </div>
         </div>
-
-        <div class="mx-auto max-w-[750px] bg-base-200/75 rounded-box mt-10 p-3">
-          <h2 class="text-xl font-semibold">Base vMix Preset</h2>
-          <p class="mt-1">Select a base vMix preset. Camera input title should be <code>`Cam`</code> and microphone <code>`Mic`</code>.</p>
-          <p class="mt-1"><b>Tip:</b> Keep a file named <code>`base.vmix`</code> in the content or parent folder, it will be used instead.</p>
-
-          <h2 class="text-xl font-semibold mt-3">Playing Folder</h2>
-          <p class="mt-1">
-            App automatically creates a vMix playlist with the files inside. Use numbers in the file names to order, i.e.
-            <code>`05&nbsp;Video.mp4`</code>. To layer image over audio keep the same numbers, i.e. <code>`07&nbsp;Image.png`</code>,
-            <code>`05&nbsp;Audio.mp3`</code>. Add a folder with images to create a slideshow.
-          </p>
-          <p class="mt-1"><b>Tip:</b> Files numbered as <code>`0`</code> or <code>`00`</code> will be pinned for easy access.</p>
-        </div>
-      </div>
-      <div class="mt-5">&nbsp;</div>
-    </div>
-
-    <div id="config-page" class="min-h-screen bg-cover bg-center bg-fixed hidden" style="background-image: url('./mountains.jpg')">
-      <div class="mx-3">
-        <div>&nbsp;</div>
-        <div class="mx-auto max-w-[1200px] w-fit pt-5 bg-base-200/75 rounded-box mt-10 p-3">
-          <h2 class="text-xl font-semibold" id="config-title"></h2>
-          <div class="overflow-x-auto mt-3">
-            <table class="table table-xs">
-              <thead>
-                <tr>
-                  <th></th>
-                  <th>File</th>
-                  <th>Type</th>
-                  <th>Options</th>
-                </tr>
-              </thead>
-              <tbody id="config-table"></tbody>
-            </table>
-          </div>
-
-          <div class="divider"></div>
-          <div class="text-center mt-3 mb-1">
-            <button id="cancel-config-btn" class="btn btn-accent">Back</button>
-            <button id="save-config-btn" class="btn btn-primary ml-2">Save</button>
-          </div>
-        </div>
-      </div>
-
-      <div class="mt-5">&nbsp;</div>
-    </div>
-
-    <div id="vmix-page" class="hidden">
-      <div class="p-4">
-        <h1 class="text-2xl font-bold">Web vMix</h1>
-        <p class="mt-2 text-sm opacity-70">vMix controls will go here later</p>
-
-        <button id="close-vmix-web-btn" class="btn btn-sm mt-4">Back</button>
       </div>
     </div>
 

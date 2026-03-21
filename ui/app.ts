@@ -199,6 +199,8 @@ saveConfigBtn.addEventListener('click', async () => {
     saveConfigBtn.disabled = false;
 });
 
+document.getElementById('open-vmix-btn')?.addEventListener('click', goToVmixPage);
+
 closeVmixWebBtn.addEventListener('click', () => {
     const res = confirm('Are you sure you want to close vMix Web?');
     if (res) goToHomePage();
