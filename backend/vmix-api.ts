@@ -20,16 +20,12 @@ export async function vMixCall(func = '', params: Record<string, any> = {}, host
     return await fetchUrl(url);
 }
 
-// import { writeFile } from 'fs/promises';
-
 export async function getVmixState() {
     const res = await vMixCall();
 
     if (res.status === 200) {
         try {
             const data = parser.parse(res.data);
-            // await writeFile('test.txt', JSON.stringify(data, null, 2));
-
             return { data: new VmixInfo(data.vmix), error: null };
         } catch (err) {
             console.error(err);

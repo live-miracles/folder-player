@@ -1,7 +1,7 @@
 import fs from 'fs';
 import path from 'path';
 
-import { getConfigFile } from './config-api.js';
+import { getFolderConfig } from './config-api.js';
 import { getFolderFiles, FILE_TYPES } from './file-manager.js';
 
 function getTitleId(xml: string, title: string) {
@@ -42,7 +42,7 @@ export function createPresetFile(folderPath: string, baseFilePath: string) {
     otherFiles.forEach((f) => otherInputsXML.push(getFileXML(f)));
     fileMap.delete(-1);
 
-    const config = getConfigFile(folderPath);
+    const config = getFolderConfig(folderPath);
     const sortedKeys = Array.from(fileMap.keys()).sort((a, b) => a - b);
 
     for (const key of sortedKeys) {

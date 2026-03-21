@@ -5,7 +5,7 @@ import { fileURLToPath } from 'url';
 import { createPresetFile } from './preset-generator.js';
 import { vMixCall, getVmixState } from './vmix-api.js';
 import { getFolderFiles } from './file-manager.js';
-import { getConfigFile } from './config-api.js';
+import { getFolderConfig, saveFolderConfig } from './config-api.js';
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
@@ -65,7 +65,12 @@ ipcMain.handle('play-folder', async (_, { folderPath, baseFile }) => {
 
 ipcMain.handle('get-vmix-state', async () => await getVmixState());
 ipcMain.handle('get-folder-files', async (_, folderPath) => Array.from(getFolderFiles(folderPath)));
-ipcMain.handle('get-folder-config', async (_, folderPath) => Array.from(getConfigFile(folderPath)));
+ipcMain.handle('get-folder-config', async (_, folderPath) =>
+    Array.from(getFolderConfig(folderPath)),
+);
+ipcMain.handle('save-folder-config', async (_, { folderPath, text }) =>
+    saveFolderConfig(folderPath, text),
+);
 
 // ===== vMix =====
 

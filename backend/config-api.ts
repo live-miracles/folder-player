@@ -3,7 +3,7 @@ import path from 'path';
 
 export const CONFIG_FILE_NAME = 'folder-player.txt';
 
-export function getConfigFile(folderPath: string): Map<number, string[]> {
+export function getFolderConfig(folderPath: string): Map<number, string[]> {
     const filePath = path.join(folderPath, CONFIG_FILE_NAME);
 
     const map = new Map<number, string[]>();
@@ -33,4 +33,12 @@ export function getConfigFile(folderPath: string): Map<number, string[]> {
     }
 
     return map;
+}
+
+export function saveFolderConfig(folderPath: string, text: string) {
+    if (!fs.existsSync(folderPath)) {
+        throw new Error('Folder does not exist');
+    }
+    const filePath = path.join(folderPath, CONFIG_FILE_NAME);
+    fs.writeFileSync(filePath, text, 'utf-8');
 }

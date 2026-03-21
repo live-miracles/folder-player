@@ -1,4 +1,4 @@
-import { renderTableBody } from './config.js';
+import { getTableConfig, renderConfigTable } from './config.js';
 
 // ===== UI Elements =====
 const homePage = document.getElementById('home-page')!;
@@ -11,10 +11,6 @@ const playFolderInput = document.getElementById('play-folder-input') as HTMLInpu
 const selectPlayFolderBtn = document.getElementById('select-play-folder-btn')!;
 const recentTable = document.getElementById('recent-folders-table')!;
 const playFolderBtn = document.getElementById('play-folder-btn')!;
-
-const editConfigBtn = document.getElementById('edit-config-btn')!;
-const cancelConfigBtn = document.getElementById('cancel-config-btn')!;
-const saveConfigBtn = document.getElementById('cancel-config-btn')!;
 
 const programCamInput = document.getElementById('program-cam-input') as HTMLInputElement;
 const previewCamInput = document.getElementById('preview-cam-input') as HTMLInputElement;
@@ -158,6 +154,7 @@ playFolderBtn.addEventListener('click', async () => {
     }
 });
 
+const editConfigBtn = document.getElementById('edit-config-btn') as HTMLButtonElement;
 editConfigBtn.addEventListener('click', async () => {
     const folderPath = playFolderInput.value;
 
@@ -166,32 +163,41 @@ editConfigBtn.addEventListener('click', async () => {
         return;
     }
 
+    editConfigBtn.disabled = true;
     try {
-        const folderFiles = (await (window as any).api.getFolderFiles(folderPath)) as [
-            number,
-            { path: string; type: string }[],
-        ][];
-        folderFiles.sort((a, b) => {
-            if (a[0] === -1) return 1;
-            if (b[0] === -1) return -1;
-            return a[0] - b[0];
-        });
-
+        const folderFiles = await (window as any).api.getFolderFiles(folderPath);
         const config = await (window as any).api.getFolderConfig(folderPath);
-        renderTableBody(folderFiles, new Map(config));
-
-        console.log(JSON.stringify(folderFiles, null, 2), JSON.stringify(config, null, 2));
-
+        renderConfigTable(folderFiles, config, folderPath);
         addRecentFolder(folderPath);
-
         goToConfigPage();
     } catch (err) {
         console.log(err);
         alert(err);
     }
+    editConfigBtn.disabled = false;
 });
 
-cancelConfigBtn.addEventListener('click', goToHomePage);
+document.getElementById('cancel-config-btn')!.addEventListener('click', goToHomePage);
+
+const saveConfigBtn = document.getElementById('save-config-btn') as HTMLButtonElement;
+saveConfigBtn.addEventListener('click', async () => {
+    const folderPath = playFolderInput.value;
+
+    if (!folderPath) {
+        alert('Select folder and base file first.');
+        return;
+    }
+    saveConfigBtn.disabled = true;
+    try {
+        const config = getTableConfig();
+        await (window as any).api.saveFolderConfig({ folderPath: folderPath, text: config });
+        alert('Config Saved');
+    } catch (err) {
+        console.log(err);
+        alert(err);
+    }
+    saveConfigBtn.disabled = false;
+});
 
 closeVmixWebBtn.addEventListener('click', () => {
     const res = confirm('Are you sure you want to close vMix Web?');
