@@ -1,16 +1,9 @@
 import { getTableConfig, renderConfigTable } from './config.js';
+import { renderVmixWeb } from './vmix-web.js';
 
 // ===== UI Elements =====
-const homePage = document.getElementById('home-page')!;
-const vmixPage = document.getElementById('vmix-page')!;
-const configPage = document.getElementById('config-page')!;
-
 const baseFileInput = document.getElementById('base-file-input') as HTMLInputElement;
-const selectBaseFileBtn = document.getElementById('select-base-file-btn')!;
 const playFolderInput = document.getElementById('play-folder-input') as HTMLInputElement;
-const selectPlayFolderBtn = document.getElementById('select-play-folder-btn')!;
-const recentTable = document.getElementById('recent-folders-table')!;
-const playFolderBtn = document.getElementById('play-folder-btn')!;
 
 const programCamInput = document.getElementById('program-cam-input') as HTMLInputElement;
 const previewCamInput = document.getElementById('preview-cam-input') as HTMLInputElement;
@@ -18,7 +11,46 @@ const enableBusInput = document.getElementById('enable-bus-input') as HTMLInputE
 const bellTimeInput = document.getElementById('bell-time-input') as HTMLInputElement;
 const closeVmixWebBtn = document.getElementById('close-vmix-web-btn')!;
 
-// ---- Storage Keys ----
+// ===== Navigation =====
+
+let programStream: MediaStream | null = null;
+let previewStream: MediaStream | null = null;
+const programVideo = document.getElementById('program-video') as HTMLVideoElement;
+
+const homePage = document.getElementById('home-page')!;
+const vmixPage = document.getElementById('vmix-page')!;
+const configPage = document.getElementById('config-page')!;
+
+function goToHomePage() {
+    vmixPage.classList.add('hidden');
+    configPage.classList.add('hidden');
+    homePage.classList.remove('hidden');
+}
+
+function goToConfigPage() {
+    vmixPage.classList.add('hidden');
+    homePage.classList.add('hidden');
+    configPage.classList.remove('hidden');
+}
+
+async function goToVmixPage() {
+    if (programStream) programStream.getTracks().forEach((track) => track.stop());
+
+    if (programCamInput.value) {
+        programStream = await navigator.mediaDevices.getUserMedia({
+            video: { deviceId: { exact: programCamInput.value } },
+            audio: false,
+        });
+        programVideo.srcObject = programStream;
+        programVideo.play();
+    }
+
+    homePage.classList.add('hidden');
+    configPage.classList.add('hidden');
+    vmixPage.classList.remove('hidden');
+}
+
+// ===== Local Storage =====
 const STORAGE_KEYS = {
     PROGRAM_CAM: 'programCam',
     PREVIEW_CAM: 'previewCam',
@@ -42,6 +74,19 @@ function addRecentFolder(folder: string) {
     renderRecentFolders();
 }
 
+programCamInput.addEventListener('input', () => {
+    localStorage.setItem(STORAGE_KEYS.PROGRAM_CAM, programCamInput.value);
+});
+previewCamInput.addEventListener('input', () => {
+    localStorage.setItem(STORAGE_KEYS.PREVIEW_CAM, previewCamInput.value);
+});
+enableBusInput.addEventListener('input', () => {
+    localStorage.setItem(STORAGE_KEYS.ENABLE_BUS, enableBusInput.value);
+});
+bellTimeInput.addEventListener('input', () => {
+    localStorage.setItem(STORAGE_KEYS.BELL_TIME, bellTimeInput.value);
+});
+
 function init() {
     programCamInput.value = localStorage.getItem(STORAGE_KEYS.PROGRAM_CAM) ?? '';
     previewCamInput.value = localStorage.getItem(STORAGE_KEYS.PREVIEW_CAM) ?? '';
@@ -52,10 +97,33 @@ function init() {
     renderRecentFolders();
 }
 
+// ===== Home Page =====
+async function loadDevices() {
+    //await navigator.mediaDevices.getUserMedia({ video: true, audio: true });
+
+    const devices = await navigator.mediaDevices.enumerateDevices();
+
+    for (const device of devices) {
+        const option = document.createElement('option');
+        option.value = device.deviceId;
+        option.text = device.label || `${device.kind}`;
+
+        if (device.kind === 'videoinput') {
+            programCamInput.appendChild(option);
+
+            const option2 = document.createElement('option');
+            option2.value = device.deviceId;
+            option2.text = device.label || `${device.kind}`;
+            previewCamInput.appendChild(option2);
+        }
+    }
+}
+
 function renderRecentFolders() {
     const folders = getRecentFolders();
 
-    recentTable.innerHTML = '';
+    const tBody = document.getElementById('recent-folders-table')!;
+    tBody.innerHTML = '';
 
     folders.forEach((folder) => {
         const tr = document.createElement('tr');
@@ -70,24 +138,11 @@ function renderRecentFolders() {
         });
 
         tr.appendChild(td);
-        recentTable.appendChild(tr);
+        tBody.appendChild(tr);
     });
 }
 
-programCamInput.addEventListener('input', () => {
-    localStorage.setItem(STORAGE_KEYS.PROGRAM_CAM, programCamInput.value);
-});
-previewCamInput.addEventListener('input', () => {
-    localStorage.setItem(STORAGE_KEYS.PREVIEW_CAM, previewCamInput.value);
-});
-enableBusInput.addEventListener('input', () => {
-    localStorage.setItem(STORAGE_KEYS.ENABLE_BUS, enableBusInput.value);
-});
-bellTimeInput.addEventListener('input', () => {
-    localStorage.setItem(STORAGE_KEYS.BELL_TIME, bellTimeInput.value);
-});
-
-selectBaseFileBtn.addEventListener('click', async () => {
+document.getElementById('select-base-file-btn')!.addEventListener('click', async () => {
     const file = await (window as any).api.selectBaseFile();
 
     if (file) {
@@ -96,7 +151,7 @@ selectBaseFileBtn.addEventListener('click', async () => {
     }
 });
 
-selectPlayFolderBtn.addEventListener('click', async () => {
+document.getElementById('select-play-folder-btn')!.addEventListener('click', async () => {
     const folder = await (window as any).api.selectPlayFolder();
 
     if (folder) {
@@ -105,25 +160,7 @@ selectPlayFolderBtn.addEventListener('click', async () => {
     }
 });
 
-function goToHomePage() {
-    vmixPage.classList.add('hidden');
-    configPage.classList.add('hidden');
-    homePage.classList.remove('hidden');
-}
-
-function goToConfigPage() {
-    vmixPage.classList.add('hidden');
-    homePage.classList.add('hidden');
-    configPage.classList.remove('hidden');
-}
-
-function goToVmixPage() {
-    homePage.classList.add('hidden');
-    configPage.classList.add('hidden');
-    vmixPage.classList.remove('hidden');
-}
-
-playFolderBtn.addEventListener('click', async () => {
+document.getElementById('play-folder-btn')!.addEventListener('click', async () => {
     const baseFile = baseFileInput.value;
     const folderPath = playFolderInput.value;
 
@@ -154,6 +191,7 @@ playFolderBtn.addEventListener('click', async () => {
     }
 });
 
+// ===== Config Page =====
 const editConfigBtn = document.getElementById('edit-config-btn') as HTMLButtonElement;
 editConfigBtn.addEventListener('click', async () => {
     const folderPath = playFolderInput.value;
@@ -199,6 +237,7 @@ saveConfigBtn.addEventListener('click', async () => {
     saveConfigBtn.disabled = false;
 });
 
+// ===== vMix Page =====
 document.getElementById('open-vmix-btn')?.addEventListener('click', goToVmixPage);
 
 closeVmixWebBtn.addEventListener('click', () => {
@@ -206,38 +245,23 @@ closeVmixWebBtn.addEventListener('click', () => {
     if (res) goToHomePage();
 });
 
-async function loadDevices() {
-    //await navigator.mediaDevices.getUserMedia({ video: true, audio: true });
-
-    const devices = await navigator.mediaDevices.enumerateDevices();
-
-    for (const device of devices) {
-        const option = document.createElement('option');
-        option.value = device.deviceId;
-        option.text = device.label || `${device.kind}`;
-
-        if (device.kind === 'videoinput') {
-            programCamInput.appendChild(option);
-
-            const option2 = document.createElement('option');
-            option2.value = device.deviceId;
-            option2.text = device.label || `${device.kind}`;
-            previewCamInput.appendChild(option2);
-        }
-    }
+async function fetchVmixState() {
+    return await (window as any).api.getVmixState();
 }
 
 (async () => {
     await loadDevices();
-
     init();
+
+    const res = await fetchVmixState();
+    if (res.error) return;
+    renderVmixWeb(res.data);
+
+    setInterval(async () => {
+        if (vmixPage.classList.contains('hidden')) return;
+
+        const res = await fetchVmixState();
+        if (res.error) return;
+        renderVmixWeb(res.data);
+    }, 10000);
 })();
-
-// setInterval(async () => {
-//     if (vmixPage.classList.contains('hidden')) return;
-
-//     const res = await fetchVmixInfo();
-//     if (res.error) return;
-
-//     console.log(res.value);
-// }, 10000);

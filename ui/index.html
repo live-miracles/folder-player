@@ -150,34 +150,12 @@
         <div class="flex h-full">
           <!-- LEFT PANEL -->
           <div class="w-[600px] p-4 flex flex-col gap-3 bg-base-200">
-            <!-- Header -->
             <div class="flex items-center gap-3">
               <button id="close-vmix-web-btn" class="btn btn-sm btn-soft btn-accent"><i data-lucide="undo-2" class="w-5 h-5"></i></button>
-              <h2 id="folderName" class="text-lg font-bold">Folder Name</h2>
+              <h2 id="preset-name" class="text-lg font-bold"></h2>
             </div>
 
-            <!-- List -->
-            <div id="fileList" class="flex-1 flex flex-col gap-2 overflow-hidden">
-              <div class="flex items-center justify-between bg-base-300 rounded-box px-3 py-2 cursor-pointer hover:bg-base-content/10">
-                <div class="flex gap-3 items-center">
-                  <span>Cam</span>
-                </div>
-                <div class="flex gap-2">
-                  <i data-lucide="mic"></i>
-                  <i data-lucide="repeat"></i>
-                </div>
-              </div>
-
-              <div class="flex items-center justify-between bg-base-300 rounded-box px-3 py-2 cursor-pointer hover:bg-base-content/10">
-                <div class="flex gap-3 items-center">
-                  <span class="text-sm opacity-60">30:00</span>
-                  <span>01_Yogapadhi Track Opening Rendered.mp4</span>
-                </div>
-                <div class="flex gap-2">
-                  <i data-lucide="repeat"></i>
-                </div>
-              </div>
-            </div>
+            <div id="input-list" class="flex-1 flex flex-col gap-2 overflow-hidden"></div>
           </div>
 
           <!-- DIVIDER -->
@@ -188,14 +166,14 @@
             <!-- Title -->
             <div class="text-center font-semibold bg-primary text-primary-content text-xl py-1" id="program-title">Program Input Title</div>
 
-            <div class="flex gap-1 items-stretch flex-1 min-h-0">
+            <div class="flex gap-1 flex-1 min-h-0">
               <!-- VIDEO -->
-              <div class="flex-1 aspect-video bg-black overflow-hidden">
-                <video id="mainVideo" class="w-full h-full"></video>
+              <div class="flex-1 min-h-0 flex items-center justify-center overflow-hidden">
+                <video id="program-video" class="max-w-full max-h-full aspect-video"></video>
               </div>
 
               <!-- AUDIO CANVAS -->
-              <canvas id="audioCanvas" class="w-[20px] h-auto bg-base-300"></canvas>
+              <canvas id="audioCanvas" class="w-[20px] bg-base-300"></canvas>
             </div>
 
             <div class="text-center font-semibold text-3xl" id="currentTitle">
