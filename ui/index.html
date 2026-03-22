@@ -147,18 +147,36 @@
 
       <!-- VMIX PAGE -->
       <div id="vmix-page" class="absolute inset-0 hidden">
-        <div class="flex h-screen">
+        <div class="flex h-full">
           <!-- LEFT PANEL -->
-          <div class="w-[35%] p-4 flex flex-col gap-3 bg-base-200">
+          <div class="w-[600px] p-4 flex flex-col gap-3 bg-base-200">
             <!-- Header -->
             <div class="flex items-center gap-3">
-              <button id="close-vmix-web-btn" class="btn btn-sm">Back</button>
+              <button id="close-vmix-web-btn" class="btn btn-sm btn-soft btn-accent"><i data-lucide="undo-2" class="w-5 h-5"></i></button>
               <h2 id="folderName" class="text-lg font-bold">Folder Name</h2>
             </div>
 
             <!-- List -->
             <div id="fileList" class="flex-1 flex flex-col gap-2 overflow-hidden">
-              <!-- Tiles will be injected here -->
+              <div class="flex items-center justify-between bg-base-300 rounded-box px-3 py-2 cursor-pointer hover:bg-base-content/10">
+                <div class="flex gap-3 items-center">
+                  <span>Cam</span>
+                </div>
+                <div class="flex gap-2">
+                  <i data-lucide="mic"></i>
+                  <i data-lucide="repeat"></i>
+                </div>
+              </div>
+
+              <div class="flex items-center justify-between bg-base-300 rounded-box px-3 py-2 cursor-pointer hover:bg-base-content/10">
+                <div class="flex gap-3 items-center">
+                  <span class="text-sm opacity-60">30:00</span>
+                  <span>01_Yogapadhi Track Opening Rendered.mp4</span>
+                </div>
+                <div class="flex gap-2">
+                  <i data-lucide="repeat"></i>
+                </div>
+              </div>
             </div>
           </div>
 
@@ -166,39 +184,79 @@
           <div class="w-1 bg-base-300"></div>
 
           <!-- RIGHT PANEL -->
-          <div class="flex-1 flex flex-col p-4 gap-3 bg-base-100">
+          <div class="flex-1 flex flex-col p-4 bg-base-100">
             <!-- Title -->
-            <div class="text-center font-semibold" id="currentTitle">title</div>
+            <div class="text-center font-semibold bg-primary text-primary-content text-xl py-1" id="program-title">Program Input Title</div>
 
-            <!-- MAIN VIDEO -->
-            <div class="aspect-video bg-black rounded-box overflow-hidden">
-              <video id="mainVideo" class="w-full h-full" autoplay muted></video>
+            <div class="flex gap-1 items-stretch flex-1 min-h-0">
+              <!-- VIDEO -->
+              <div class="flex-1 aspect-video bg-black overflow-hidden">
+                <video id="mainVideo" class="w-full h-full"></video>
+              </div>
+
+              <!-- AUDIO CANVAS -->
+              <canvas id="audioCanvas" class="w-[20px] h-auto bg-base-300"></canvas>
             </div>
 
-            <!-- Info bar -->
-            <div class="text-center text-sm opacity-70" id="durationInfo">duration: 00:00 | left: 00:00 | ends at: --</div>
+            <div class="text-center font-semibold text-3xl" id="currentTitle">
+              <span>00:00:28 / 00:02:24 / 00:01:56</span>
+            </div>
+            <div class="flex items-center gap-2">
+              <button id="play-video" class="btn btn-sm"><i data-lucide="play" class="w-5 h-5"></i></button>
+              <button id="play-video" class="btn btn-sm"><i data-lucide="square" class="w-5 h-5"></i></button>
+              <input type="range" min="0" max="100" value="30" class="range range-xs flex-1" />
+            </div>
 
             <!-- Controls -->
-            <div class="flex gap-4 items-start">
+            <div class="flex gap-4 items-start mt-3">
               <!-- Buttons -->
-              <div class="flex flex-col gap-2">
-                <button class="btn">FTB</button>
-                <button class="btn" id="clockBtn">--:--</button>
-                <button class="btn">Clock</button>
+              <div class="flex flex-col gap-3 text-center w-[250px]">
+                <button class="btn btn-xl btn-soft btn-error">Fade To Black</button>
+                <span class="p-2 text-6xl">17:45:32</span>
+                <span class="text-3xl" id="clockBtn">Ends: 12:03:30</span>
               </div>
 
               <!-- Preview -->
-              <div class="aspect-video w-48 bg-black rounded-box overflow-hidden">
+              <div id="preview-container" class="relative group aspect-video w-[350px] bg-black overflow-hidden cursor-pointer">
+                <!-- Video -->
                 <video id="previewVideo" class="w-full h-full"></video>
+
+                <!-- Overlay button -->
+                <button id="fullscreen-btn" class="absolute bottom-2 right-2 btn btn-ghost btn-circle opacity-0 group-hover:opacity-100 transition">
+                  <i data-lucide="maximize" class="w-4 h-4"></i>
+                </button>
               </div>
 
               <!-- Audio meters -->
               <div class="flex gap-2">
-                <div class="w-16 h-40 bg-base-300 rounded-box flex items-end">
-                  <div id="audio1" class="w-full bg-green-500" style="height: 30%"></div>
-                </div>
-                <div class="w-16 h-40 bg-base-300 rounded-box flex items-end">
-                  <div id="audio2" class="w-full bg-green-500" style="height: 50%"></div>
+                <div class="flex flex-col items-center w-32">
+                  <!-- TITLE -->
+                  <div class="w-full text-center text-sm truncate bg-base-300 p-2 rounded-t-xl">Very Long Input Name That Should Be Cut</div>
+
+                  <!-- MAIN BOX -->
+                  <div class="flex items-stretch gap-2 bg-base-200 p-2 rounded-b-lg w-full h-[165px]">
+                    <!-- LEFT CONTROLS -->
+                    <div class="flex flex-col items-center gap-1 flex-1">
+                      <input id="volume-input" type="text" value="100%" disabled class="input w-full text-center" />
+
+                      <div class="flex gap-1 flex-wrap justify-center">
+                        <button id="vol-plus" class="btn btn-sm">
+                          <i data-lucide="plus" class="w-5 h-5"></i>
+                        </button>
+
+                        <button id="vol-minus" class="btn btn-sm">
+                          <i data-lucide="minus" class="w-5 h-5"></i>
+                        </button>
+
+                        <button id="vol-mute" class="btn btn-sm">
+                          <i data-lucide="volume-x" class="w-5 h-5"></i>
+                        </button>
+                      </div>
+                    </div>
+
+                    <!-- RIGHT CANVAS -->
+                    <canvas class="w-[10px] bg-base-300 rounded-box"></canvas>
+                  </div>
                 </div>
               </div>
             </div>
@@ -207,6 +265,10 @@
       </div>
     </div>
 
+    <script src="./lucide.min.js"></script>
+    <script>
+      lucide.createIcons();
+    </script>
     <script type="module" src="./dist/app.js"></script>
   </body>
 </html>
