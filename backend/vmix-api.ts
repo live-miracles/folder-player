@@ -50,8 +50,10 @@ function transition(type: string, input: string | number | null) {
 
 type VMixInput = {
     '@attributes': { key: string; number: string };
-    overlays: { index: number; number: number }[];
+    overlays: { index: number; number: number; key: string }[];
     gainDb?: string;
+    loop: boolean;
+    number: number;
 };
 
 function ensureArray(item: any) {
@@ -86,14 +88,17 @@ class VmixInfo {
         data.inputs.input.forEach((i: any) => (keyMap[i.key] = Number(i.number)));
 
         this.inputs = [];
-        data.inputs.input.forEach((i: any) => {
-            const number = Number(i.number);
-            this.inputs[number] = i;
+        data.inputs.input.forEach((input: any) => {
+            const number = Number(input.number);
+            this.inputs[number] = input;
+            this.inputs[number].number = number;
+            this.inputs[number].loop = input.loop === 'True';
             this.inputs[number].overlays = [];
-            ensureArray(i.overlay).forEach((overlay) => {
+            ensureArray(input.overlay).forEach((overlay) => {
                 this.inputs[number].overlays.push({
                     index: parseInt(overlay.index),
                     number: keyMap[overlay.key],
+                    key: overlay.key,
                 });
             });
         });
@@ -145,18 +150,6 @@ function getBusName(bus: string, capital = false) {
 //         return `${position} / ${duration} / ${remaining}`;
 //     }
 //     return `${formatTimeMMSS(duration)} | ${formatTimeMMSS(remaining)}`;
-// }
-
-// function getInputDuration(input) {
-//     if (input.duration === '0') return '';
-
-//     console.assert(['Video', 'AudioFile', 'Photos'].includes(input.type), input.type);
-//     const duration = parseInt(input.duration);
-//     if (input.type === 'Photos') {
-//         return duration;
-//     }
-
-//     return formatTimeMMSS(duration);
 // }
 
 // function getVolumeInfo(input: VMixInput) {
