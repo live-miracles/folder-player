@@ -37,10 +37,6 @@ export async function getVmixState() {
     }
 }
 
-function previewInput(inputNum: string | number) {
-    vMixCall('PreviewInput', { Input: inputNum });
-}
-
 function transition(type: string, input: string | number | null) {
     const params = input && type !== 'FadeToBlack' ? { Input: input } : {};
     vMixCall(type, params);

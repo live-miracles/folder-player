@@ -64,6 +64,8 @@ ipcMain.handle('play-folder', async (_, { folderPath, baseFile }) => {
 });
 
 ipcMain.handle('get-vmix-state', async () => await getVmixState());
+ipcMain.handle('set-vmix-active', async (_, index) => vMixCall('ActiveInput', { Input: index }));
+ipcMain.handle('set-vmix-preview', async (_, index) => vMixCall('PreviewInput', { Input: index }));
 ipcMain.handle('get-folder-files', async (_, folderPath) => Array.from(getFolderFiles(folderPath)));
 ipcMain.handle('get-folder-config', async (_, folderPath) =>
     Array.from(getFolderConfig(folderPath)),

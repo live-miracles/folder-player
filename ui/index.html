@@ -7,6 +7,17 @@
   </head>
 
   <body class="h-screen overflow-hidden">
+    <div role="alert" id="error-alert" class="alert alert-error fixed top-3 left-1/2 z-999 hidden max-w-175 -translate-x-1/2 transform opacity-90">
+      <svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6 shrink-0 stroke-current" fill="none" viewBox="0 0 24 24">
+        <path
+          stroke-linecap="round"
+          stroke-linejoin="round"
+          stroke-width="2"
+          d="M10 14l2-2m0 0l2-2m-2 2l-2-2m2 2l2 2m7-2a9 9 0 11-18 0 9 9 0 0118 0z" />
+      </svg>
+      <span id="error-msg"></span>
+    </div>
+
     <div class="relative w-full h-full">
       <!-- LOADING PAGE -->
       <div id="loading-page" class="absolute inset-0 overflow-y-auto bg-cover bg-center hidden" style="background-image: url('./mountains.jpg')">
@@ -167,9 +178,9 @@
               <h2 id="preset-name" class="text-lg font-bold"></h2>
             </div>
 
-            <div class="text-center mx-auto">
-              <span class="p-2 text-6xl">17:45:32</span>
-              <span class="text-3xl" id="clockBtn">(File ends 12:03:30)</span>
+            <div class="flex items-center gap-3 mx-auto">
+              <span class="p-2 text-6xl" id="current-time">17:45:32</span>
+              <span class="text-3xl opacity-70" id="clockBtn">File ends 12:03:30</span>
             </div>
 
             <div id="pinned-inputs" class="flex flex-col gap-2"></div>

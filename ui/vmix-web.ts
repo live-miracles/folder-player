@@ -5,19 +5,53 @@ function getLeadingNumber(text: string) {
     return match ? Number(match[1]) : -1;
 }
 
+function getTimeString() {
+    const now = new Date();
+
+    const h = String(now.getHours()).padStart(2, '0');
+    const m = String(now.getMinutes()).padStart(2, '0');
+    const s = String(now.getSeconds()).padStart(2, '0');
+
+    return `${h}:${m}:${s}`;
+}
+
+function renderTime() {
+    setInterval(() => {
+        document.getElementById('current-time')!.innerText = getTimeString();
+    }, 300);
+}
+
 function getMicId(state: any) {
     const micTitleInput = state.inputs
         .filter(Boolean)
         .find((input: any) => input.title.trim().split(/\s+/).includes('Mic'));
     if (micTitleInput) return micTitleInput.key;
 
-    const micTypeInput = state.inputs.find((input: any) => input.type === 'Audio');
+    const micTypeInput = state.inputs.filter(Boolean).find((input: any) => input.type === 'Audio');
     if (micTypeInput) return micTypeInput.key;
 
     return null;
 }
 
+let alertCount = 0;
+function showErrorAlert(error: string) {
+    const errorAlertElem = document.getElementById('error-alert');
+    if (!errorAlertElem) return;
+    errorAlertElem.classList.remove('hidden');
+    document.getElementById('error-msg')!.innerText = error;
+    console.error(error);
+    const alertId = ++alertCount;
+    setTimeout(() => {
+        if (alertId !== alertCount) return;
+        errorAlertElem.classList.add('hidden');
+    }, 3000);
+}
+
 export function renderVmixWeb(state: any) {
+    if (!state) {
+        showErrorAlert('Not able to feth vMix status.');
+        return;
+    }
     state.micId = getMicId(state);
 
     document.getElementById('preset-name')!.innerText = state.preset;
@@ -58,17 +92,18 @@ function renderInputList(state: any) {
         ];
 
         const html = `
-        <div class="flex items-center justify-between ${color} rounded-lg px-3 py-2 cursor-pointer ${hover}">
-            <div class="flex gap-3 items-center">
-                <i data-lucide="${getFileIcon(input.type)}" class="w-4 h-4 shrink-0"></i>
-                ${getInputDuration(input) ? `<span class="text-sm opacity-70">${getInputDuration(input)}</span>` : ''}
-                <span>${input.title}</span>
-            </div>
-            <div class="flex gap-2">
-                ${input.overlays.find((over: any) => over.key === state.micId) ? '<i data-lucide="mic" class="w-4 h-4"></i>' : ''}
-                ${input.loop ? '<i data-lucide="repeat" class="w-4 h-4"></i>' : ''}
-            </div>
-        </div>`;
+            <div class="input-item flex items-center justify-between ${color} 
+                    rounded-lg px-3 py-2 cursor-pointer ${hover} select-none" data-index="${input.number}">
+                <div class="flex gap-3 items-center">
+                    <i data-lucide="${getFileIcon(input.type)}" class="w-4 h-4 shrink-0"></i>
+                    ${getInputDuration(input) ? `<span class="text-sm opacity-70">${getInputDuration(input)}</span>` : ''}
+                    <span>${input.title}</span>
+                </div>
+                <div class="flex gap-2">
+                    ${input.overlays.find((over: any) => over.key === state.micId) ? '<i data-lucide="mic" class="w-4 h-4"></i>' : ''}
+                    ${input.loop ? '<i data-lucide="repeat" class="w-4 h-4"></i>' : ''}
+                </div>
+            </div>`;
         if (getLeadingNumber(input.title) === 0) pinnedHtml += html;
         else normalHtml += html;
     });
@@ -97,3 +132,34 @@ function formatTimeMMSS(ms: number) {
     const pad = (num: number) => String(num).padStart(2, '0');
     return `${hours === 0 ? '' : hours + ':'}${pad(minutes)}:${pad(seconds)}`;
 }
+
+document.getElementById('input-list')!.addEventListener('click', inputClick);
+document.getElementById('input-list')!.addEventListener('dblclick', inputDbClick);
+
+document.getElementById('pinned-inputs')!.addEventListener('click', inputClick);
+document.getElementById('pinned-inputs')!.addEventListener('dblclick', inputDbClick);
+
+let clickTimeout: any = null;
+function inputClick(e: Event) {
+    const item = (e.target as HTMLElement).closest('.input-item') as HTMLElement;
+    if (!item) return;
+
+    const index = item.dataset.index;
+
+    // delay click to detect double click
+    if (clickTimeout) clearTimeout(clickTimeout);
+
+    clickTimeout = setTimeout(() => (window as any).api.setVmixPreview(index), 200);
+}
+
+function inputDbClick(e: Event) {
+    const item = (e.target as HTMLElement).closest('.input-item') as HTMLElement;
+    if (!item) return;
+
+    const index = item.dataset.index;
+    if (clickTimeout) clearTimeout(clickTimeout);
+
+    (window as any).api.setVmixActive(index);
+}
+
+renderTime();

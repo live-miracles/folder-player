@@ -302,14 +302,13 @@ async function fetchVmixState() {
     init();
 
     const res = await fetchVmixState();
-    if (res.error) return;
+    console.log(res.data);
     renderVmixWeb(res.data);
 
     setInterval(async () => {
         if (vmixPage.classList.contains('hidden')) return;
 
         const res = await fetchVmixState();
-        if (res.error) return;
         renderVmixWeb(res.data);
     }, 1000);
 })();
