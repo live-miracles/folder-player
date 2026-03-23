@@ -16,33 +16,69 @@ const closeVmixWebBtn = document.getElementById('close-vmix-web-btn')!;
 let programStream: MediaStream | null = null;
 let previewStream: MediaStream | null = null;
 const programVideo = document.getElementById('program-video') as HTMLVideoElement;
+const previewVideo = document.getElementById('preview-video') as HTMLVideoElement;
 
+const loadingPage = document.getElementById('loading-page')!;
 const homePage = document.getElementById('home-page')!;
-const vmixPage = document.getElementById('vmix-page')!;
 const configPage = document.getElementById('config-page')!;
+const vmixPage = document.getElementById('vmix-page')!;
+
+function goToLoadingPage() {
+    configPage.classList.add('hidden');
+    vmixPage.classList.add('hidden');
+    homePage.classList.add('hidden');
+    loadingPage.classList.remove('hidden');
+}
 
 function goToHomePage() {
-    vmixPage.classList.add('hidden');
+    loadingPage.classList.add('hidden');
     configPage.classList.add('hidden');
+    vmixPage.classList.add('hidden');
     homePage.classList.remove('hidden');
 }
 
 function goToConfigPage() {
-    vmixPage.classList.add('hidden');
+    loadingPage.classList.add('hidden');
     homePage.classList.add('hidden');
+    vmixPage.classList.add('hidden');
     configPage.classList.remove('hidden');
 }
 
 async function goToVmixPage() {
-    if (programStream) programStream.getTracks().forEach((track) => track.stop());
+    const res = await (window as any).api.getVmixState();
 
-    if (programCamInput.value) {
-        programStream = await navigator.mediaDevices.getUserMedia({
-            video: { deviceId: { exact: programCamInput.value } },
-            audio: false,
-        });
-        programVideo.srcObject = programStream;
-        programVideo.play();
+    if (res.error) {
+        alert(
+            'Could not connect to vMix on port 8088. Make sure it is running and HTTP API is enabled.\n\n' +
+                res.error,
+        );
+        return;
+    }
+
+    try {
+        if (programStream) programStream.getTracks().forEach((track) => track.stop());
+        if (previewStream) previewStream.getTracks().forEach((track) => track.stop());
+
+        if (programCamInput.value) {
+            programStream = await navigator.mediaDevices.getUserMedia({
+                video: { deviceId: { exact: programCamInput.value } },
+                audio: false,
+            });
+            programVideo.srcObject = programStream;
+            programVideo.play();
+        }
+
+        if (previewCamInput.value) {
+            previewStream = await navigator.mediaDevices.getUserMedia({
+                video: { deviceId: { exact: previewCamInput.value } },
+                audio: false,
+            });
+            previewVideo.srcObject = previewStream;
+            previewVideo.play();
+        }
+    } catch (err) {
+        console.log(err);
+        alert(err);
     }
 
     homePage.classList.add('hidden');
@@ -68,7 +104,7 @@ function getRecentFolders(): string[] {
 function addRecentFolder(folder: string) {
     const folders = getRecentFolders();
 
-    const updated = [folder, ...folders.filter((f) => f !== folder)].slice(0, 5);
+    const updated = [folder, ...folders.filter((f) => f !== folder)].slice(0, 7);
 
     localStorage.setItem(STORAGE_KEYS.RECENT_FOLDERS, JSON.stringify(updated));
     renderRecentFolders();
@@ -99,9 +135,14 @@ function init() {
 
 // ===== Home Page =====
 async function loadDevices() {
-    //await navigator.mediaDevices.getUserMedia({ video: true, audio: true });
-
     const devices = await navigator.mediaDevices.enumerateDevices();
+
+    devices.sort((a, b) =>
+        (a.label || '').localeCompare(b.label || '', undefined, {
+            numeric: true,
+            sensitivity: 'base',
+        }),
+    );
 
     for (const device of devices) {
         const option = document.createElement('option');
@@ -160,7 +201,12 @@ document.getElementById('select-play-folder-btn')!.addEventListener('click', asy
     }
 });
 
-document.getElementById('play-folder-btn')!.addEventListener('click', async () => {
+function sleep(ms: number) {
+    return new Promise((res) => setTimeout(res, ms));
+}
+
+const playFolderBtn = document.getElementById('play-folder-btn') as HTMLButtonElement;
+playFolderBtn.addEventListener('click', async () => {
     const baseFile = baseFileInput.value;
     const folderPath = playFolderInput.value;
 
@@ -182,10 +228,12 @@ document.getElementById('play-folder-btn')!.addEventListener('click', async () =
     addRecentFolder(folderPath);
 
     try {
+        goToLoadingPage();
         await (window as any).api.playFolder({ folderPath, baseFile });
-
+        await sleep(5000);
         goToVmixPage();
     } catch (err) {
+        goToHomePage();
         console.error(err);
         alert(err);
     }
@@ -263,5 +311,5 @@ async function fetchVmixState() {
         const res = await fetchVmixState();
         if (res.error) return;
         renderVmixWeb(res.data);
-    }, 10000);
+    }, 1000);
 })();

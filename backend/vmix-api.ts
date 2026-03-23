@@ -7,8 +7,8 @@ async function fetchUrl(url: string) {
         const response = await fetch(url, { signal: AbortSignal.timeout(1000) });
         const data = await response.text();
         return { status: response.status, data: data, error: null };
-    } catch (error) {
-        return { status: null, data: null, error: error };
+    } catch (err) {
+        return { status: null, data: null, error: err };
     }
 }
 
@@ -54,6 +54,7 @@ type VMixInput = {
     gainDb?: string;
     loop: boolean;
     number: number;
+    title: string;
 };
 
 function ensureArray(item: any) {

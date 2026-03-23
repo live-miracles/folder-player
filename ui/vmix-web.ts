@@ -1,12 +1,14 @@
+import { FILE_TYPES } from './config.js';
+
 function getLeadingNumber(text: string) {
     const match = text.match(/^\s*(\d+)/);
     return match ? Number(match[1]) : -1;
 }
 
 function getMicId(state: any) {
-    const micTitleInput = state.inputs.find((input: any) =>
-        input.title.trim().split(/\s+/).includes('Mic'),
-    );
+    const micTitleInput = state.inputs
+        .filter(Boolean)
+        .find((input: any) => input.title.trim().split(/\s+/).includes('Mic'));
     if (micTitleInput) return micTitleInput.key;
 
     const micTypeInput = state.inputs.find((input: any) => input.type === 'Audio');
@@ -16,7 +18,6 @@ function getMicId(state: any) {
 }
 
 export function renderVmixWeb(state: any) {
-    state.inputs = state.inputs.filter(Boolean);
     state.micId = getMicId(state);
 
     document.getElementById('preset-name')!.innerText = state.preset;
@@ -32,10 +33,21 @@ function getInputStatus(input: any, state: any) {
     return 2;
 }
 
+function getFileIcon(type: string) {
+    if (type === FILE_TYPES.AUDIO) return 'audio-lines';
+    else if (type === FILE_TYPES.VIDEO) return 'clapperboard';
+    else if (type === FILE_TYPES.IMAGE) return 'image';
+    else if (type === FILE_TYPES.FOLDER) return 'presentation';
+    else if (type === 'Capture') return 'camera';
+    else if (type === 'Audio') return 'mic-vocal';
+    else if (type === 'Colour') return 'palette';
+    return '';
+}
+
 function renderInputList(state: any) {
     let pinnedHtml = '';
     let normalHtml = '';
-    state.inputs.forEach((input: any) => {
+    state.inputs.filter(Boolean).forEach((input: any) => {
         const color = [
             'bg-primary text-primary-content font-semibold',
             'bg-warning text-warning-content font-semibold',
@@ -46,14 +58,15 @@ function renderInputList(state: any) {
         ];
 
         const html = `
-        <div class="flex items-center justify-between ${color} rounded-box px-3 py-2 cursor-pointer ${hover}">
+        <div class="flex items-center justify-between ${color} rounded-lg px-3 py-2 cursor-pointer ${hover}">
             <div class="flex gap-3 items-center">
+                <i data-lucide="${getFileIcon(input.type)}" class="w-4 h-4 shrink-0"></i>
                 ${getInputDuration(input) ? `<span class="text-sm opacity-70">${getInputDuration(input)}</span>` : ''}
                 <span>${input.title}</span>
             </div>
             <div class="flex gap-2">
-                ${input.overlays.find((over: any) => over.key === state.micId) ? '<i data-lucide="mic"></i>' : ''}
-                ${input.loop ? '<i data-lucide="repeat"></i>' : ''}
+                ${input.overlays.find((over: any) => over.key === state.micId) ? '<i data-lucide="mic" class="w-4 h-4"></i>' : ''}
+                ${input.loop ? '<i data-lucide="repeat" class="w-4 h-4"></i>' : ''}
             </div>
         </div>`;
         if (getLeadingNumber(input.title) === 0) pinnedHtml += html;

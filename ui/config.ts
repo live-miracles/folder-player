@@ -1,4 +1,4 @@
-const FILE_TYPES = { IMAGE: 'Image', VIDEO: 'Video', AUDIO: 'AudioFile', FOLDER: 'Photos' };
+export const FILE_TYPES = { IMAGE: 'Image', VIDEO: 'Video', AUDIO: 'AudioFile', FOLDER: 'Photos' };
 
 export function renderConfigTable(
     folderFiles: [number, { path: string; type: string }[]][],

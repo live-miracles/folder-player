@@ -43,6 +43,19 @@ export function createPresetFile(folderPath: string, baseFilePath: string) {
     fileMap.delete(-1);
 
     const config = getFolderConfig(folderPath);
+    if (!micId) {
+        config.forEach((list, _) => {
+            const index = list.indexOf('mic');
+            if (index !== -1) list.splice(index, 1);
+        });
+    }
+    if (!camId) {
+        config.forEach((list, _) => {
+            const index = list.indexOf('cam');
+            if (index !== -1) list.splice(index, 1);
+        });
+    }
+
     const sortedKeys = Array.from(fileMap.keys()).sort((a, b) => a - b);
 
     for (const key of sortedKeys) {
@@ -50,6 +63,7 @@ export function createPresetFile(folderPath: string, baseFilePath: string) {
         const options = config.get(key) ?? [];
         const layers: string[] = [];
         if (micId && options.includes('mic')) layers.push(micId);
+        if (camId && options.includes('cam')) layers.push(camId);
 
         const audios = files.filter((f) => f.type === FILE_TYPES.AUDIO);
         const videos = files.filter((f) => f.type === FILE_TYPES.VIDEO);
@@ -57,14 +71,21 @@ export function createPresetFile(folderPath: string, baseFilePath: string) {
         const slideshows = files.filter((f) => f.type === FILE_TYPES.FOLDER);
 
         console.assert(files.length > 0);
-        if (files.length === 1) {
-            if (images.length > 0 && options.includes('cam') && camId) {
-                layers.push(images[0].id);
-                inputsXML.push(getVirtualInput({ id: camId, newId: crypto.randomUUID() }, layers));
-                helperInputsXML.push(getFileXML(images[0], [], [...options, 'collapsed']));
-            } else {
-                inputsXML.push(getFileXML(files[0], layers, config.get(key)));
-            }
+
+        // Special case when it is camera overlayed by an image
+        if (files.length === 1 && images.length > 0 && options.includes('cam')) {
+            layers.pop(); // remove Cam layer, it will be the base instead
+
+            layers.push(images[0].id);
+            const filename = path.parse(images[0].path).name;
+            inputsXML.push(
+                getVirtualInput(
+                    { id: camId!, newId: crypto.randomUUID(), title: filename },
+                    layers,
+                ),
+            );
+            helperInputsXML.push(getFileXML(images[0], [], [...options, 'collapsed']));
+
             continue;
         }
 
@@ -250,8 +271,11 @@ function getPhotosXML(
         VideoShader_ClippingX2="1" VideoShader_ClippingY1="0" VideoShader_ClippingY2="1" VideoShader_PremultipliedAlpha="False">${escapeXML(file.path)}</Input>`;
 }
 
-function getVirtualInput(file: { id: string; newId: string }, layers: string[] = []) {
-    return `<Input Type="22" Position="0" RangeStart="0" RangeStop="0" State="1" OriginalTitle="" 
+function getVirtualInput(
+    file: { id: string; newId: string; title: string },
+    layers: string[] = [],
+) {
+    return `<Input Type="22" Position="0" RangeStart="0" RangeStop="0" State="1" Title="${file.title}" OriginalTitle="" 
         ShortcutMappings="" Key="${file.newId}" Loop="False" VolumeF="1" Muted="True" BalanceF="0" AspectRatio="100"
         Category="0" MouseClickAction="0" GOClickAction="20" Collapsed="False" Solo="False" BusMVolumeF="1"
         HeadphonesVolumeF="1" BusAVolumeF="1" BusBVolumeF="1" BusCVolumeF="1" BusDVolumeF="1" BusEVolumeF="1"

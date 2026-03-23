@@ -2,12 +2,24 @@
 <html data-theme="dim">
   <head>
     <meta charset="UTF-8" />
-    <title>Folder Player</title>
+    <title>Folder Player 0.1.0</title>
     <link href="./dist/output.css" rel="stylesheet" />
   </head>
 
   <body class="h-screen overflow-hidden">
     <div class="relative w-full h-full">
+      <!-- LOADING PAGE -->
+      <div id="loading-page" class="absolute inset-0 overflow-y-auto bg-cover bg-center hidden" style="background-image: url('./mountains.jpg')">
+        <div class="w-full h-full flex items-center justify-center">
+          <div class="bg-base-100/40 backdrop-blur-md px-10 py-6 rounded-2xl text-center">
+            <div class="text-4xl font-bold flex items-center gap-4">
+              Loading
+              <span class="loading loading-ring loading-xl"></span>
+            </div>
+          </div>
+        </div>
+      </div>
+
       <!-- HOME PAGE -->
       <div id="home-page" class="absolute inset-0 overflow-y-auto bg-cover bg-center" style="background-image: url('./mountains.jpg')">
         <div class="mx-3">
@@ -39,7 +51,7 @@
             </div>
 
             <div class="text-center mt-3">
-              <button id="edit-config-btn" class="btn btn-accent">Edit Config</button>
+              <button id="edit-config-btn" class="btn btn-accent">Open Config</button>
               <button id="play-folder-btn" class="btn btn-primary ml-2">Play Selected Folder</button>
             </div>
           </div>
@@ -149,10 +161,15 @@
       <div id="vmix-page" class="absolute inset-0 hidden">
         <div class="flex h-full">
           <!-- LEFT PANEL -->
-          <div class="w-[600px] p-4 flex flex-col gap-3 bg-base-200">
+          <div class="flex-1 p-4 flex flex-col gap-3 bg-base-200 min-w-0">
             <div class="flex items-center gap-3">
               <button id="close-vmix-web-btn" class="btn btn-sm btn-soft btn-accent"><i data-lucide="undo-2" class="w-5 h-5"></i></button>
               <h2 id="preset-name" class="text-lg font-bold"></h2>
+            </div>
+
+            <div class="text-center mx-auto">
+              <span class="p-2 text-6xl">17:45:32</span>
+              <span class="text-3xl" id="clockBtn">(File ends 12:03:30)</span>
             </div>
 
             <div id="pinned-inputs" class="flex flex-col gap-2"></div>
@@ -163,7 +180,7 @@
           <div class="w-1 bg-base-300"></div>
 
           <!-- RIGHT PANEL -->
-          <div class="flex-1 flex flex-col p-4 bg-base-100">
+          <div class="w-[900px] flex flex-col p-4 bg-base-100">
             <!-- Title -->
             <div class="text-center font-semibold bg-primary text-primary-content text-xl py-1" id="program-input-title"></div>
 
@@ -189,16 +206,15 @@
             <!-- Controls -->
             <div class="flex gap-4 items-start mt-3">
               <!-- Buttons -->
-              <div class="flex flex-col gap-3 text-center w-[250px]">
+              <div class="flex flex-col gap-3 text-center w-[200px]">
                 <button class="btn btn-xl btn-soft btn-error">Fade To Black</button>
-                <span class="p-2 text-6xl">17:45:32</span>
-                <span class="text-3xl" id="clockBtn">Ends: 12:03:30</span>
+                <button class="btn btn-xl btn-soft btn-error">Record</button>
               </div>
 
               <!-- Preview -->
               <div id="preview-container" class="relative group aspect-video w-[350px] bg-black overflow-hidden cursor-pointer">
                 <!-- Video -->
-                <video id="previewVideo" class="w-full h-full"></video>
+                <video id="preview-video" class="w-full h-full"></video>
 
                 <!-- Overlay button -->
                 <button id="fullscreen-btn" class="absolute bottom-2 right-2 btn btn-ghost btn-circle opacity-0 group-hover:opacity-100 transition">

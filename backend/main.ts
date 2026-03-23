@@ -82,7 +82,15 @@ async function setupVmix(folderPath: string, baseFile: string) {
 
     const presetPath = createPresetFile(folderPath, baseFile);
 
+    await vMixCall('StopExternal');
+    await sleep(500);
+    await vMixCall('StopStreaming');
+    await sleep(500);
+    await vMixCall('StopRecording');
+    await sleep(500);
     await vMixCall('OpenPreset', { Value: presetPath });
+    await sleep(5000);
+    await vMixCall('StartExternal');
 
     // await sleep(1000);
     // await waitForVmixReady();
@@ -91,4 +99,8 @@ async function setupVmix(folderPath: string, baseFile: string) {
     // await addFolderInputs(folderPath);
 
     // await vmixCall('SavePreset');
+}
+
+function sleep(ms: number) {
+    return new Promise((res) => setTimeout(res, ms));
 }
