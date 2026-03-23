@@ -178,10 +178,7 @@
               <h2 id="preset-name" class="text-lg font-bold"></h2>
             </div>
 
-            <div class="flex items-center gap-3 mx-auto">
-              <span class="p-2 text-6xl" id="current-time"></span>
-              <span class="text-3xl opacity-70" id="live-time"></span>
-            </div>
+            <div class="flex items-center gap-3 mx-auto"><span class="p-2 text-6xl" id="current-time"></span></div>
 
             <div id="pinned-inputs" class="flex flex-col gap-2"></div>
             <div id="input-list" class="flex-1 flex flex-col gap-2 overflow-y-auto min-h-0"></div>
@@ -200,18 +197,16 @@
               <div class="flex-1 min-h-0 flex items-center justify-center overflow-hidden">
                 <video id="program-video" class="max-w-full max-h-full aspect-video"></video>
               </div>
-
               <!-- AUDIO CANVAS -->
               <canvas id="audioCanvas" class="w-[20px] bg-base-300"></canvas>
             </div>
 
-            <div class="text-center font-semibold text-3xl" id="currentTitle">
-              <span>00:00:28 / 00:02:24 / 00:01:56</span>
-            </div>
-            <div class="flex items-center gap-2">
+            <div class="text-center font-semibold text-3xl"><span id="active-input-duration"></span></div>
+            <div class="flex items-center gap-2 invisible">
               <button id="play-video" class="btn btn-sm"><i data-lucide="play" class="w-5 h-5"></i></button>
               <button id="play-video" class="btn btn-sm"><i data-lucide="square" class="w-5 h-5"></i></button>
-              <input type="range" min="0" max="100" value="30" class="range range-xs flex-1" />
+              <input id="active-input-timeline" type="range" min="0" max="100" value="30" class="range range-xs flex-1" />
+              <span class="opacity-70 w-[120px] text-center" id="live-time"></span>
             </div>
 
             <!-- Controls -->
@@ -220,6 +215,7 @@
               <div class="flex flex-col gap-3 text-center w-[200px]">
                 <button class="btn btn-xl btn-soft btn-error">Fade To Black</button>
                 <button class="btn btn-xl btn-soft btn-error">Record</button>
+                <button class="btn btn-xl btn-soft btn-primary"><i data-lucide="mic-off"></i></button>
               </div>
 
               <!-- Preview -->

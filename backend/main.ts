@@ -93,14 +93,6 @@ async function setupVmix(folderPath: string, baseFile: string) {
     await vMixCall('OpenPreset', { Value: presetPath });
     await sleep(5000);
     await vMixCall('StartExternal');
-
-    // await sleep(1000);
-    // await waitForVmixReady();
-    // await sleep(1000);
-
-    // await addFolderInputs(folderPath);
-
-    // await vmixCall('SavePreset');
 }
 
 function sleep(ms: number) {

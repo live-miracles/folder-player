@@ -46,9 +46,25 @@ function showErrorAlert(error: string) {
 }
 
 let liveStartTime: number | null = null;
+function getLiveTimeString() {
+    return formatTimeMMSS(Date.now() - liveStartTime!);
+}
+
+function getEndTimeString(input: any) {
+    const remaining = input.duration - input.position;
+    if (remaining < 1000) return 'Ended';
+
+    return 'Ends @ ' + getTimeString(new Date(Date.now() + remaining));
+}
+
+const endTimeElement = document.getElementById('live-time')!;
+const activeInputDuration = document.getElementById('active-input-duration')!;
+const activeInputTimeline = document.getElementById('active-input-timeline') as HTMLInputElement;
 export function renderVmixWeb(state: any) {
     if (!state) {
         showErrorAlert('Not able to feth vMix status.');
+        return;
+    } else if (state.active === 0) {
         return;
     }
     state.micId = getMicId(state);
@@ -57,17 +73,24 @@ export function renderVmixWeb(state: any) {
 
     if (activeInput.duration === 0 || activeInput.type === 'Photos') {
         if (liveStartTime === null) liveStartTime = Date.now();
-        document.getElementById('live-time')!.innerHTML = formatTimeMMSS(
-            Date.now() - liveStartTime!,
-        );
+        endTimeElement.classList.add('hidden');
     } else {
-        const duration = parseInt(activeInput.duration);
-        const position = parseInt(activeInput.position);
-        const remaining = duration - position;
-        console.log(remaining);
-        document.getElementById('live-time')!.innerHTML =
-            'Ends @ ' + getTimeString(new Date(Date.now() + remaining));
+        liveStartTime = null;
+        endTimeElement.classList.remove('hidden');
+        endTimeElement.innerHTML = getEndTimeString(activeInput);
     }
+
+    if (activeInput.duration === 0) {
+        activeInputDuration.innerText = getLiveTimeString();
+        activeInputTimeline.parentElement?.classList.add('invisible');
+    } else {
+        activeInputDuration.innerText = getInputProgress(activeInput);
+        activeInputTimeline.value = String(
+            Math.round((activeInput.position / activeInput.duration) * 100),
+        );
+        activeInputTimeline.parentElement?.classList.remove('invisible');
+    }
+
     document.getElementById('preset-name')!.innerText = state.preset;
     document.getElementById('program-input-title')!.innerText = activeInput.title;
     renderInputList(state);
@@ -176,18 +199,11 @@ function inputDbClick(e: Event) {
     (window as any).api.setVmixActive(index);
 }
 
+function getInputProgress(input: any) {
+    if (input.type === 'Photos') return `${input.position + 1} / ${input.duration + 1}`;
+
+    const remaining = input.duration - input.position;
+    return `${formatTimeMMSS(input.position)} / ${formatTimeMMSS(input.duration)} / ${formatTimeMMSS(remaining)}`;
+}
+
 renderTime();
-
-// function getShortInputProgress(input) {
-//     if (input.duration === '0') return '';
-
-//     console.assert(['Video', 'AudioFile', 'Photos'].includes(input.type), input.type);
-//     const duration = parseInt(input.duration);
-//     const position = parseInt(input.position);
-//     const remaining = duration - position;
-
-//     if (input.type === 'Photos') {
-//         return `${position} / ${duration} / ${remaining}`;
-//     }
-//     return `${formatTimeMMSS(duration)} | ${formatTimeMMSS(remaining)}`;
-// }

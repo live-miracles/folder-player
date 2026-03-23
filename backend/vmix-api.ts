@@ -52,6 +52,7 @@ type VMixInput = {
     number: number;
     title: string;
     duration: number;
+    position: number;
 };
 
 function ensureArray(item: any) {
@@ -91,6 +92,7 @@ class VmixInfo {
             this.inputs[number] = input;
             this.inputs[number].number = number;
             this.inputs[number].duration = parseInt(input.duration);
+            this.inputs[number].position = parseInt(input.position);
             this.inputs[number].loop = input.loop === 'True';
             this.inputs[number].overlays = [];
             ensureArray(input.overlay).forEach((overlay) => {
