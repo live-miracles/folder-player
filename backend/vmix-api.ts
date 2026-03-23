@@ -51,6 +51,7 @@ type VMixInput = {
     loop: boolean;
     number: number;
     title: string;
+    duration: number;
 };
 
 function ensureArray(item: any) {
@@ -89,6 +90,7 @@ class VmixInfo {
             const number = Number(input.number);
             this.inputs[number] = input;
             this.inputs[number].number = number;
+            this.inputs[number].duration = parseInt(input.duration);
             this.inputs[number].loop = input.loop === 'True';
             this.inputs[number].overlays = [];
             ensureArray(input.overlay).forEach((overlay) => {
@@ -134,20 +136,6 @@ function getBusName(bus: string, capital = false) {
     console.assert(name !== undefined, bus);
     return capital ? name.charAt(0).toUpperCase() + name.slice(1) : name;
 }
-
-// function getShortInputProgress(input) {
-//     if (input.duration === '0') return '';
-
-//     console.assert(['Video', 'AudioFile', 'Photos'].includes(input.type), input.type);
-//     const duration = parseInt(input.duration);
-//     const position = parseInt(input.position);
-//     const remaining = duration - position;
-
-//     if (input.type === 'Photos') {
-//         return `${position} / ${duration} / ${remaining}`;
-//     }
-//     return `${formatTimeMMSS(duration)} | ${formatTimeMMSS(remaining)}`;
-// }
 
 // function getVolumeInfo(input: VMixInput) {
 //     let gain = '';

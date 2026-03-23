@@ -5,19 +5,17 @@ function getLeadingNumber(text: string) {
     return match ? Number(match[1]) : -1;
 }
 
-function getTimeString() {
-    const now = new Date();
-
-    const h = String(now.getHours()).padStart(2, '0');
-    const m = String(now.getMinutes()).padStart(2, '0');
-    const s = String(now.getSeconds()).padStart(2, '0');
+function getTimeString(date: Date) {
+    const h = String(date.getHours()).padStart(2, '0');
+    const m = String(date.getMinutes()).padStart(2, '0');
+    const s = String(date.getSeconds()).padStart(2, '0');
 
     return `${h}:${m}:${s}`;
 }
 
 function renderTime() {
     setInterval(() => {
-        document.getElementById('current-time')!.innerText = getTimeString();
+        document.getElementById('current-time')!.innerText = getTimeString(new Date());
     }, 300);
 }
 
@@ -47,6 +45,7 @@ function showErrorAlert(error: string) {
     }, 3000);
 }
 
+let liveStartTime: number | null = null;
 export function renderVmixWeb(state: any) {
     if (!state) {
         showErrorAlert('Not able to feth vMix status.');
@@ -54,8 +53,23 @@ export function renderVmixWeb(state: any) {
     }
     state.micId = getMicId(state);
 
+    const activeInput = state.inputs[state.active];
+
+    if (activeInput.duration === 0 || activeInput.type === 'Photos') {
+        if (liveStartTime === null) liveStartTime = Date.now();
+        document.getElementById('live-time')!.innerHTML = formatTimeMMSS(
+            Date.now() - liveStartTime!,
+        );
+    } else {
+        const duration = parseInt(activeInput.duration);
+        const position = parseInt(activeInput.position);
+        const remaining = duration - position;
+        console.log(remaining);
+        document.getElementById('live-time')!.innerHTML =
+            'Ends @ ' + getTimeString(new Date(Date.now() + remaining));
+    }
     document.getElementById('preset-name')!.innerText = state.preset;
-    document.getElementById('program-input-title')!.innerText = state.inputs[state.active].title;
+    document.getElementById('program-input-title')!.innerText = activeInput.title;
     renderInputList(state);
 
     (window as any).lucide.createIcons();
@@ -112,9 +126,9 @@ function renderInputList(state: any) {
 }
 
 function getInputDuration(input: any) {
-    if (input.duration === '0') return '';
+    if (input.duration === 0) return '';
 
-    console.assert(['Video', 'AudioFile', 'Photos'].includes(input.type), input.type);
+    console.assert(['Video', 'AudioFile', 'Photos'].includes(input.type), input);
     const duration = parseInt(input.duration);
     if (input.type === 'Photos') {
         return duration;
@@ -163,3 +177,17 @@ function inputDbClick(e: Event) {
 }
 
 renderTime();
+
+// function getShortInputProgress(input) {
+//     if (input.duration === '0') return '';
+
+//     console.assert(['Video', 'AudioFile', 'Photos'].includes(input.type), input.type);
+//     const duration = parseInt(input.duration);
+//     const position = parseInt(input.position);
+//     const remaining = duration - position;
+
+//     if (input.type === 'Photos') {
+//         return `${position} / ${duration} / ${remaining}`;
+//     }
+//     return `${formatTimeMMSS(duration)} | ${formatTimeMMSS(remaining)}`;
+// }
