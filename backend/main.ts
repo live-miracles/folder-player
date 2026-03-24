@@ -1,5 +1,6 @@
 import { app, BrowserWindow, ipcMain, dialog, session } from 'electron';
 import path from 'path';
+import fs from 'fs';
 import { fileURLToPath } from 'url';
 
 import { createPresetFile } from './preset-generator.js';
@@ -58,9 +59,11 @@ ipcMain.handle('select-play-folder', async () => {
     return result.filePaths[0];
 });
 
+ipcMain.handle('create-preset', (_, { folderPath, baseFile }) => {
+    createPresetFile(folderPath, baseFile);
+});
 ipcMain.handle('play-folder', async (_, { folderPath, baseFile }) => {
-    const presetPath = await setupVmix(folderPath, baseFile);
-    return { success: true, presetPath };
+    await setupVmix(folderPath, baseFile);
 });
 
 ipcMain.handle('get-vmix-state', async () => await getVmixState());
@@ -82,7 +85,16 @@ async function setupVmix(folderPath: string, baseFile: string) {
         throw new Error('Failed connecting to vMix');
     }
 
-    const presetPath = createPresetFile(folderPath, baseFile);
+    // Build preset path
+    const folderName = path.basename(folderPath);
+    const parentName = path.basename(path.dirname(folderPath));
+    const outputName = `${parentName} ${folderName}.vmix`;
+    const presetPath = path.join(folderPath, outputName);
+
+    // Create only if it doesn't exist
+    if (!fs.existsSync(presetPath)) {
+        createPresetFile(folderPath, baseFile);
+    }
 
     await vMixCall('StopExternal');
     await sleep(500);

@@ -1,4 +1,5 @@
 import { FILE_TYPES } from './config.js';
+import { showErrorAlert } from './utils.js';
 
 function getLeadingNumber(text: string) {
     const match = text.match(/^\s*(\d+)/);
@@ -29,20 +30,6 @@ function getMicId(state: any) {
     if (micTypeInput) return micTypeInput.key;
 
     return null;
-}
-
-let alertCount = 0;
-function showErrorAlert(error: string) {
-    const errorAlertElem = document.getElementById('error-alert');
-    if (!errorAlertElem) return;
-    errorAlertElem.classList.remove('hidden');
-    document.getElementById('error-msg')!.innerText = error;
-    console.error(error);
-    const alertId = ++alertCount;
-    setTimeout(() => {
-        if (alertId !== alertCount) return;
-        errorAlertElem.classList.add('hidden');
-    }, 3000);
 }
 
 let liveStartTime: number | null = null;
@@ -154,7 +141,7 @@ function getInputDuration(input: any) {
     console.assert(['Video', 'AudioFile', 'Photos'].includes(input.type), input);
     const duration = parseInt(input.duration);
     if (input.type === 'Photos') {
-        return duration;
+        return duration + 1;
     }
 
     return formatTimeMMSS(duration);

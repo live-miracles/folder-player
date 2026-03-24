@@ -18,6 +18,16 @@
       <span id="error-msg"></span>
     </div>
 
+    <div
+      role="alert"
+      id="success-alert"
+      class="alert alert-success fixed top-3 left-1/2 z-999 hidden max-w-175 -translate-x-1/2 transform opacity-90">
+      <svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6 shrink-0 stroke-current" fill="none" viewBox="0 0 24 24">
+        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
+      </svg>
+      <span id="success-msg"></span>
+    </div>
+
     <div class="relative w-full h-full">
       <!-- LOADING PAGE -->
       <div id="loading-page" class="absolute inset-0 overflow-y-auto bg-cover bg-center hidden" style="background-image: url('./mountains.jpg')">
@@ -63,40 +73,23 @@
 
             <div class="text-center mt-3">
               <button id="edit-config-btn" class="btn btn-accent">Open Config</button>
-              <button id="play-folder-btn" class="btn btn-primary ml-2">Play Selected Folder</button>
+              <button id="create-preset-btn" class="btn btn-accent ml-2">Create vMix Preset</button>
+              <button id="play-folder-btn" class="btn btn-primary ml-2">Open vMix Preset</button>
             </div>
           </div>
 
-          <div class="mx-auto max-w-[750px] pt-5 bg-base-200/75 rounded-box mt-10 p-3">
+          <div class="mx-auto max-w-[750px] pt-5 bg-base-200/75 rounded-box mt-10 p-3 text-center">
             <fieldset class="fieldset inline-block w-fit">
               <legend class="fieldset-legend">Program Output</legend>
-              <select id="program-cam-input" class="select w-36">
+              <select id="program-cam-input" class="select w-48">
                 <option value="" selected>None</option>
               </select>
             </fieldset>
 
             <fieldset class="fieldset inline-block w-fit ml-1">
               <legend class="fieldset-legend">Preview Output</legend>
-              <select id="preview-cam-input" class="select w-36">
+              <select id="preview-cam-input" class="select w-48">
                 <option value="" selected>None</option>
-              </select>
-            </fieldset>
-
-            <fieldset class="fieldset inline-block w-fit ml-1">
-              <legend class="fieldset-legend">
-                <div class="tooltip" data-tip="A bell will ring before the video is over to wake you up 😙. If Mic is on it will not ring.">
-                  Bell Time
-                </div>
-              </legend>
-              <select id="bell-time-input" class="select w-24">
-                <option value="" selected>Off</option>
-                <option value="5">5 sec</option>
-                <option value="10">10 sec</option>
-                <option value="30">30 sec</option>
-                <option value="60">1 min</option>
-                <option value="120">2 min</option>
-                <option value="30">5 min</option>
-                <option value="600">10 min</option>
               </select>
             </fieldset>
 

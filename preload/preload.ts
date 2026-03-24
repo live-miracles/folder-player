@@ -3,6 +3,8 @@ import { contextBridge, ipcRenderer } from 'electron';
 contextBridge.exposeInMainWorld('api', {
     selectPlayFolder: () => ipcRenderer.invoke('select-play-folder'),
     selectBaseFile: () => ipcRenderer.invoke('select-base-file'),
+    createPreset: (data: { folderPath: string; baseFile: string }) =>
+        ipcRenderer.invoke('create-preset', data),
     playFolder: (data: { folderPath: string; baseFile: string }) =>
         ipcRenderer.invoke('play-folder', data),
     getVmixState: () => ipcRenderer.invoke('get-vmix-state'),

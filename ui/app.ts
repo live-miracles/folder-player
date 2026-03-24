@@ -1,5 +1,6 @@
 import { getTableConfig, renderConfigTable } from './config.js';
 import { renderVmixWeb } from './vmix-web.js';
+import { showErrorAlert, showSuccessAlert } from './utils.js';
 
 // ===== UI Elements =====
 const baseFileInput = document.getElementById('base-file-input') as HTMLInputElement;
@@ -8,7 +9,6 @@ const playFolderInput = document.getElementById('play-folder-input') as HTMLInpu
 const programCamInput = document.getElementById('program-cam-input') as HTMLInputElement;
 const previewCamInput = document.getElementById('preview-cam-input') as HTMLInputElement;
 const enableBusInput = document.getElementById('enable-bus-input') as HTMLInputElement;
-const bellTimeInput = document.getElementById('bell-time-input') as HTMLInputElement;
 const closeVmixWebBtn = document.getElementById('close-vmix-web-btn')!;
 
 // ===== Navigation =====
@@ -78,7 +78,7 @@ async function goToVmixPage() {
         }
     } catch (err) {
         console.log(err);
-        alert(err);
+        showErrorAlert(err);
     }
 
     homePage.classList.add('hidden');
@@ -91,7 +91,6 @@ const STORAGE_KEYS = {
     PROGRAM_CAM: 'programCam',
     PREVIEW_CAM: 'previewCam',
     ENABLE_BUS: 'enableBus',
-    BELL_TIME: 'bellTime',
     BASE_FILE: 'baseFile',
     RECENT_FOLDERS: 'recentFolders',
 };
@@ -119,15 +118,11 @@ previewCamInput.addEventListener('input', () => {
 enableBusInput.addEventListener('input', () => {
     localStorage.setItem(STORAGE_KEYS.ENABLE_BUS, enableBusInput.value);
 });
-bellTimeInput.addEventListener('input', () => {
-    localStorage.setItem(STORAGE_KEYS.BELL_TIME, bellTimeInput.value);
-});
 
 function init() {
     programCamInput.value = localStorage.getItem(STORAGE_KEYS.PROGRAM_CAM) ?? '';
     previewCamInput.value = localStorage.getItem(STORAGE_KEYS.PREVIEW_CAM) ?? '';
     enableBusInput.value = localStorage.getItem(STORAGE_KEYS.ENABLE_BUS) ?? '';
-    bellTimeInput.value = localStorage.getItem(STORAGE_KEYS.BELL_TIME) ?? '';
 
     baseFileInput.value = localStorage.getItem(STORAGE_KEYS.BASE_FILE) ?? '';
     renderRecentFolders();
@@ -183,6 +178,28 @@ function renderRecentFolders() {
     });
 }
 
+const editConfigBtn = document.getElementById('edit-config-btn') as HTMLButtonElement;
+editConfigBtn.addEventListener('click', async () => {
+    const folderPath = playFolderInput.value;
+
+    if (!folderPath) {
+        alert('Select folder and base file first.');
+        return;
+    }
+
+    editConfigBtn.disabled = true;
+    try {
+        const folderFiles = await (window as any).api.getFolderFiles(folderPath);
+        const config = await (window as any).api.getFolderConfig(folderPath);
+        renderConfigTable(folderFiles, config, folderPath);
+        addRecentFolder(folderPath);
+        goToConfigPage();
+    } catch (err) {
+        console.error(err);
+    }
+    editConfigBtn.disabled = false;
+});
+
 document.getElementById('select-base-file-btn')!.addEventListener('click', async () => {
     const file = await (window as any).api.selectBaseFile();
 
@@ -205,8 +222,26 @@ function sleep(ms: number) {
     return new Promise((res) => setTimeout(res, ms));
 }
 
-const playFolderBtn = document.getElementById('play-folder-btn') as HTMLButtonElement;
-playFolderBtn.addEventListener('click', async () => {
+document.getElementById('create-preset-btn')!.addEventListener('click', async () => {
+    const baseFile = baseFileInput.value;
+    const folderPath = playFolderInput.value;
+
+    if (!folderPath || !baseFile) {
+        alert('Select folder and base file first.');
+        return;
+    }
+
+    addRecentFolder(folderPath);
+
+    try {
+        await (window as any).api.createPreset({ folderPath, baseFile });
+        showSuccessAlert();
+    } catch (err) {
+        showErrorAlert(err);
+    }
+});
+
+document.getElementById('play-folder-btn')!.addEventListener('click', async () => {
     const baseFile = baseFileInput.value;
     const folderPath = playFolderInput.value;
 
@@ -218,7 +253,7 @@ playFolderBtn.addEventListener('click', async () => {
     const res = await (window as any).api.getVmixState();
 
     if (res.error) {
-        alert(
+        showErrorAlert(
             'Could not connect to vMix on port 8088. Make sure it is running and HTTP API is enabled.\n\n' +
                 res.error,
         );
@@ -234,34 +269,11 @@ playFolderBtn.addEventListener('click', async () => {
         goToVmixPage();
     } catch (err) {
         goToHomePage();
-        console.error(err);
-        alert(err);
+        showErrorAlert(err);
     }
 });
 
 // ===== Config Page =====
-const editConfigBtn = document.getElementById('edit-config-btn') as HTMLButtonElement;
-editConfigBtn.addEventListener('click', async () => {
-    const folderPath = playFolderInput.value;
-
-    if (!folderPath) {
-        alert('Select folder and base file first.');
-        return;
-    }
-
-    editConfigBtn.disabled = true;
-    try {
-        const folderFiles = await (window as any).api.getFolderFiles(folderPath);
-        const config = await (window as any).api.getFolderConfig(folderPath);
-        renderConfigTable(folderFiles, config, folderPath);
-        addRecentFolder(folderPath);
-        goToConfigPage();
-    } catch (err) {
-        console.log(err);
-        alert(err);
-    }
-    editConfigBtn.disabled = false;
-});
 
 document.getElementById('cancel-config-btn')!.addEventListener('click', goToHomePage);
 
@@ -279,8 +291,7 @@ saveConfigBtn.addEventListener('click', async () => {
         await (window as any).api.saveFolderConfig({ folderPath: folderPath, text: config });
         alert('Config Saved');
     } catch (err) {
-        console.log(err);
-        alert(err);
+        showErrorAlert(err);
     }
     saveConfigBtn.disabled = false;
 });
