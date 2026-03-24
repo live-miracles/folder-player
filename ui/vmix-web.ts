@@ -1,5 +1,5 @@
 import { FILE_TYPES } from './config.js';
-import { showErrorAlert } from './utils.js';
+import { showErrorAlert, drawAudioLevels } from './utils.js';
 
 function getLeadingNumber(text: string) {
     const match = text.match(/^\s*(\d+)/);
@@ -20,14 +20,14 @@ function renderTime() {
     }, 300);
 }
 
-function getMicId(state: any) {
+function getMicNumber(state: any) {
     const micTitleInput = state.inputs
         .filter(Boolean)
         .find((input: any) => input.title.trim().split(/\s+/).includes('Mic'));
-    if (micTitleInput) return micTitleInput.key;
+    if (micTitleInput) return micTitleInput.number;
 
     const micTypeInput = state.inputs.filter(Boolean).find((input: any) => input.type === 'Audio');
-    if (micTypeInput) return micTypeInput.key;
+    if (micTypeInput) return micTypeInput.number;
 
     return null;
 }
@@ -49,12 +49,12 @@ const activeInputDuration = document.getElementById('active-input-duration')!;
 const activeInputTimeline = document.getElementById('active-input-timeline') as HTMLInputElement;
 export function renderVmixWeb(state: any) {
     if (!state) {
-        showErrorAlert('Not able to feth vMix status.');
+        showErrorAlert('Not able to fetch vMix status.');
         return;
     } else if (state.active === 0) {
         return;
     }
-    state.micId = getMicId(state);
+    state.micNumber = getMicNumber(state);
 
     const activeInput = state.inputs[state.active];
 
@@ -81,6 +81,8 @@ export function renderVmixWeb(state: any) {
     document.getElementById('preset-name')!.innerText = state.preset;
     document.getElementById('program-input-title')!.innerText = activeInput.title;
     renderInputList(state);
+
+    renderAudioMixer(state);
 
     (window as any).lucide.createIcons();
 }
@@ -124,7 +126,7 @@ function renderInputList(state: any) {
                     <span>${input.title}</span>
                 </div>
                 <div class="flex gap-2">
-                    ${input.overlays.find((over: any) => over.key === state.micId) ? '<i data-lucide="mic" class="w-4 h-4"></i>' : ''}
+                    ${input.overlays.find((over: any) => over.number === state.micNumber) ? '<i data-lucide="mic" class="w-4 h-4"></i>' : ''}
                     ${input.loop ? '<i data-lucide="repeat" class="w-4 h-4"></i>' : ''}
                 </div>
             </div>`;
@@ -133,6 +135,60 @@ function renderInputList(state: any) {
     });
     document.getElementById('pinned-inputs')!.innerHTML = pinnedHtml;
     document.getElementById('input-list')!.innerHTML = normalHtml;
+}
+
+function getVolumeString(input: any) {
+    const vol = parseFloat(input.volume);
+    const gain = parseFloat(input.gainDb);
+
+    // Convert dB to linear multiplier
+    const multiplier = Math.pow(10, gain / 20);
+    return `${Math.round(vol * multiplier)}%`;
+}
+
+function renderAudioMixer(state: any) {
+    drawAudioLevels(
+        document.getElementById('master-meter') as HTMLCanvasElement,
+        state.audio.master,
+    );
+
+    const mixer1 = document.getElementById('mixer-1')!;
+    if (state.micNumber !== null) {
+        const input = state.inputs[state.micNumber];
+
+        drawAudioLevels(mixer1.querySelector('.mixer-meter') as HTMLCanvasElement, input);
+
+        const mixerTitle = mixer1.querySelector('.mixer-title')!;
+        if (input.muted === 'True') {
+            mixerTitle.classList.add('badge-soft');
+        } else {
+            mixerTitle.classList.remove('badge-soft');
+        }
+        mixerTitle.innerHTML = input.title.slice(0, 10);
+        mixer1.querySelector('.mixer-volume')!.innerHTML = getVolumeString(input);
+        mixer1.classList.remove('hidden');
+    } else {
+        mixer1.classList.add('hidden');
+    }
+
+    const activeInput = state.inputs[state.active];
+    const mixer2 = document.getElementById('mixer-2')!;
+    if (activeInput.volume !== undefined) {
+        const input = activeInput;
+        drawAudioLevels(mixer2.querySelector('.mixer-meter') as HTMLCanvasElement, input);
+
+        const mixerTitle = mixer2.querySelector('.mixer-title')!;
+        if (input.muted === 'True') {
+            mixerTitle.classList.add('badge-soft');
+        } else {
+            mixerTitle.classList.remove('badge-soft');
+        }
+        mixerTitle.innerHTML = input.title.slice(0, 10);
+        mixer2.querySelector('.mixer-volume')!.innerHTML = getVolumeString(input);
+        mixer2.classList.remove('hidden');
+    } else {
+        mixer2.classList.add('hidden');
+    }
 }
 
 function getInputDuration(input: any) {
