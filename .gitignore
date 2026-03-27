@@ -4,4 +4,6 @@ bundle.js
 bundle.json
 .vscode
 .idea
-dist
+dist/
+.env
+release/

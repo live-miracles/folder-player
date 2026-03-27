@@ -8,21 +8,26 @@ import { vMixCall, getVmixState } from './vmix-api.js';
 import { getFolderFiles } from './file-manager.js';
 import { getFolderConfig, saveFolderConfig } from './config-api.js';
 
+import updater from 'electron-updater';
+const { autoUpdater } = updater;
+
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
 
+let mainWindow: BrowserWindow;
+
 function createWindow(): void {
     console.log(__dirname, path.join(__dirname, 'preload.js'));
-    const win = new BrowserWindow({
+    mainWindow = new BrowserWindow({
         width: 1200,
         height: 800,
-        icon: path.join(__dirname, '../ui/icon.ico'),
+        icon: path.join(__dirname, '../ui/icon-256.ico'),
         webPreferences: {
             preload: path.join(__dirname, 'preload.js'),
         },
     });
 
-    win.loadFile(path.join(__dirname, '../ui/index.html'));
+    mainWindow.loadFile(path.join(__dirname, '../ui/index.html'));
 
     // For Camera / Mic permissions
     session.defaultSession.setPermissionRequestHandler((webContents, permission, callback) => {
@@ -34,7 +39,25 @@ function createWindow(): void {
     });
 }
 
-app.whenReady().then(createWindow);
+app.whenReady().then(() => {
+    createWindow();
+
+    autoUpdater.checkForUpdatesAndNotify();
+
+    autoUpdater.on('update-available', () => {
+        mainWindow.webContents.send('update-available');
+    });
+
+    autoUpdater.on('download-progress', (p) => {
+        mainWindow.webContents.send('update-progress', p.percent);
+    });
+
+    autoUpdater.on('update-downloaded', () => {
+        mainWindow.webContents.send('update-ready');
+    });
+});
+
+ipcMain.on('install-update', () => autoUpdater.quitAndInstall());
 
 app.on('window-all-closed', () => {
     if (process.platform !== 'darwin') {

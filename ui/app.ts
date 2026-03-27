@@ -2,6 +2,35 @@ import { getTableConfig, renderConfigTable } from './config.js';
 import { renderVmixWeb } from './vmix-web.js';
 import { showErrorAlert, showSuccessAlert } from './utils.js';
 
+// ===== Updates =====
+const updateText = document.getElementById('update-text')!;
+const updateBtn = document.getElementById('update-btn')!;
+const updateProgress = document.getElementById('update-progress') as HTMLProgressElement;
+
+function showToast() {
+    document.getElementById('update-toast')!.classList.remove('hidden');
+}
+
+(window as any).api.onUpdateAvailable(() => {
+    showToast();
+    updateText.innerText = 'Downloading update...';
+    updateProgress.classList.remove('hidden');
+    updateBtn.classList.add('hidden');
+});
+
+(window as any).api.onUpdateProgress((p: number) => {
+    updateProgress.value = p;
+    updateText.innerText = 'Downloading: ' + p.toFixed(1) + '%';
+});
+
+(window as any).api.onUpdateReady(() => {
+    updateText.innerText = 'Update ready to install';
+    updateProgress.classList.add('hidden');
+    updateBtn.classList.remove('hidden');
+});
+
+updateBtn.onclick = () => (window as any).api.installUpdate();
+
 // ===== UI Elements =====
 const baseFileInput = document.getElementById('base-file-input') as HTMLInputElement;
 const playFolderInput = document.getElementById('play-folder-input') as HTMLInputElement;
