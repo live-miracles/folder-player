@@ -6,7 +6,7 @@
     "scripts": {
         "build": "tsc -p backend && tsc -p preload && tsc -p ui",
         "dist": "npm run build && electron-builder",
-        "publish": "npm run build && electron-builder --publish=always",
+        "publish": "dotenv -e .env -- npm run build && dotenv -e .env -- electron-builder --publish=always",
         "dev": "concurrently \"tsc -p backend -w\" \"tsc -p preload -w\" \"tsc -p ui -w\" \"electronmon .\"",
         "css": "npx tailwindcss -i ./ui/input.css -o ./ui/dist/output.css --watch",
         "format": "prettier --write ."
@@ -45,6 +45,7 @@
         "@types/semver": "^7.7.1",
         "concurrently": "^9.2.1",
         "daisyui": "^5.5.19",
+        "dotenv-cli": "^11.0.0",
         "electron": "^41.0.2",
         "electron-builder": "^26.8.1",
         "electronmon": "^2.0.4",
