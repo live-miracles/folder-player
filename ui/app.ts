@@ -125,6 +125,7 @@ function init() {
     enableBusInput.value = localStorage.getItem(STORAGE_KEYS.ENABLE_BUS) ?? '';
 
     baseFileInput.value = localStorage.getItem(STORAGE_KEYS.BASE_FILE) ?? '';
+    playFolderInput.value = getRecentFolders()[0] ?? '';
     renderRecentFolders();
 }
 
@@ -311,10 +312,6 @@ async function fetchVmixState() {
 (async () => {
     await loadDevices();
     init();
-
-    const res = await fetchVmixState();
-    console.log(res.data);
-    renderVmixWeb(res.data);
 
     setInterval(async () => {
         if (vmixPage.classList.contains('hidden')) return;

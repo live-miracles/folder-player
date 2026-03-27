@@ -1,11 +1,12 @@
 export const FILE_TYPES = { IMAGE: 'Image', VIDEO: 'Video', AUDIO: 'AudioFile', FOLDER: 'Photos' };
+const TYPE_MAP = { Video: 1, AudioFile: 2, Image: 3, Photos: 4 };
 
 export function renderConfigTable(
     folderFiles: [number, { path: string; type: string }[]][],
     config: [number, string[]][],
     folderPath: string,
 ) {
-    document.getElementById('config-title')!.innerHTML = getParentAndCurrent(folderPath);
+    document.getElementById('config-title')!.innerHTML = folderPath;
     const tbody = document.getElementById('config-table')!;
 
     tbody.innerHTML = '';
@@ -21,6 +22,7 @@ export function renderConfigTable(
 
     let i = 0;
     for (const [index, files] of folderFiles) {
+        files.sort((a: any, b: any) => (TYPE_MAP as any)[a.type] - (TYPE_MAP as any)[b.type]);
         const types = files.map((f) => f.type);
         const selectedOptions = configMap.get(index) ?? [];
 
@@ -56,12 +58,19 @@ export function renderConfigTable(
         }
 
         let rowColor = i++ % 2 === 0 ? 'bg-base-300/30' : '';
+
+        const tab = '&nbsp;&nbsp;&nbsp⤷&nbsp;&nbsp;&nbsp;';
+        const applyTab =
+            types.filter((t) => t === FILE_TYPES.AUDIO).length +
+                types.filter((t) => t === FILE_TYPES.VIDEO).length ===
+            1;
         files.forEach((file, i) => {
             html += `<tr class="${rowColor}">`;
             if (i === 0) {
                 html += `<td rowspan="${files.length}" class="align-top font-semibold">${index === -1 ? '' : index}</td>`;
             }
-            html += `<td class="break-all max-w-[600px]">${file.path}</td> <td class="break-all w-[90px]">${getFileTypeHtml(file.type)}</td>`;
+            const subType = file.type !== FILE_TYPES.AUDIO && file.type !== FILE_TYPES.VIDEO;
+            html += `<td class="break-all max-w-[300px]">${applyTab && subType ? tab : ''}${getFileName(file.path)}</td> <td class="break-all w-[90px]">${getFileTypeHtml(file.type)}</td>`;
             if (i === 0) html += `<td rowspan="${files.length}">${optionsHtml}</td>`;
             html += `</tr>`;
         });
@@ -70,9 +79,9 @@ export function renderConfigTable(
     tbody.innerHTML = html;
 }
 
-function getParentAndCurrent(folderPath: string) {
-    const parts = folderPath.replace(/\\/g, '/').split('/').filter(Boolean);
-    return parts.slice(-2).join('/');
+function getFileName(path: string) {
+    const parts = path.replace(/\\/g, '/').split('/').filter(Boolean);
+    return parts.slice(-1)[0];
 }
 
 function getOptionHtml(name: string, type: string, value: string, index: number) {
