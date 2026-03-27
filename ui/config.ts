@@ -77,9 +77,9 @@ export function renderConfigTable(
             }
             const subType = file.type !== FILE_TYPES.AUDIO && file.type !== FILE_TYPES.VIDEO;
             html += `<td class="break-all">${applyTab && subType ? tab : ''}${getFileName(file.path)}</td>`;
-            html += `<td class="break-all w-[90px]">${getFileTypeHtml(file.type)}</td>`;
+            html += `<td class="break-all w-[120px]">${getFileTypeHtml(file.type)}</td>`;
             if (i === 0)
-                html += `<td class="w-[420px]" rowspan="${files.length}">${optionsHtml}</td>`;
+                html += `<td class="w-[480px]" rowspan="${files.length}">${optionsHtml}</td>`;
             html += `</tr>`;
         });
     }
@@ -98,8 +98,8 @@ function getBoolOptionHtml(name: string, value: string, index: number) {
 
     return `<label class="swap ml-2">
             <input data-index="${index}" data-name="${name}" class="config-option" type="checkbox" ${value === 'true' ? 'checked="checked"' : ''} />
-            <div class="swap-on"><span class="badge badge-sm badge-primary">${name}</span></div>
-            <div class="swap-off"><span class="badge badge-sm">${name}</span></div>
+            <div class="swap-on"><span class="badge badge-primary">${name}</span></div>
+            <div class="swap-off"><span class="badge">${name}</span></div>
         </label>`;
 }
 
@@ -107,7 +107,7 @@ function getNumberOptionHtml(name: string, value: string, index: number, min: nu
     if (index === -1) return '';
 
     return `<input data-index="${index}" data-name="${name}" type="number" min="${min}" max="${max}"
-         class="config-option input input-xs w-14 ml-2" value="${value}" />&nbsp;${name}`;
+         class="config-option input input-sm w-14 ml-2" value="${value}" />&nbsp;${name}`;
 }
 
 function getSkipOptionHtml(value: string, index: number) {
@@ -115,8 +115,8 @@ function getSkipOptionHtml(value: string, index: number) {
 
     return `<label class="swap ml-2">
             <input data-index="${index}" data-name="skip" class="config-option" type="checkbox" ${value === 'true' ? 'checked="checked"' : ''} />
-            <div class="swap-on"><span class="badge badge-sm badge-primary">skip next cam</span></div>
-            <div class="swap-off"><span class="badge badge-sm">skip next cam</span></div>
+            <div class="swap-on"><span class="badge badge-primary">skip next cam</span></div>
+            <div class="swap-off"><span class="badge">skip next cam</span></div>
         </label>`;
 }
 
@@ -127,7 +127,7 @@ function getFileTypeHtml(type: string) {
     if (type === FILE_TYPES.IMAGE) color = 'badge-accent';
     if (type === FILE_TYPES.FOLDER) color = 'badge-warning';
 
-    return `<span class="badge badge-soft badge-sm ${color}">${type}</span>`;
+    return `<span class="badge badge-soft ${color}">${type}</span>`;
 }
 
 export function getTableConfig() {
