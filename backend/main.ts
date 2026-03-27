@@ -26,6 +26,7 @@ function createWindow(): void {
             preload: path.join(__dirname, 'preload.js'),
         },
     });
+    mainWindow.setMenuBarVisibility(false);
 
     mainWindow.loadFile(path.join(__dirname, '../ui/index.html'));
 

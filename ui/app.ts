@@ -77,7 +77,7 @@ async function goToVmixPage() {
     const res = await (window as any).api.getVmixState();
 
     if (res.error) {
-        alert(
+        showErrorAlert(
             'Could not connect to vMix on port 8088. Make sure it is running and HTTP API is enabled.\n\n' +
                 res.error,
         );
@@ -319,7 +319,7 @@ saveConfigBtn.addEventListener('click', async () => {
     try {
         const config = getTableConfig();
         await (window as any).api.saveFolderConfig({ folderPath: folderPath, text: config });
-        alert('Config Saved');
+        showSuccessAlert('Config Saved');
     } catch (err) {
         showErrorAlert(err);
     }

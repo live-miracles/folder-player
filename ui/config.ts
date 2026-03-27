@@ -27,33 +27,39 @@ export function renderConfigTable(
         const selectedOptions = configMap.get(index) ?? [];
 
         let optionsHtml = '';
-        const isMic = selectedOptions.includes('mic') ? 'true' : 'false';
-        optionsHtml += getOptionHtml('mic', 'bool', isMic, index);
+
+        const isSkip = selectedOptions.includes('skip') ? 'true' : 'false';
+        optionsHtml += getSkipOptionHtml(isSkip, index);
 
         const isCam = selectedOptions.includes('cam') ? 'true' : 'false';
-        optionsHtml += getOptionHtml('cam', 'bool', isCam, index);
+        optionsHtml += getBoolOptionHtml('cam', isCam, index);
+
+        const isMic = selectedOptions.includes('mic') ? 'true' : 'false';
+        optionsHtml += getBoolOptionHtml('mic', isMic, index);
 
         if (types.includes(FILE_TYPES.AUDIO) || types.includes(FILE_TYPES.VIDEO)) {
             const isLoop = selectedOptions.includes('loop') ? 'true' : 'false';
-            optionsHtml += getOptionHtml('loop', 'bool', isLoop, index);
+            optionsHtml += getBoolOptionHtml('loop', isLoop, index);
 
             const opt = selectedOptions.find((opt) => opt.endsWith('%')) ?? '100';
             const parsed = parseInt(opt);
-            optionsHtml += getOptionHtml(
+            optionsHtml += getNumberOptionHtml(
                 '%',
-                'number',
                 isNaN(parsed) ? '100' : String(parsed),
                 index,
+                0,
+                10000,
             );
         }
         if (types.includes(FILE_TYPES.FOLDER)) {
             const opt = selectedOptions.find((opt) => opt.endsWith('s')) ?? '10';
             const parsed = parseInt(opt);
-            optionsHtml += getOptionHtml(
+            optionsHtml += getNumberOptionHtml(
                 's',
-                'number',
                 isNaN(parsed) ? '10' : String(parsed),
                 index,
+                1,
+                1000,
             );
         }
 
@@ -67,16 +73,19 @@ export function renderConfigTable(
         files.forEach((file, i) => {
             html += `<tr class="${rowColor}">`;
             if (i === 0) {
-                html += `<td rowspan="${files.length}" class="align-top font-semibold">${index === -1 ? '' : index}</td>`;
+                html += `<td rowspan="${files.length}" class="align-middle font-semibold">${index === -1 ? '' : index}</td>`;
             }
             const subType = file.type !== FILE_TYPES.AUDIO && file.type !== FILE_TYPES.VIDEO;
-            html += `<td class="break-all max-w-[300px]">${applyTab && subType ? tab : ''}${getFileName(file.path)}</td> <td class="break-all w-[90px]">${getFileTypeHtml(file.type)}</td>`;
-            if (i === 0) html += `<td rowspan="${files.length}">${optionsHtml}</td>`;
+            html += `<td class="break-all">${applyTab && subType ? tab : ''}${getFileName(file.path)}</td>`;
+            html += `<td class="break-all w-[90px]">${getFileTypeHtml(file.type)}</td>`;
+            if (i === 0)
+                html += `<td class="w-[420px]" rowspan="${files.length}">${optionsHtml}</td>`;
             html += `</tr>`;
         });
     }
 
     tbody.innerHTML = html;
+    setupCamMicLogic(tbody);
 }
 
 function getFileName(path: string) {
@@ -84,17 +93,31 @@ function getFileName(path: string) {
     return parts.slice(-1)[0];
 }
 
-function getOptionHtml(name: string, type: string, value: string, index: number) {
+function getBoolOptionHtml(name: string, value: string, index: number) {
     if (index === -1) return '';
 
-    if (type === 'bool') {
-        return `<label class="swap ml-2">
+    return `<label class="swap ml-2">
             <input data-index="${index}" data-name="${name}" class="config-option" type="checkbox" ${value === 'true' ? 'checked="checked"' : ''} />
             <div class="swap-on"><span class="badge badge-sm badge-primary">${name}</span></div>
             <div class="swap-off"><span class="badge badge-sm">${name}</span></div>
         </label>`;
-    }
-    return `<input data-index="${index}" data-name="${name}" type="number" class="config-option input input-xs w-14 ml-2" value="${value}" />&nbsp;${name}`;
+}
+
+function getNumberOptionHtml(name: string, value: string, index: number, min: number, max: number) {
+    if (index === -1) return '';
+
+    return `<input data-index="${index}" data-name="${name}" type="number" min="${min}" max="${max}"
+         class="config-option input input-xs w-14 ml-2" value="${value}" />&nbsp;${name}`;
+}
+
+function getSkipOptionHtml(value: string, index: number) {
+    if (index === -1) return '';
+
+    return `<label class="swap ml-2">
+            <input data-index="${index}" data-name="skip" class="config-option" type="checkbox" ${value === 'true' ? 'checked="checked"' : ''} />
+            <div class="swap-on"><span class="badge badge-sm badge-primary">skip next cam</span></div>
+            <div class="swap-off"><span class="badge badge-sm">skip next cam</span></div>
+        </label>`;
 }
 
 function getFileTypeHtml(type: string) {
@@ -147,4 +170,44 @@ export function getTableConfig() {
     const list = Array.from(configMap).sort((a, b) => a[0] - b[0]);
     const text = list.map((elem) => elem[0] + ' ' + elem[1].join(' ')).join('\r\n');
     return text;
+}
+
+function setupCamMicLogic(root: HTMLElement) {
+    // group by index (each row group)
+    const groups = new Map<string, HTMLElement[]>();
+
+    const inputs = root.querySelectorAll<HTMLInputElement>('.config-option[type="checkbox"]');
+
+    inputs.forEach((input) => {
+        const index = input.dataset.index!;
+        if (!groups.has(index)) groups.set(index, []);
+        groups.get(index)!.push(input);
+    });
+
+    groups.forEach((group) => {
+        const cam = group.find((el) => el.dataset.name === 'cam') as HTMLInputElement | undefined;
+        const mic = group.find((el) => el.dataset.name === 'mic') as HTMLInputElement | undefined;
+
+        if (!cam || !mic) return;
+
+        const update = () => {
+            if (cam.checked) {
+                mic.checked = true;
+                mic.disabled = true;
+
+                // optional UI feedback
+                mic.closest('label')?.classList.add('opacity-50');
+                mic.closest('label')?.classList.add('pointer-events-none');
+            } else {
+                mic.disabled = false;
+                mic.closest('label')?.classList.remove('opacity-50');
+                mic.closest('label')?.classList.remove('pointer-events-none');
+            }
+        };
+
+        cam.addEventListener('change', update);
+
+        // run once on init
+        update();
+    });
 }

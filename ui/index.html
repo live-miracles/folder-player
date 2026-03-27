@@ -56,10 +56,37 @@
       <div id="home-page" class="absolute inset-0 overflow-y-auto bg-cover bg-center" style="background-image: url('./mountains.jpg')">
         <div class="mx-3">
           <div>&nbsp;</div>
-          <div class="mx-auto max-w-[750px] pt-5 bg-base-200/75 rounded-box mt-10 p-3">
-            <h1 class="text-3xl font-bold text-ce mb-3">Folder Player <span class="badge badge-outline">v0.1.0</span></h1>
+          <div class="mx-auto max-w-[750px] bg-base-200/75 rounded-box mt-10 p-3">
+            <fieldset class="fieldset inline-block w-fit">
+              <legend class="fieldset-legend">
+                <div class="tooltip" data-tip="This Bus will be enabled for all the inputs in the playlist.">Enable Bus</div>
+              </legend>
+              <select id="enable-bus-input" class="select w-24">
+                <option value="">None</option>
+                <option selected>A</option>
+                <option>B</option>
+                <option>C</option>
+                <option>D</option>
+                <option>E</option>
+                <option>F</option>
+              </select>
+            </fieldset>
 
-            <label class="input w-full mt-1">
+            <fieldset class="fieldset inline-block w-fit">
+              <legend class="fieldset-legend">Program Output</legend>
+              <select id="program-cam-input" class="select w-48">
+                <option value="" selected>None</option>
+              </select>
+            </fieldset>
+
+            <fieldset class="fieldset inline-block w-fit ml-1">
+              <legend class="fieldset-legend">Preview Output</legend>
+              <select id="preview-cam-input" class="select w-48">
+                <option value="" selected>None</option>
+              </select>
+            </fieldset>
+
+            <label class="input w-full">
               Base vMix Preset:
               <input type="text" class="grow" id="base-file-input" readonly />
               <button id="select-base-file-btn" class="btn btn-primary btn-xs">Select</button>
@@ -85,42 +112,8 @@
             <div class="text-center mt-3">
               <button id="edit-config-btn" class="btn btn-accent">Open Config</button>
               <button id="create-preset-btn" class="btn btn-accent ml-2">Create vMix Preset</button>
-              <button id="play-folder-btn" class="btn btn-primary ml-2">Open vMix Preset</button>
-            </div>
-          </div>
-
-          <div class="mx-auto max-w-[750px] pt-5 bg-base-200/75 rounded-box mt-10 p-3 text-center">
-            <fieldset class="fieldset inline-block w-fit">
-              <legend class="fieldset-legend">Program Output</legend>
-              <select id="program-cam-input" class="select w-48">
-                <option value="" selected>None</option>
-              </select>
-            </fieldset>
-
-            <fieldset class="fieldset inline-block w-fit ml-1">
-              <legend class="fieldset-legend">Preview Output</legend>
-              <select id="preview-cam-input" class="select w-48">
-                <option value="" selected>None</option>
-              </select>
-            </fieldset>
-
-            <fieldset class="fieldset inline-block w-fit ml-1">
-              <legend class="fieldset-legend">
-                <div class="tooltip" data-tip="This Bus will be enabled for all the inputs in the playlist.">Enable Bus</div>
-              </legend>
-              <select id="enable-bus-input" class="select w-24">
-                <option value="">None</option>
-                <option selected>A</option>
-                <option>B</option>
-                <option>C</option>
-                <option>D</option>
-                <option>E</option>
-                <option>F</option>
-              </select>
-            </fieldset>
-
-            <div class="text-center mt-3">
-              <button id="open-vmix-btn" class="btn btn-primary">Open vMix Web</button>
+              <button id="play-folder-btn" class="btn btn-primary ml-2">Setup Folder in vMix</button>
+              <button id="open-vmix-btn" class="btn btn-primary ml-2">Open Current vMix</button>
             </div>
           </div>
 
@@ -145,7 +138,7 @@
       <div id="config-page" class="absolute inset-0 overflow-y-auto bg-cover bg-center hidden" style="background-image: url('./mountains.jpg')">
         <div class="mx-3">
           <div>&nbsp;</div>
-          <div class="mx-auto max-w-[1200px] w-fit pt-5 bg-base-200/75 rounded-box mt-10 p-3">
+          <div class="mx-auto max-w-[1000px] pt-5 bg-base-200/75 rounded-box mt-10 p-3">
             <h2 class="text-xl font-semibold" id="config-title"></h2>
             <div class="overflow-x-auto mt-3">
               <table class="table table-xs">
