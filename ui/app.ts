@@ -14,7 +14,7 @@ function showToast() {
 
 (window as any).api.onUpdateAvailable(() => {
     showToast();
-    updateText.innerText = 'Downloading update...';
+    updateText.innerText = 'Downloading...';
     updateProgress.classList.remove('hidden');
     updateBtn.classList.add('hidden');
 });
@@ -25,7 +25,7 @@ function showToast() {
 });
 
 (window as any).api.onUpdateReady(() => {
-    updateText.innerText = 'Update downloaded';
+    updateText.innerText = 'Downloaded';
     updateProgress.classList.add('hidden');
     updateBtn.classList.remove('hidden');
 });
