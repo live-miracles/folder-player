@@ -9,9 +9,9 @@ contextBridge.exposeInMainWorld('api', {
 
     selectPlayFolder: () => ipcRenderer.invoke('select-play-folder'),
     selectBaseFile: () => ipcRenderer.invoke('select-base-file'),
-    createPreset: (data: { folderPath: string; baseFile: string }) =>
+    createPreset: (data: { folderPath: string; baseFile: string; enableBus: string }) =>
         ipcRenderer.invoke('create-preset', data),
-    playFolder: (data: { folderPath: string; baseFile: string }) =>
+    playFolder: (data: { folderPath: string; baseFile: string; enableBus: string }) =>
         ipcRenderer.invoke('play-folder', data),
     getVmixState: () => ipcRenderer.invoke('get-vmix-state'),
     setVmixActive: (index: number) => ipcRenderer.invoke('set-vmix-active', index),

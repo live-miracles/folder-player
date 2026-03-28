@@ -278,8 +278,9 @@ document.getElementById('create-preset-btn')!.addEventListener('click', async ()
 
     addRecentFolder(folderPath);
 
+    const enableBus = enableBusInput.value;
     try {
-        await (window as any).api.createPreset({ folderPath, baseFile });
+        await (window as any).api.createPreset({ folderPath, baseFile, enableBus });
         showSuccessAlert();
     } catch (err) {
         showErrorAlert(err);
@@ -307,9 +308,10 @@ document.getElementById('play-folder-btn')!.addEventListener('click', async () =
 
     addRecentFolder(folderPath);
 
+    const enableBus = enableBusInput.value;
     try {
         goToLoadingPage(10);
-        await (window as any).api.playFolder({ folderPath, baseFile });
+        await (window as any).api.playFolder({ folderPath, baseFile, enableBus });
         await sleep(5000);
         goToVmixPage();
     } catch (err) {

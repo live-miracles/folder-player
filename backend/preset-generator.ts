@@ -24,7 +24,7 @@ function getFullXML(xml: string, inputs: string[]) {
     return xml.replace(/(\s*)<State/, `$1${inputs.join('\r\n')}\r\n$1<State`);
 }
 
-export function createPresetFile(folderPath: string, baseFilePath: string) {
+export function createPresetFile(folderPath: string, baseFilePath: string, enableBus: string) {
     const baseXML = fs.readFileSync(baseFilePath, 'utf-8');
     console.log('Read base xml file');
 
@@ -39,7 +39,7 @@ export function createPresetFile(folderPath: string, baseFilePath: string) {
     const helperInputsXML: string[] = [];
 
     const otherFiles = fileMap.get(-1) ?? [];
-    otherFiles.forEach((f) => otherInputsXML.push(getFileXML(f)));
+    otherFiles.forEach((f) => otherInputsXML.push(getFileXML(f, [], [], enableBus)));
     fileMap.delete(-1);
 
     const config = getFolderConfig(folderPath);
@@ -84,14 +84,14 @@ export function createPresetFile(folderPath: string, baseFilePath: string) {
                     layers,
                 ),
             );
-            helperInputsXML.push(getFileXML(images[0], [], [...options, 'collapsed']));
+            helperInputsXML.push(getFileXML(images[0], [], [...options, 'collapsed'], enableBus));
 
             continue;
         }
 
         // Ignore any strange cases
         if (audios.length + videos.length > 1 || images.length + slideshows.length > 1) {
-            files.forEach((f) => inputsXML.push(getFileXML(f, layers, options)));
+            files.forEach((f) => inputsXML.push(getFileXML(f, layers, options, enableBus)));
         }
 
         if (audios.length > 0 || videos.length > 0) {
@@ -99,11 +99,11 @@ export function createPresetFile(folderPath: string, baseFilePath: string) {
             const top = images[0] ?? slideshows[0];
             if (top) {
                 layers.push(top.id);
-                helperInputsXML.push(getFileXML(top, [], [...options, 'collapsed']));
+                helperInputsXML.push(getFileXML(top, [], [...options, 'collapsed'], enableBus));
             }
-            inputsXML.push(getFileXML(base, layers, options));
+            inputsXML.push(getFileXML(base, layers, options, enableBus));
         } else {
-            files.forEach((f) => inputsXML.push(getFileXML(f, layers, options)));
+            files.forEach((f) => inputsXML.push(getFileXML(f, layers, options, enableBus)));
         }
     }
 
@@ -148,15 +148,16 @@ function getAudioOptions(options: string[]) {
 
 function getFileXML(
     file: { path: string; type: string; id: string },
-    layers: string[] = [],
-    options: string[] = [],
+    layers: string[],
+    options: string[],
+    enableBus: string,
 ) {
     if (file.type === FILE_TYPES.IMAGE) {
         return getImageXML(file, layers, options);
     } else if (file.type === FILE_TYPES.VIDEO) {
-        return getVideoXML(file, layers, options);
+        return getVideoXML(file, layers, options, enableBus);
     } else if (file.type === FILE_TYPES.AUDIO) {
-        return getAudioXML(file, layers, options);
+        return getAudioXML(file, layers, options, enableBus);
     } else if (file.type === FILE_TYPES.FOLDER) {
         return getPhotosXML(file, layers, options);
     }
@@ -164,11 +165,7 @@ function getFileXML(
     return '';
 }
 
-function getImageXML(
-    file: { path: string; id: string },
-    layers: string[] = [],
-    options: string[] = [],
-) {
+function getImageXML(file: { path: string; id: string }, layers: string[], options: string[]) {
     const collapsed = options.includes('collapsed') ? 'True' : 'False';
 
     return `<Input Type="1" Position="0" RangeStart="0" RangeStop="0" State="1" OriginalTitle=""
@@ -183,11 +180,13 @@ function getImageXML(
 
 function getVideoXML(
     file: { path: string; id: string },
-    layers: string[] = [],
-    options: string[] = [],
+    layers: string[],
+    options: string[],
+    enableBus: string,
 ) {
     const { volume, gain } = getAudioOptions(options);
     const loop = options.includes('loop') ? 'True' : 'False';
+    const enableBusText = enableBus ? `Bus${enableBus}="True"` : '';
 
     return `<Input Type="0" Position="0" RangeStart="0" RangeStop="0" State="1" OriginalTitle=""
         ShortcutMappings="" Key="${file.id}" Loop="${loop}" VolumeF="${volume}" Muted="True" BalanceF="0" AspectRatio="100" Category="0"
@@ -197,7 +196,7 @@ function getVideoXML(
         AudioCompressorEnabled="False" AudioCompressorRatio="1" AudioCompressorThreshold="0.1258925" AudioNoiseGateEnabled="False"
         AudioNoiseGateThreshold="0" AudioEQEnabled="False" AudioEQGainDB0="0" AudioEQGainDB1="0" AudioEQGainDB2="0" AudioEQGainDB3="0"
         AudioEQGainDB4="0" AudioEQGainDB5="0" AudioEQGainDB6="0" AudioEQGainDB7="0" AudioEQGainDB8="0" AudioEQGainDB9="0" AudioAGCEnabled="False"
-        AudioRackXML="&lt;plugins /&gt;" BusMaster="True" BusA="True" FrameDelay="0" TallyCOMPort="None" TallyNumber="0" AutoAudioMixing="True"
+        AudioRackXML="&lt;plugins /&gt;" BusMaster="True" ${enableBusText} FrameDelay="0" TallyCOMPort="None" TallyNumber="0" AutoAudioMixing="True"
         AutoPause="True" AutoRestart="True" AutoPlay="True" Mirror="False" SelectedIndex="0" Rate="1" FlattenLayers="False" ${getLayersText(layers)} XML=""
         ShaderSource="00000000-0000-0000-0000-000000000000" PTZProvider="" PTZConnection="" PTZAutoConnect="False" PTZDefaultPanTiltSpeed="0.5"
         PTZDefaultZoomSpeed="0.5" PTZDefaultPositionSpeed="1" PTZDefaultFocusSpeed="0.5" PTZDefaultFocusEnabled="False" PTZDefaultTallyEnabled="False"
@@ -213,11 +212,13 @@ function getVideoXML(
 
 function getAudioXML(
     file: { path: string; id: string },
-    layers: string[] = [],
-    options: string[] = [],
+    layers: string[],
+    options: string[],
+    enableBus: string,
 ) {
     const { volume, gain } = getAudioOptions(options);
     const loop = options.includes('loop') ? 'True' : 'False';
+    const enableBusText = enableBus ? `Bus${enableBus}="True"` : '';
 
     return `<Input Type="13" Position="0" RangeStart="0" RangeStop="0" State="1" OriginalTitle=""
         ShortcutMappings="" Key="${file.id}" Loop="${loop}" VolumeF="${volume}" Muted="True" BalanceF="0" AspectRatio="100"
@@ -228,7 +229,7 @@ function getAudioXML(
         AudioCompressorThreshold="0.1258925" AudioNoiseGateEnabled="False" AudioNoiseGateThreshold="0" AudioEQEnabled="False"
         AudioEQGainDB0="0" AudioEQGainDB1="0" AudioEQGainDB2="0" AudioEQGainDB3="0" AudioEQGainDB4="0" AudioEQGainDB5="0"
         AudioEQGainDB6="0" AudioEQGainDB7="0" AudioEQGainDB8="0" AudioEQGainDB9="0" AudioAGCEnabled="False" AudioRackXML="&lt;plugins /&gt;"
-        BusMaster="True" BusA="True" FrameDelay="0" TallyCOMPort="None" TallyNumber="0" AutoAudioMixing="True" AutoPause="True"
+        BusMaster="True" ${enableBusText} FrameDelay="0" TallyCOMPort="None" TallyNumber="0" AutoAudioMixing="True" AutoPause="True"
         AutoRestart="True" AutoPlay="True" Mirror="False" SelectedIndex="0" Rate="1" FlattenLayers="False" ${getLayersText(layers)}
         XML="" ShaderSource="00000000-0000-0000-0000-000000000000" PTZProvider="" PTZConnection="" PTZAutoConnect="False"
         PTZDefaultPanTiltSpeed="0.5" PTZDefaultZoomSpeed="0.5" PTZDefaultPositionSpeed="1" PTZDefaultFocusSpeed="0.5"
@@ -244,11 +245,7 @@ function getAudioXML(
         VideoShader_ClippingY2="1" VideoShader_PremultipliedAlpha="False">${escapeXML(file.path)}</Input>`;
 }
 
-function getPhotosXML(
-    file: { path: string; id: string },
-    layers: string[] = [],
-    options: string[] = [],
-) {
+function getPhotosXML(file: { path: string; id: string }, layers: string[], options: string[]) {
     const slideshowTime = options.find((opt) => opt.endsWith('s')) ?? '10s';
     const time = parseInt(slideshowTime) ?? 10;
 
@@ -271,10 +268,7 @@ function getPhotosXML(
         VideoShader_ClippingX2="1" VideoShader_ClippingY1="0" VideoShader_ClippingY2="1" VideoShader_PremultipliedAlpha="False">${escapeXML(file.path)}</Input>`;
 }
 
-function getVirtualInput(
-    file: { id: string; newId: string; title: string },
-    layers: string[] = [],
-) {
+function getVirtualInput(file: { id: string; newId: string; title: string }, layers: string[]) {
     return `<Input Type="22" Position="0" RangeStart="0" RangeStop="0" State="1" Title="${file.title}" OriginalTitle="" 
         ShortcutMappings="" Key="${file.newId}" Loop="False" VolumeF="1" Muted="True" BalanceF="0" AspectRatio="100"
         Category="0" MouseClickAction="0" GOClickAction="20" Collapsed="False" Solo="False" BusMVolumeF="1"

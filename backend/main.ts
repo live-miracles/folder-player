@@ -84,11 +84,11 @@ ipcMain.handle('select-play-folder', async () => {
     return result.filePaths[0];
 });
 
-ipcMain.handle('create-preset', (_, { folderPath, baseFile }) => {
-    createPresetFile(folderPath, baseFile);
+ipcMain.handle('create-preset', (_, { folderPath, baseFile, enableBus }) => {
+    createPresetFile(folderPath, baseFile, enableBus);
 });
-ipcMain.handle('play-folder', async (_, { folderPath, baseFile }) => {
-    await setupVmix(folderPath, baseFile);
+ipcMain.handle('play-folder', async (_, { folderPath, baseFile, enableBus }) => {
+    await setupVmix(folderPath, baseFile, enableBus);
 });
 
 ipcMain.handle('get-vmix-state', async () => await getVmixState());
@@ -104,7 +104,7 @@ ipcMain.handle('save-folder-config', async (_, { folderPath, text }) =>
 
 // ===== vMix =====
 
-async function setupVmix(folderPath: string, baseFile: string) {
+async function setupVmix(folderPath: string, baseFile: string, enableBus: string) {
     const res = await vMixCall();
     if (res.error) {
         throw new Error('Failed connecting to vMix');
@@ -118,7 +118,7 @@ async function setupVmix(folderPath: string, baseFile: string) {
 
     // Create only if it doesn't exist
     if (!fs.existsSync(presetPath)) {
-        createPresetFile(folderPath, baseFile);
+        createPresetFile(folderPath, baseFile, enableBus);
     }
 
     await vMixCall('StopExternal');
