@@ -42,11 +42,9 @@
       <!-- LOADING PAGE -->
       <div id="loading-page" class="absolute inset-0 overflow-y-auto bg-cover bg-center hidden" style="background-image: url('./mountains.jpg')">
         <div class="w-full h-full flex items-center justify-center">
-          <div class="bg-base-100/40 backdrop-blur-md px-10 py-6 rounded-2xl text-center">
-            <div class="text-4xl font-bold flex items-center gap-4">
-              Loading
-              <span class="loading loading-ring loading-xl"></span>
-            </div>
+          <div class="bg-base-100/40 backdrop-blur-md px-10 py-6 rounded-2xl text-center w-[750px]">
+            <div id="loading-quote" class="text-3xl font-semibold leading-relaxed"></div>
+            <progress id="loading-progress" class="progress progress-primary w-full mt-6" value="0" max="100"></progress>
           </div>
         </div>
       </div>

@@ -1,6 +1,7 @@
 import { getTableConfig, renderConfigTable } from './config.js';
 import { renderVmixWeb } from './vmix-web.js';
 import { showErrorAlert, showSuccessAlert } from './utils.js';
+import { getRandomQuote } from './quotes.js';
 
 // ===== Updates =====
 const updateText = document.getElementById('update-text')!;
@@ -52,11 +53,25 @@ const homePage = document.getElementById('home-page')!;
 const configPage = document.getElementById('config-page')!;
 const vmixPage = document.getElementById('vmix-page')!;
 
-function goToLoadingPage() {
+function goToLoadingPage(seconds: number) {
     configPage.classList.add('hidden');
     vmixPage.classList.add('hidden');
     homePage.classList.add('hidden');
     loadingPage.classList.remove('hidden');
+
+    const quoteEl = document.getElementById('loading-quote')!;
+    const progressEl = document.getElementById('loading-progress') as HTMLProgressElement;
+    quoteEl.textContent = `“${getRandomQuote()}”`;
+    progressEl.value = 0;
+    const totalMs = seconds * 1000;
+    const start = Date.now();
+
+    const interval = setInterval(() => {
+        const elapsed = Date.now() - start;
+        const percent = Math.min((elapsed / totalMs) * 100, 100);
+        progressEl.value = percent;
+        if (elapsed >= totalMs) clearInterval(interval);
+    }, 100);
 }
 
 function goToHomePage() {
@@ -293,7 +308,7 @@ document.getElementById('play-folder-btn')!.addEventListener('click', async () =
     addRecentFolder(folderPath);
 
     try {
-        goToLoadingPage();
+        goToLoadingPage(10);
         await (window as any).api.playFolder({ folderPath, baseFile });
         await sleep(5000);
         goToVmixPage();
@@ -346,6 +361,7 @@ async function fetchVmixState() {
         if (vmixPage.classList.contains('hidden')) return;
 
         const res = await fetchVmixState();
+        // TODO Error handling
         renderVmixWeb(res.data);
     }, 1000);
 })();
