@@ -19,6 +19,7 @@ let mainWindow: BrowserWindow;
 function createWindow(): void {
     console.log(__dirname, path.join(__dirname, 'preload.js'));
     mainWindow = new BrowserWindow({
+        title: `Folder Player ${app.getVersion()}`,
         width: 1200,
         height: 800,
         icon: path.join(__dirname, '../ui/icon-256.ico'),

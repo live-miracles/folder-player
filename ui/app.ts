@@ -24,7 +24,7 @@ function showToast() {
 });
 
 (window as any).api.onUpdateReady(() => {
-    updateText.innerText = 'Update ready to install';
+    updateText.innerText = 'Update downloaded';
     updateProgress.classList.add('hidden');
     updateBtn.classList.remove('hidden');
 });
