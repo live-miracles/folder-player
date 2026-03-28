@@ -90,8 +90,9 @@ export function createPresetFile(folderPath: string, baseFilePath: string, enabl
         }
 
         // Ignore any strange cases
-        if (audios.length + videos.length > 1 || images.length + slideshows.length > 1) {
+        if (audios.length + videos.length > 1) {
             files.forEach((f) => inputsXML.push(getFileXML(f, layers, options, enableBus)));
+            continue;
         }
 
         if (audios.length > 0 || videos.length > 0) {

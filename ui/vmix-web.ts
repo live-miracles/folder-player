@@ -1,11 +1,6 @@
 import { FILE_TYPES } from './config.js';
 import { showErrorAlert, drawAudioLevels } from './utils.js';
 
-function getLeadingNumber(text: string) {
-    const match = text.match(/^\s*(\d+)/);
-    return match ? Number(match[1]) : -1;
-}
-
 function getTimeString(date: Date) {
     const h = String(date.getHours()).padStart(2, '0');
     const m = String(date.getMinutes()).padStart(2, '0');
@@ -21,13 +16,25 @@ function renderTime() {
 }
 
 function getMicNumber(state: any) {
-    const micTitleInput = state.inputs
+    const titleInput = state.inputs
         .filter(Boolean)
         .find((input: any) => input.title.trim().split(/\s+/).includes('Mic'));
-    if (micTitleInput) return micTitleInput.number;
+    if (titleInput) return titleInput.number;
 
     const micTypeInput = state.inputs.filter(Boolean).find((input: any) => input.type === 'Audio');
     if (micTypeInput) return micTypeInput.number;
+
+    return null;
+}
+
+function getCamNumber(state: any) {
+    const titleInput = state.inputs
+        .filter(Boolean)
+        .find((input: any) => input.title.trim().split(/\s+/).includes('Cam'));
+    if (titleInput) return titleInput.number;
+
+    const typeInput = state.inputs.filter(Boolean).find((input: any) => input.type === 'Capture');
+    if (typeInput) return typeInput.number;
 
     return null;
 }
@@ -47,6 +54,8 @@ function getEndTimeString(input: any) {
 const endTimeElement = document.getElementById('live-time')!;
 const activeInputDuration = document.getElementById('active-input-duration')!;
 const activeInputTimeline = document.getElementById('active-input-timeline') as HTMLInputElement;
+
+let lastTitleNumber = -1;
 export function renderVmixWeb(state: any) {
     if (!state) {
         showErrorAlert('Not able to fetch vMix status.');
@@ -54,9 +63,18 @@ export function renderVmixWeb(state: any) {
     } else if (state.active === 0) {
         return;
     }
+
+    let config = null;
+    if ((window as any).presetName === state.preset) {
+        config = (window as any).config;
+    }
+
     state.micNumber = getMicNumber(state);
+    state.camNumber = getCamNumber(state);
 
     const activeInput = state.inputs[state.active];
+
+    if (activeInput.titleNumber !== -1) lastTitleNumber = activeInput.titleNumber;
 
     if (activeInput.duration === 0 || activeInput.type === 'Photos') {
         if (liveStartTime === null) liveStartTime = Date.now();
@@ -80,17 +98,11 @@ export function renderVmixWeb(state: any) {
 
     document.getElementById('preset-name')!.innerText = state.preset;
     document.getElementById('program-input-title')!.innerText = activeInput.title;
-    renderInputList(state);
+    renderInputList(state, config);
 
     renderAudioMixer(state);
 
     (window as any).lucide.createIcons();
-}
-
-function getInputStatus(input: any, state: any) {
-    if (input.number === state.active) return 0;
-    if (input.number === state.preview) return 1;
-    return 2;
 }
 
 function getFileIcon(type: string) {
@@ -101,42 +113,94 @@ function getFileIcon(type: string) {
     else if (type === 'Capture') return 'camera';
     else if (type === 'Audio') return 'mic-vocal';
     else if (type === 'Colour') return 'palette';
+    else if (type === 'Virtual') return 'layers-2';
     return '';
 }
 
-function renderInputList(state: any) {
+function renderInputList(state: any, config: Map<number, string[]> | null) {
     let pinnedHtml = '';
     let normalHtml = '';
-    state.inputs.filter(Boolean).forEach((input: any) => {
-        const color = [
-            'bg-primary text-primary-content font-semibold',
-            'bg-base-content/30 font-semibold',
-            'bg-base-300',
-        ][getInputStatus(input, state)];
-        const hover = [
-            'hover:bg-primary/70',
-            'hover:bg-base-content/20',
-            'hover:bg-base-content/10',
-        ][getInputStatus(input, state)];
 
-        const html = `
-            <div class="input-item flex items-center justify-between ${color} 
-                    rounded-lg px-3 py-2 cursor-pointer ${hover} select-none" data-index="${input.number}">
-                <div class="flex gap-3 items-center">
-                    <i data-lucide="${getFileIcon(input.type)}" class="w-4 h-4 shrink-0"></i>
-                    ${getInputDuration(input) ? `<span class="text-sm opacity-70">${getInputDuration(input)}</span>` : ''}
-                    <span>${input.title}</span>
-                </div>
-                <div class="flex gap-2">
-                    ${input.overlays.find((over: any) => over.number === state.micNumber) ? '<i data-lucide="mic" class="w-4 h-4"></i>' : ''}
-                    ${input.loop ? '<i data-lucide="repeat" class="w-4 h-4"></i>' : ''}
-                </div>
-            </div>`;
-        if (getLeadingNumber(input.title) === 0) pinnedHtml += html;
-        else normalHtml += html;
-    });
+    let startIndex = 0;
+    for (let i = 1; i < state.inputs.length; i++) {
+        const num = state.inputs[i].titleNumber;
+        if (num === -1) continue;
+        startIndex = i;
+        break;
+    }
+
+    // Find first helper element, his leading number will be less than actual number of inputs
+    let helperIndex = state.inputs.length;
+    let max = -1;
+    for (let i = 1; i < state.inputs.length; i++) {
+        const num = state.inputs[i].titleNumber;
+        if (num === -1) continue;
+        max = Math.max(max, num);
+        if (num === max) continue;
+
+        helperIndex = i;
+        break;
+    }
+
+    const inputs = state.inputs.slice(startIndex, helperIndex).filter(Boolean);
+    for (let i = 0; i < inputs.length; i++) {
+        const input = inputs[i];
+
+        if (config && state.camNumber !== input.number) {
+            const html = getInputHtml(state, input);
+            if (input.titleNumber === 0) pinnedHtml += html;
+            else normalHtml += html;
+        }
+
+        // Add camera if Preset matches config
+        if (state.camNumber && input.number !== state.camNumber && input.titleNumber !== -1) {
+            if (config && !config.get(input.titleNumber)?.includes('skip')) {
+                if (i + 1 < inputs.length && input.titleNumber !== inputs[i + 1].titleNumber) {
+                    normalHtml += getInputHtml(state, state.inputs[state.camNumber], input);
+                }
+            }
+        }
+    }
+
     document.getElementById('pinned-inputs')!.innerHTML = pinnedHtml;
     document.getElementById('input-list')!.innerHTML = normalHtml;
+}
+
+function getInputHtml(state: any, input: any, previous: any = null) {
+    let color = 'bg-base-300';
+    let hover = 'hover:bg-base-content/10';
+
+    if (previous) {
+        if (state.active === state.camNumber && previous.titleNumber === lastTitleNumber) {
+            color = 'bg-primary text-primary-content font-semibold';
+            hover = 'hover:bg-primary/70';
+        } else if (state.preview === state.camNumber && previous.titleNumber === lastTitleNumber) {
+            color = 'bg-base-content/30 font-semibold';
+            hover = 'hover:bg-base-content/20';
+        }
+    } else {
+        if (state.active === input.number) {
+            color = 'bg-primary text-primary-content font-semibold';
+            hover = 'hover:bg-primary/70';
+        } else if (state.preview === input.number) {
+            color = 'bg-base-content/30 font-semibold';
+            hover = 'hover:bg-base-content/20';
+        }
+    }
+
+    return `
+        <div class="input-item flex items-center justify-between ${color} 
+                rounded-lg px-3 py-2 cursor-pointer ${hover} select-none" data-index="${input.number}">
+            <div class="flex gap-3 items-center">
+                <i data-lucide="${getFileIcon(input.type)}" class="w-4 h-4 shrink-0"></i>
+                ${getInputDuration(input) ? `<span class="text-sm opacity-70">${getInputDuration(input)}</span>` : ''}
+                <span>${input.title}</span>
+            </div>
+            <div class="flex gap-2">
+                ${input.overlays.find((over: any) => over.number === state.micNumber) ? '<i data-lucide="mic" class="w-4 h-4"></i>' : ''}
+                ${input.loop ? '<i data-lucide="repeat" class="w-4 h-4"></i>' : ''}
+            </div>
+        </div>`;
 }
 
 function getVolumeString(input: any) {

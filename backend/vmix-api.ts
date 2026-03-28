@@ -43,6 +43,10 @@ function transition(type: string, input: string | number | null) {
 }
 
 // ===== vMix Info =====
+function getLeadingNumber(text: string) {
+    const match = text.match(/^\s*(\d+)/);
+    return match ? Number(match[1]) : -1;
+}
 
 type VMixInput = {
     '@attributes': { key: string; number: string };
@@ -53,6 +57,7 @@ type VMixInput = {
     title: string;
     duration: number;
     position: number;
+    titleNumber: number;
 };
 
 function ensureArray(item: any) {
@@ -94,6 +99,7 @@ class VmixInfo {
             this.inputs[number].duration = parseInt(input.duration);
             this.inputs[number].position = parseInt(input.position);
             this.inputs[number].loop = input.loop === 'True';
+            this.inputs[number].titleNumber = getLeadingNumber(input.title);
             this.inputs[number].overlays = [];
             ensureArray(input.overlay).forEach((overlay) => {
                 this.inputs[number].overlays.push({

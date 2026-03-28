@@ -99,6 +99,18 @@ async function goToVmixPage() {
         return;
     }
 
+    (window as any).config = null;
+    (window as any).presetName = null;
+
+    const folderPath = playFolderInput.value;
+    try {
+        if (folderPath) {
+            const config = await (window as any).api.getFolderConfig(folderPath);
+            (window as any).config = new Map(config);
+            (window as any).presetName = getPresetName(folderPath);
+        }
+    } catch (err) {}
+
     try {
         if (programStream) programStream.getTracks().forEach((track) => track.stop());
         if (previewStream) previewStream.getTracks().forEach((track) => track.stop());
@@ -128,6 +140,11 @@ async function goToVmixPage() {
     homePage.classList.add('hidden');
     configPage.classList.add('hidden');
     vmixPage.classList.remove('hidden');
+}
+
+function getPresetName(path: string) {
+    const parts = path.replace(/\\/g, '/').split('/').filter(Boolean);
+    return parts.slice(-2).join(' ');
 }
 
 // ===== Local Storage =====
