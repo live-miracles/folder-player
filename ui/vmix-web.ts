@@ -246,9 +246,7 @@ function inputDbClick(e: Event) {
 
 function getInputProgress(input: any) {
     if (input.type === 'Photos') return `${input.position + 1} / ${input.duration + 1}`;
-
-    const remaining = input.duration - input.position;
-    return `${formatTimeMMSS(input.position)} / ${formatTimeMMSS(input.duration)} / ${formatTimeMMSS(remaining)}`;
+    return `${formatTimeMMSS(input.position)} / ${formatTimeMMSS(input.duration)}`;
 }
 
 renderTime();

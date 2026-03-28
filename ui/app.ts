@@ -363,7 +363,6 @@ async function fetchVmixState() {
         if (vmixPage.classList.contains('hidden')) return;
 
         const res = await fetchVmixState();
-        // TODO Error handling
         renderVmixWeb(res.data);
     }, 1000);
 })();

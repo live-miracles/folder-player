@@ -206,10 +206,9 @@
             <!-- Controls -->
             <div class="flex gap-4 items-start mt-3">
               <!-- Buttons -->
-              <div class="flex flex-col gap-3 text-center w-[200px]">
+              <div class="flex flex-col justify-center gap-3 text-center w-[200px] h-full">
                 <button class="btn btn-xl btn-primary">Next</button>
-                <button class="btn btn-xl btn-soft btn-error">Record</button>
-                <button class="btn btn-xl btn-soft btn-primary"><i data-lucide="mic-off"></i></button>
+                <button class="btn btn-xl btn-soft btn-error"><i data-lucide="mic-off"></i></button>
               </div>
 
               <!-- Preview -->
@@ -225,16 +224,16 @@
 
               <div class="flex gap-2">
                 <div id="mixer-1" class="flex flex-col items-center w-32 rounded-lg bg-base-200">
-                  <div class="mixer-title text-center badge badge-soft badge-primary font-semibold truncate p-1 m-1 rounded-lg w-28"></div>
+                  <div class="mixer-title text-center badge badge-soft badge-primary font-semibold truncate p-1 m-1 rounded-lg w-28">&nbsp;</div>
 
                   <div class="flex items-stretch gap-2 p-2 w-full h-[165px]">
                     <div class="flex flex-col items-center gap-1 flex-1">
-                      <span class="mixer-volume"></span>
+                      <span class="mixer-volume text-lg font-semibold">&nbsp;</span>
 
                       <div class="flex gap-1 flex-wrap justify-center">
                         <button id="vol-plus" class="btn btn-sm"><i data-lucide="plus" class="w-5 h-5"></i></button>
                         <button id="vol-minus" class="btn btn-sm"><i data-lucide="minus" class="w-5 h-5"></i></button>
-                        <button id="vol-mute" class="btn btn-sm text-lg"><i data-lucide="headphones" class="w-5 h-5"></i></button>
+                        <button id="vol-mute" class="btn btn-sm text-lg"><i data-lucide="headphone-off" class="w-5 h-5"></i></button>
                       </div>
                     </div>
                     <canvas class="mixer-meter w-[10px] bg-base-300 rounded-lg" width="100" height="1000"></canvas>
@@ -242,16 +241,16 @@
                 </div>
 
                 <div id="mixer-2" class="flex flex-col items-center w-32 rounded-lg bg-base-200">
-                  <div class="mixer-title badge badge-soft badge-primary font-semibold truncate p-1 m-1 rounded-lg w-28"></div>
+                  <div class="mixer-title badge badge-soft badge-primary font-semibold truncate p-1 m-1 rounded-lg w-28">&nbsp;</div>
 
                   <div class="flex items-stretch gap-2 p-2 w-full h-[165px]">
                     <div class="flex flex-col items-center gap-1 flex-1">
-                      <span class="mixer-volume"></span>
+                      <span class="mixer-volume text-lg font-semibold">&nbsp;</span>
 
                       <div class="flex gap-1 flex-wrap justify-center">
                         <button id="vol-plus" class="btn btn-sm"><i data-lucide="plus" class="w-5 h-5"></i></button>
                         <button id="vol-minus" class="btn btn-sm"><i data-lucide="minus" class="w-5 h-5"></i></button>
-                        <button id="vol-mute" class="btn btn-sm text-lg"><i data-lucide="headphones" class="w-5 h-5"></i></button>
+                        <button id="vol-mute" class="btn btn-sm btn-primary text-lg"><i data-lucide="volume-2" class="w-5 h-5"></i></button>
                       </div>
                     </div>
                     <canvas class="mixer-meter w-[10px] bg-base-300 rounded-lg" width="100" height="1000"></canvas>
