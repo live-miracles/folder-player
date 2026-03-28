@@ -110,12 +110,14 @@ function renderInputList(state: any) {
     state.inputs.filter(Boolean).forEach((input: any) => {
         const color = [
             'bg-primary text-primary-content font-semibold',
-            'bg-warning text-warning-content font-semibold',
+            'bg-base-content/30 font-semibold',
             'bg-base-300',
         ][getInputStatus(input, state)];
-        const hover = ['hover:bg-primary/70', 'hover:bg-warning/70', 'hover:bg-base-content/10'][
-            getInputStatus(input, state)
-        ];
+        const hover = [
+            'hover:bg-primary/70',
+            'hover:bg-base-content/20',
+            'hover:bg-base-content/10',
+        ][getInputStatus(input, state)];
 
         const html = `
             <div class="input-item flex items-center justify-between ${color} 

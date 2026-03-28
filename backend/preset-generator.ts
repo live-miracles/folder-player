@@ -219,7 +219,7 @@ function getAudioXML(
     const { volume, gain } = getAudioOptions(options);
     const loop = options.includes('loop') ? 'True' : 'False';
 
-    return `<Input Type="0" Position="0" RangeStart="0" RangeStop="0" State="1" OriginalTitle=""
+    return `<Input Type="13" Position="0" RangeStart="0" RangeStop="0" State="1" OriginalTitle=""
         ShortcutMappings="" Key="${file.id}" Loop="${loop}" VolumeF="${volume}" Muted="True" BalanceF="0" AspectRatio="100"
         Category="0" MouseClickAction="0" GOClickAction="20" Collapsed="False" SoloPFLMode="False" MetersPF="False" Solo="False"
         BusMVolumeF="1" HeadphonesVolumeF="1" BusAVolumeF="1" BusBVolumeF="1" BusCVolumeF="1" BusDVolumeF="1" BusEVolumeF="1"
