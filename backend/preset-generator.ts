@@ -2,7 +2,7 @@ import fs from 'fs';
 import path from 'path';
 
 import { getFolderConfig } from './config-api.js';
-import { getFolderFiles, FILE_TYPES } from './file-manager.js';
+import { getBaseFile, getFolderFiles, FILE_TYPES } from './file-manager.js';
 
 function getTitleId(xml: string, title: string) {
     const regex = new RegExp(`<Input[^>]*?Title="${title}"[^>]*?>`);
@@ -25,8 +25,9 @@ function getFullXML(xml: string, inputs: string[]) {
 }
 
 export function createPresetFile(folderPath: string, baseFilePath: string, enableBus: string) {
-    const baseXML = fs.readFileSync(baseFilePath, 'utf-8');
-    console.log('Read base xml file');
+    const base = getBaseFile(folderPath) ?? baseFilePath;
+    console.log('Reading base file: ' + base);
+    const baseXML = fs.readFileSync(base, 'utf-8');
 
     const micId = getTitleId(baseXML, 'Mic');
     const camId = getTitleId(baseXML, 'Cam');

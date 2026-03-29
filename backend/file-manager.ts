@@ -8,6 +8,28 @@ function getLeadingNumber(text: string) {
     return match ? Number(match[1]) : -1;
 }
 
+export function getBaseFile(folderPath: string) {
+    const regex = /^base(\s.*)?\.vmix$/i;
+
+    if (!fs.existsSync(folderPath)) return null;
+
+    const files = fs.readdirSync(folderPath);
+
+    for (const file of files) {
+        if (regex.test(file)) return path.join(folderPath, file);
+    }
+
+    const parent = path.dirname(folderPath);
+    if (parent && parent !== folderPath) {
+        const files = fs.readdirSync(parent);
+
+        for (const file of files) {
+            if (regex.test(file)) return path.join(parent, file);
+        }
+    }
+    return null;
+}
+
 function getFileType(filePath: string) {
     const IMAGE_EXT = ['.jpg', '.png', '.jpeg'];
     const VIDEO_EXT = ['.mp4', '.mov', '.m4a'];
