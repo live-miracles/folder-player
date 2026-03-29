@@ -30,7 +30,7 @@ export function createPresetFile(folderPath: string, baseFilePath: string, enabl
 
     const micId = getTitleId(baseXML, 'Mic');
     const camId = getTitleId(baseXML, 'Cam');
-    console.log('Identrified micId: ' + micId + ' and camId: ' + camId);
+    console.log('Identified micId: ' + micId + ' and camId: ' + camId);
 
     const fileMap = getFolderFiles(folderPath);
 

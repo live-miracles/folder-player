@@ -32,14 +32,8 @@ export async function getVmixState() {
             return { data: null, error: 'XML parse error' };
         }
     } else {
-        console.error(res.error);
         return { data: null, error: res.error };
     }
-}
-
-function transition(type: string, input: string | number | null) {
-    const params = input && type !== 'FadeToBlack' ? { Input: input } : {};
-    vMixCall(type, params);
 }
 
 // ===== vMix Info =====

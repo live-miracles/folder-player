@@ -76,6 +76,9 @@ export function renderVmixWeb(state: any) {
 
     if (activeInput.titleNumber !== -1) lastTitleNumber = activeInput.titleNumber;
 
+    if (state.fadeToBlack) ftbBtn.classList.remove('btn-soft');
+    else ftbBtn.classList.add('btn-soft');
+
     if (activeInput.duration === 0 || activeInput.type === 'Photos') {
         if (liveStartTime === null) liveStartTime = Date.now();
         endTimeElement.classList.add('hidden');
@@ -146,19 +149,37 @@ function renderInputList(state: any, config: Map<number, string[]> | null) {
     for (let i = 0; i < inputs.length; i++) {
         const input = inputs[i];
 
+        const nextInput =
+            i + 1 < inputs.length && inputs[i + 1].titleNumber !== -1 ? inputs[i + 1] : null;
+        let nextCam = null;
+
+        if (state.camNumber && input.number !== state.camNumber && input.titleNumber !== -1) {
+            if (config && !config.get(input.titleNumber)?.includes('skip')) {
+                if (nextInput && input.titleNumber !== inputs[i + 1].titleNumber) {
+                    nextCam = state.inputs[state.camNumber];
+                }
+            }
+        }
+
+        if (state.camNumber === state.active && input.titleNumber === lastTitleNumber) {
+            nextBtn.dataset.index = nextInput?.number ?? -1;
+            nextBtn.disabled = !Boolean(nextInput);
+        }
+
+        if (input.number === state.active && input.number !== state.camNumber) {
+            const next = nextCam ? nextCam : nextInput;
+            nextBtn.dataset.index = next?.number ?? -1;
+            nextBtn.disabled = !Boolean(next);
+        }
+
         if (config && state.camNumber !== input.number) {
-            const html = getInputHtml(state, input);
+            const html = getInputHtml(state, input, null);
             if (input.titleNumber === 0) pinnedHtml += html;
             else normalHtml += html;
         }
 
-        // Add camera if Preset matches config
-        if (state.camNumber && input.number !== state.camNumber && input.titleNumber !== -1) {
-            if (config && !config.get(input.titleNumber)?.includes('skip')) {
-                if (i + 1 < inputs.length && input.titleNumber !== inputs[i + 1].titleNumber) {
-                    normalHtml += getInputHtml(state, state.inputs[state.camNumber], input);
-                }
-            }
+        if (nextCam) {
+            normalHtml += getInputHtml(state, state.inputs[state.camNumber], input);
         }
     }
 
@@ -166,7 +187,7 @@ function renderInputList(state: any, config: Map<number, string[]> | null) {
     document.getElementById('input-list')!.innerHTML = normalHtml;
 }
 
-function getInputHtml(state: any, input: any, previous: any = null) {
+function getInputHtml(state: any, input: any, previous: any | null) {
     let color = 'bg-base-300';
     let hover = 'hover:bg-base-content/10';
 
@@ -174,18 +195,10 @@ function getInputHtml(state: any, input: any, previous: any = null) {
         if (state.active === state.camNumber && previous.titleNumber === lastTitleNumber) {
             color = 'bg-primary text-primary-content font-semibold';
             hover = 'hover:bg-primary/70';
-        } else if (state.preview === state.camNumber && previous.titleNumber === lastTitleNumber) {
-            color = 'bg-base-content/30 font-semibold';
-            hover = 'hover:bg-base-content/20';
         }
-    } else {
-        if (state.active === input.number) {
-            color = 'bg-primary text-primary-content font-semibold';
-            hover = 'hover:bg-primary/70';
-        } else if (state.preview === input.number) {
-            color = 'bg-base-content/30 font-semibold';
-            hover = 'hover:bg-base-content/20';
-        }
+    } else if (state.active === input.number) {
+        color = 'bg-primary text-primary-content font-semibold';
+        hover = 'hover:bg-primary/70';
     }
 
     return `
@@ -220,6 +233,20 @@ function renderAudioMixer(state: any) {
 
     const mixer1 = document.getElementById('mixer-1')!;
     if (state.micNumber !== null) {
+        micBtn.dataset.index = state.micNumber;
+
+        if (state.inputs[state.micNumber].muted === 'True') {
+            micBtn.classList.remove('btn-primary');
+            micBtn.classList.add('btn-soft');
+            micBtn.classList.add('btn-error');
+            micBtn.innerHTML = '<i data-lucide="mic-off"></i>';
+        } else {
+            micBtn.classList.remove('btn-error');
+            micBtn.classList.remove('btn-soft');
+            micBtn.classList.add('btn-primary');
+            micBtn.innerHTML = '<i data-lucide="mic"></i>';
+        }
+
         const input = state.inputs[state.micNumber];
 
         drawAudioLevels(mixer1.querySelector('.mixer-meter') as HTMLCanvasElement, input);
@@ -234,6 +261,7 @@ function renderAudioMixer(state: any) {
         mixer1.querySelector('.mixer-volume')!.innerHTML = getVolumeString(input);
         mixer1.classList.remove('hidden');
     } else {
+        micBtn.disabled = true;
         mixer1.classList.add('hidden');
     }
 
@@ -279,33 +307,42 @@ function formatTimeMMSS(ms: number) {
     return `${hours === 0 ? '' : hours + ':'}${pad(minutes)}:${pad(seconds)}`;
 }
 
-document.getElementById('input-list')!.addEventListener('click', inputClick);
 document.getElementById('input-list')!.addEventListener('dblclick', inputDbClick);
-
-document.getElementById('pinned-inputs')!.addEventListener('click', inputClick);
 document.getElementById('pinned-inputs')!.addEventListener('dblclick', inputDbClick);
 
-let clickTimeout: any = null;
-function inputClick(e: Event) {
-    const item = (e.target as HTMLElement).closest('.input-item') as HTMLElement;
-    if (!item) return;
+const nextBtn = document.getElementById('vmix-next-btn') as HTMLButtonElement;
+nextBtn.addEventListener('click', async () => {
+    let index = parseInt(nextBtn.dataset.index!);
+    if (isNaN(index) || index === -1) {
+        console.assert(false, 'Invalid next index: ' + index);
+        return;
+    }
+    nextBtn.disabled = true;
+    (window as any).api.vMixCall('Stinger1', { Input: index });
+});
 
-    const index = item.dataset.index;
+const micBtn = document.getElementById('vmix-mic-btn') as HTMLButtonElement;
+micBtn.addEventListener('click', async () => {
+    const index = parseInt(micBtn.dataset.index!);
+    console.assert(!isNaN(index) && index >= 0);
+    micBtn.disabled = true;
+    await (window as any).api.vMixCall('Audio', { Input: index });
+    setTimeout(() => (micBtn.disabled = false), 1000);
+});
 
-    // delay click to detect double click
-    if (clickTimeout) clearTimeout(clickTimeout);
-
-    clickTimeout = setTimeout(() => (window as any).api.setVmixPreview(index), 200);
-}
+const ftbBtn = document.getElementById('vmix-ftb-btn') as HTMLButtonElement;
+ftbBtn.addEventListener('click', async () => {
+    ftbBtn.disabled = true;
+    await (window as any).api.vMixCall('FadeToBlack');
+    setTimeout(() => (ftbBtn.disabled = false), 1000);
+});
 
 function inputDbClick(e: Event) {
     const item = (e.target as HTMLElement).closest('.input-item') as HTMLElement;
     if (!item) return;
-
-    const index = item.dataset.index;
-    if (clickTimeout) clearTimeout(clickTimeout);
-
-    (window as any).api.setVmixActive(index);
+    const index = parseInt(item.dataset.index!);
+    console.assert(!isNaN(index) && index > -1);
+    (window as any).api.vMixCall('Stinger1', { Input: index });
 }
 
 function getInputProgress(input: any) {

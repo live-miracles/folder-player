@@ -192,7 +192,9 @@ function init() {
 
 // ===== Home Page =====
 async function loadDevices() {
-    const devices = await navigator.mediaDevices.enumerateDevices();
+    const devices = (await navigator.mediaDevices.enumerateDevices()).filter((d) =>
+        d.label.includes('vMix'),
+    );
 
     devices.sort((a, b) =>
         (a.label || '').localeCompare(b.label || '', undefined, {
