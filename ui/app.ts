@@ -39,6 +39,7 @@ const playFolderInput = document.getElementById('play-folder-input') as HTMLInpu
 const programCamInput = document.getElementById('program-cam-input') as HTMLInputElement;
 const previewCamInput = document.getElementById('preview-cam-input') as HTMLInputElement;
 const enableBusInput = document.getElementById('enable-bus-input') as HTMLInputElement;
+const transitionTypeInput = document.getElementById('transition-type-input') as HTMLInputElement;
 const closeVmixWebBtn = document.getElementById('close-vmix-web-btn')!;
 
 // ===== Navigation =====
@@ -149,9 +150,10 @@ function getPresetName(path: string) {
 
 // ===== Local Storage =====
 const STORAGE_KEYS = {
+    ENABLE_BUS: 'enableBus',
+    TRANSITION_TYPE: 'transitionType',
     PROGRAM_CAM: 'programCam',
     PREVIEW_CAM: 'previewCam',
-    ENABLE_BUS: 'enableBus',
     BASE_FILE: 'baseFile',
     RECENT_FOLDERS: 'recentFolders',
 };
@@ -179,11 +181,15 @@ previewCamInput.addEventListener('input', () => {
 enableBusInput.addEventListener('input', () => {
     localStorage.setItem(STORAGE_KEYS.ENABLE_BUS, enableBusInput.value);
 });
+transitionTypeInput.addEventListener('input', () => {
+    localStorage.setItem(STORAGE_KEYS.TRANSITION_TYPE, transitionTypeInput.value);
+});
 
 function init() {
+    enableBusInput.value = localStorage.getItem(STORAGE_KEYS.ENABLE_BUS) ?? '';
+    transitionTypeInput.value = localStorage.getItem(STORAGE_KEYS.TRANSITION_TYPE) ?? 'Stinger1';
     programCamInput.value = localStorage.getItem(STORAGE_KEYS.PROGRAM_CAM) ?? '';
     previewCamInput.value = localStorage.getItem(STORAGE_KEYS.PREVIEW_CAM) ?? '';
-    enableBusInput.value = localStorage.getItem(STORAGE_KEYS.ENABLE_BUS) ?? '';
 
     baseFileInput.value = localStorage.getItem(STORAGE_KEYS.BASE_FILE) ?? '';
     playFolderInput.value = getRecentFolders()[0] ?? '';

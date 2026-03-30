@@ -1,6 +1,8 @@
 import { FILE_TYPES } from './config.js';
 import { showErrorAlert, drawAudioLevels } from './utils.js';
 
+let lastTitleNumber = -1;
+
 function getTimeString(date: Date) {
     const h = String(date.getHours()).padStart(2, '0');
     const m = String(date.getMinutes()).padStart(2, '0');
@@ -55,7 +57,6 @@ const endTimeElement = document.getElementById('live-time')!;
 const activeInputDuration = document.getElementById('active-input-duration')!;
 const activeInputTimeline = document.getElementById('active-input-timeline') as HTMLInputElement;
 
-let lastTitleNumber = -1;
 export function renderVmixWeb(state: any) {
     if (!state) {
         showErrorAlert('Not able to fetch vMix status.');
@@ -76,8 +77,8 @@ export function renderVmixWeb(state: any) {
 
     if (activeInput.titleNumber !== -1) lastTitleNumber = activeInput.titleNumber;
 
-    if (state.fadeToBlack) ftbBtn.classList.remove('btn-soft');
-    else ftbBtn.classList.add('btn-soft');
+    if (state.fadeToBlack) ftbBtn.classList.add('btn-error');
+    else ftbBtn.classList.remove('btn-error');
 
     if (activeInput.duration === 0 || activeInput.type === 'Photos') {
         if (liveStartTime === null) liveStartTime = Date.now();
@@ -93,9 +94,15 @@ export function renderVmixWeb(state: any) {
         activeInputTimeline.parentElement?.classList.add('invisible');
     } else {
         activeInputDuration.innerText = getInputProgress(activeInput);
-        activeInputTimeline.value = String(
-            Math.round((activeInput.position / activeInput.duration) * 100),
-        );
+        if (!userSelectedTimeline) {
+            activeInputTimeline.value = String(
+                Math.round((activeInput.position / activeInput.duration) * 100),
+            );
+
+            activeInputTimeline.dataset.index = activeInput.number;
+            activeInputTimeline.dataset.duration = activeInput.duration;
+        }
+
         activeInputTimeline.parentElement?.classList.remove('invisible');
     }
 
@@ -121,8 +128,7 @@ function getFileIcon(type: string) {
 }
 
 function renderInputList(state: any, config: Map<number, string[]> | null) {
-    let pinnedHtml = '';
-    let normalHtml = '';
+    let inputsHtml = '';
 
     let startIndex = 0;
     for (let i = 1; i < state.inputs.length; i++) {
@@ -173,18 +179,15 @@ function renderInputList(state: any, config: Map<number, string[]> | null) {
         }
 
         if (config && state.camNumber !== input.number) {
-            const html = getInputHtml(state, input, null);
-            if (input.titleNumber === 0) pinnedHtml += html;
-            else normalHtml += html;
+            inputsHtml += getInputHtml(state, input, null);
         }
 
         if (nextCam) {
-            normalHtml += getInputHtml(state, state.inputs[state.camNumber], input);
+            inputsHtml += getInputHtml(state, state.inputs[state.camNumber], input);
         }
     }
 
-    document.getElementById('pinned-inputs')!.innerHTML = pinnedHtml;
-    document.getElementById('input-list')!.innerHTML = normalHtml;
+    document.getElementById('input-list')!.innerHTML = inputsHtml;
 }
 
 function getInputHtml(state: any, input: any, previous: any | null) {
@@ -202,8 +205,8 @@ function getInputHtml(state: any, input: any, previous: any | null) {
     }
 
     return `
-        <div class="input-item flex items-center justify-between ${color} 
-                rounded-lg px-3 py-2 cursor-pointer ${hover} select-none" data-index="${input.number}">
+        <div class="input-item flex items-center justify-between ${color} rounded-lg px-3 py-2 cursor-pointer 
+                ${hover} select-none" data-index="${input.number}" data-previous="${previous ? previous.titleNumber : '-1'}">
             <div class="flex gap-3 items-center">
                 <i data-lucide="${getFileIcon(input.type)}" class="w-4 h-4 shrink-0"></i>
                 ${getInputDuration(input) ? `<span class="text-sm opacity-70">${getInputDuration(input)}</span>` : ''}
@@ -237,12 +240,8 @@ function renderAudioMixer(state: any) {
 
         if (state.inputs[state.micNumber].muted === 'True') {
             micBtn.classList.remove('btn-primary');
-            micBtn.classList.add('btn-soft');
-            micBtn.classList.add('btn-error');
             micBtn.innerHTML = '<i data-lucide="mic-off"></i>';
         } else {
-            micBtn.classList.remove('btn-error');
-            micBtn.classList.remove('btn-soft');
             micBtn.classList.add('btn-primary');
             micBtn.innerHTML = '<i data-lucide="mic"></i>';
         }
@@ -307,8 +306,18 @@ function formatTimeMMSS(ms: number) {
     return `${hours === 0 ? '' : hours + ':'}${pad(minutes)}:${pad(seconds)}`;
 }
 
-document.getElementById('input-list')!.addEventListener('dblclick', inputDbClick);
-document.getElementById('pinned-inputs')!.addEventListener('dblclick', inputDbClick);
+document.getElementById('input-list')!.addEventListener('dblclick', async (e: Event) => {
+    const item = (e.target as HTMLElement).closest('.input-item') as HTMLElement;
+    if (!item) return;
+    const index = parseInt(item.dataset.index!);
+    console.assert(!isNaN(index) && index > -1);
+
+    showLoading();
+    await (window as any).api.vMixCall('Stinger1', { Input: index });
+
+    const previous = parseInt(item.dataset.previous!);
+    if (previous !== -1) setTimeout(() => (lastTitleNumber = previous), 1000);
+});
 
 const nextBtn = document.getElementById('vmix-next-btn') as HTMLButtonElement;
 nextBtn.addEventListener('click', async () => {
@@ -319,6 +328,7 @@ nextBtn.addEventListener('click', async () => {
     }
     nextBtn.disabled = true;
     (window as any).api.vMixCall('Stinger1', { Input: index });
+    showLoading();
 });
 
 const micBtn = document.getElementById('vmix-mic-btn') as HTMLButtonElement;
@@ -337,17 +347,58 @@ ftbBtn.addEventListener('click', async () => {
     setTimeout(() => (ftbBtn.disabled = false), 1000);
 });
 
-function inputDbClick(e: Event) {
-    const item = (e.target as HTMLElement).closest('.input-item') as HTMLElement;
-    if (!item) return;
-    const index = parseInt(item.dataset.index!);
-    console.assert(!isNaN(index) && index > -1);
-    (window as any).api.vMixCall('Stinger1', { Input: index });
-}
+let userSelectedTimeline = false;
+activeInputTimeline.addEventListener('change', async () => {
+    const value = Number(activeInputTimeline.value);
+
+    const index = parseInt(activeInputTimeline.dataset.index!);
+    const duration = parseInt(activeInputTimeline.dataset.duration!);
+    const position = Math.round((value / 100) * duration);
+
+    await (window as any).api.vMixCall('SetPosition', { Input: index, Value: position });
+});
+
+let timelineInteractionTimeout: ReturnType<typeof setTimeout> | null = null;
+activeInputTimeline.addEventListener('pointerdown', () => {
+    if (timelineInteractionTimeout) clearTimeout(timelineInteractionTimeout);
+    userSelectedTimeline = true;
+    timelineInteractionTimeout = setTimeout(() => {
+        userSelectedTimeline = false;
+        timelineInteractionTimeout = null;
+    }, 10000);
+});
+activeInputTimeline.addEventListener('pointerup', () => (userSelectedTimeline = false));
+activeInputTimeline.addEventListener('pointercancel', () => (userSelectedTimeline = false));
 
 function getInputProgress(input: any) {
     if (input.type === 'Photos') return `${input.position + 1} / ${input.duration + 1}`;
     return `${formatTimeMMSS(input.position)} / ${formatTimeMMSS(input.duration)}`;
+}
+
+const overlay = document.getElementById('loading-overlay') as HTMLDivElement;
+const progressBar = document.getElementById('progress-bar') as HTMLProgressElement;
+
+function showLoading(duration = 2000) {
+    overlay.classList.remove('pointer-events-none');
+    overlay.classList.remove('opacity-0');
+
+    let start = Date.now();
+
+    const interval = setInterval(() => {
+        const elapsed = Date.now() - start;
+        const percent = Math.min((elapsed / duration) * 100, 100);
+
+        progressBar.value = percent;
+
+        if (percent >= 100) {
+            clearInterval(interval);
+            overlay.classList.add('opacity-0');
+
+            setTimeout(() => {
+                overlay.classList.add('pointer-events-none');
+            }, 300);
+        }
+    }, 50);
 }
 
 renderTime();

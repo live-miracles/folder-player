@@ -74,7 +74,7 @@
               <select id="transition-type-input" class="select w-32">
                 <option>Fade</option>
                 <option>Cut</option>
-                <option selected>Stinger1</option>
+                <option>Stinger1</option>
                 <option>Stinger2</option>
                 <option>Stinger3</option>
               </select>
@@ -127,8 +127,10 @@
 
           <div class="mx-auto max-w-[750px] bg-base-200/75 rounded-box mt-10 p-3">
             <h2 class="text-xl font-semibold">Base vMix Preset</h2>
-            <p class="mt-1">Select a base vMix preset. Camera input title should be <code>`Cam`</code> and microphone <code>`Mic`</code>.</p>
-            <p class="mt-1"><b>Tip:</b> Keep a file named <code>`base.vmix`</code> in the content or parent folder, it will be used instead.</p>
+            <p class="mt-1">
+              Select a base vMix preset. Camera input title should be <code>`Cam`</code> and microphone <code>`Mic`</code>. If you keep a file named
+              <code>`base.vmix`</code> in the content or parent folder, it will be used instead.
+            </p>
 
             <h2 class="text-xl font-semibold mt-3">Playing Folder</h2>
             <p class="mt-1">
@@ -136,7 +138,6 @@
               <code>`05&nbsp;Video.mp4`</code>. To layer image over audio keep the same numbers, i.e. <code>`07&nbsp;Image.png`</code>,
               <code>`05&nbsp;Audio.mp3`</code>. Add a folder with images to create a slideshow.
             </p>
-            <p class="mt-1"><b>Tip:</b> Files numbered as <code>`0`</code> or <code>`00`</code> will be pinned for easy access.</p>
           </div>
         </div>
         <div class="mt-5">&nbsp;</div>
@@ -185,8 +186,20 @@
 
             <div class="flex items-center gap-3 mx-auto"><span class="p-2 text-8xl" id="current-time"></span></div>
 
-            <div id="pinned-inputs" class="flex flex-col gap-2"></div>
-            <div id="input-list" class="flex-1 flex flex-col gap-2 overflow-y-auto min-h-0"></div>
+            <div class="flex-1 min-h-0 relative">
+              <div id="input-list" class="flex flex-col gap-2 overflow-y-auto overflow-x-hidden h-full"></div>
+
+              <!-- Overlay -->
+              <div
+                id="loading-overlay"
+                class="absolute inset-0 bg-white/10 rounded-box flex items-center justify-center opacity-0 pointer-events-none transition-opacity duration-300 z-50">
+                <div class="text-center w-2/3 bg-base-200/90 rounded-box p-3">
+                  <p class="text-white mt-2">Loading...</p>
+
+                  <progress id="progress-bar" class="progress progress-primary w-full mt-4" value="0" max="100"></progress>
+                </div>
+              </div>
+            </div>
           </div>
 
           <!-- DIVIDER -->
@@ -219,8 +232,8 @@
               <!-- Buttons -->
               <div class="flex flex-col justify-center gap-3 text-center w-[250px] h-full">
                 <button id="vmix-next-btn" class="btn btn-xl btn-primary">Next</button>
-                <button id="vmix-ftb-btn" class="btn btn-xl btn-error">Fade to Black</button>
-                <button id="vmix-mic-btn" class="btn btn-xl btn-soft btn-error"><i data-lucide="mic-off"></i></button>
+                <button id="vmix-ftb-btn" class="btn btn-xl">Fade to Black</button>
+                <button id="vmix-mic-btn" class="btn btn-xl"><i data-lucide="mic-off"></i></button>
               </div>
 
               <!-- Preview -->
