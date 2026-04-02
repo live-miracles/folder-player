@@ -52,8 +52,8 @@ function getEndTimeString(input: any) {
 }
 
 const endTimeElement = document.getElementById('live-time')!;
-const activeInputDuration = document.getElementById('active-input-duration')!;
-const activeInputTimeline = document.getElementById('active-input-timeline') as HTMLInputElement;
+const vmixDuration = document.getElementById('vmix-duration')!;
+const vmixTimeline = document.getElementById('vmix-timeline') as HTMLInputElement;
 
 export function renderVmixWeb(state: any) {
     if (!state) {
@@ -81,20 +81,39 @@ export function renderVmixWeb(state: any) {
     }
 
     if (activeInput.duration === 0) {
-        activeInputDuration.innerText = getLiveTimeString();
-        activeInputTimeline.parentElement?.classList.add('invisible');
+        vmixDuration.innerText = getLiveTimeString();
+        vmixTimeline.parentElement?.classList.add('invisible');
     } else {
-        activeInputDuration.innerText = getInputProgress(activeInput);
+        vmixDuration.innerText = getInputProgress(activeInput);
         if (!userSelectedTimeline) {
-            activeInputTimeline.value = String(
-                Math.round((activeInput.position / activeInput.duration) * 100),
+            vmixTimeline.value = String(
+                Math.round(
+                    (activeInput.position / activeInput.duration) * Number(vmixTimeline.max),
+                ),
             );
 
-            activeInputTimeline.dataset.index = activeInput.number;
-            activeInputTimeline.dataset.duration = activeInput.duration;
+            vmixTimeline.dataset.index = activeInput.number;
+            vmixTimeline.dataset.duration = activeInput.duration;
         }
 
-        activeInputTimeline.parentElement?.classList.remove('invisible');
+        vmixTimeline.parentElement?.classList.remove('invisible');
+
+        restartBtn.dataset.index = activeInput.number;
+        playBtn.dataset.index = activeInput.number;
+        if (activeInput.state === 'Paused') {
+            playBtn.classList.remove('btn-primary');
+            playBtn.innerHTML = '<i data-lucide="play"></i>';
+        } else {
+            playBtn.classList.add('btn-primary');
+            playBtn.innerHTML = '<i data-lucide="pause"></i>';
+        }
+
+        loopBtn.dataset.index = activeInput.number;
+        if (activeInput.loop) {
+            loopBtn.classList.add('btn-primary');
+        } else {
+            loopBtn.classList.remove('btn-primary');
+        }
     }
 
     document.getElementById('preset-name')!.innerText = state.preset;
@@ -295,6 +314,31 @@ document.getElementById('input-list')!.addEventListener('dblclick', async (e: Ev
     await (window as any).api.vMixCall('Stinger1', { Input: index });
 });
 
+const playBtn = document.getElementById('vmix-play-btn') as HTMLButtonElement;
+playBtn.addEventListener('click', async () => {
+    const index = parseInt(playBtn.dataset.index!);
+    playBtn.disabled = true;
+    await (window as any).api.vMixCall('PlayPause', { Input: index });
+    setTimeout(() => (playBtn.disabled = false), 1000);
+});
+
+const restartBtn = document.getElementById('vmix-restart-btn') as HTMLButtonElement;
+restartBtn.addEventListener('click', async () => {
+    const index = parseInt(restartBtn.dataset.index!);
+    restartBtn.disabled = true;
+    await (window as any).api.vMixCall('Restart', { Input: index });
+    setTimeout(() => (restartBtn.disabled = false), 1000);
+});
+
+const loopBtn = document.getElementById('vmix-loop-btn') as HTMLButtonElement;
+loopBtn.addEventListener('click', async () => {
+    const index = parseInt(loopBtn.dataset.index!);
+
+    loopBtn.disabled = true;
+    await (window as any).api.vMixCall('Loop', { Input: index });
+    setTimeout(() => (loopBtn.disabled = false), 1000);
+});
+
 const nextBtn = document.getElementById('vmix-next-btn') as HTMLButtonElement;
 nextBtn.addEventListener('click', async () => {
     let index = parseInt(nextBtn.dataset.index!);
@@ -325,18 +369,18 @@ ftbBtn.addEventListener('click', async () => {
 });
 
 let userSelectedTimeline = false;
-activeInputTimeline.addEventListener('change', async () => {
-    const value = Number(activeInputTimeline.value);
+vmixTimeline.addEventListener('change', async () => {
+    const value = Number(vmixTimeline.value);
 
-    const index = parseInt(activeInputTimeline.dataset.index!);
-    const duration = parseInt(activeInputTimeline.dataset.duration!);
-    const position = Math.round((value / 100) * duration);
+    const index = parseInt(vmixTimeline.dataset.index!);
+    const duration = parseInt(vmixTimeline.dataset.duration!);
+    const position = Math.round((value / Number(vmixTimeline.max)) * duration);
 
     await (window as any).api.vMixCall('SetPosition', { Input: index, Value: position });
 });
 
 let timelineInteractionTimeout: ReturnType<typeof setTimeout> | null = null;
-activeInputTimeline.addEventListener('pointerdown', () => {
+vmixTimeline.addEventListener('pointerdown', () => {
     if (timelineInteractionTimeout) clearTimeout(timelineInteractionTimeout);
     userSelectedTimeline = true;
     timelineInteractionTimeout = setTimeout(() => {
@@ -344,8 +388,8 @@ activeInputTimeline.addEventListener('pointerdown', () => {
         timelineInteractionTimeout = null;
     }, 10000);
 });
-activeInputTimeline.addEventListener('pointerup', () => (userSelectedTimeline = false));
-activeInputTimeline.addEventListener('pointercancel', () => (userSelectedTimeline = false));
+vmixTimeline.addEventListener('pointerup', () => (userSelectedTimeline = false));
+vmixTimeline.addEventListener('pointercancel', () => (userSelectedTimeline = false));
 
 function getInputProgress(input: any) {
     if (input.type === 'Photos') return `${input.position + 1} / ${input.duration + 1}`;
