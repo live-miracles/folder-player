@@ -100,18 +100,6 @@ async function goToVmixPage() {
         return;
     }
 
-    (window as any).config = null;
-    (window as any).presetName = null;
-
-    const folderPath = playFolderInput.value;
-    try {
-        if (folderPath) {
-            const config = await (window as any).api.getFolderConfig(folderPath);
-            (window as any).config = new Map(config);
-            (window as any).presetName = getPresetName(folderPath);
-        }
-    } catch (err) {}
-
     try {
         if (programStream) programStream.getTracks().forEach((track) => track.stop());
         if (previewStream) previewStream.getTracks().forEach((track) => track.stop());

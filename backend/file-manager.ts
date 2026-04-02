@@ -3,9 +3,30 @@ import path from 'path';
 
 export const FILE_TYPES = { IMAGE: 'Image', VIDEO: 'Video', AUDIO: 'AudioFile', FOLDER: 'Photos' };
 
-function getLeadingNumber(text: string) {
-    const match = text.match(/^\s*(\d+)/);
-    return match ? Number(match[1]) : -1;
+function getLeadingNumbers(text: string) {
+    const match = text.match(/^(\d+)(?:_(\d+))?/);
+    if (!match) return [-1, -1];
+
+    const first = Number(match[1]);
+    const second = match[2] !== undefined ? Number(match[2]) : -1;
+
+    return [first, second];
+}
+
+export function getLeadingKey(text: string) {
+    const [first, second] = getLeadingNumbers(text);
+
+    if (first === -1) return '';
+
+    return `${String(first)}${second !== -1 ? `_${String(second)}` : ''}`;
+}
+
+export function compareFiles(a: string, b: string) {
+    const [a1, a2] = getLeadingNumbers(a);
+    const [b1, b2] = getLeadingNumbers(b);
+    if (a1 !== b1) return a1 - b1;
+    if (a2 !== b2) return a2 - b2;
+    return a.localeCompare(b);
 }
 
 export function getBaseFile(folderPath: string) {
@@ -50,23 +71,18 @@ function getFileType(filePath: string) {
 export function getFolderFiles(folderPath: string) {
     let fileNames = fs.readdirSync(folderPath, 'utf8');
 
-    fileNames.sort((a, b) => {
-        const numA = getLeadingNumber(a);
-        const numB = getLeadingNumber(b);
-        if (numA !== numB) return numA - numB;
-        return a.localeCompare(b);
-    });
+    fileNames.sort(compareFiles);
 
-    const fileMap = new Map<number, { path: string; type: string; id: string }[]>();
+    const fileMap = new Map<string, { path: string; type: string; id: string }[]>();
     for (const name of fileNames) {
-        const number = getLeadingNumber(name);
+        const key = getLeadingKey(name);
         const fullPath = path.join(folderPath, name);
         const type = getFileType(fullPath);
 
         if (!type) continue;
 
-        if (!fileMap.get(number)) fileMap.set(number, []);
-        fileMap.get(number)?.push({ path: fullPath, type: type, id: crypto.randomUUID() });
+        if (!fileMap.get(key)) fileMap.set(key, []);
+        fileMap.get(key)?.push({ path: fullPath, type: type, id: crypto.randomUUID() });
     }
 
     return fileMap;

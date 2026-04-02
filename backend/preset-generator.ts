@@ -2,7 +2,7 @@ import fs from 'fs';
 import path from 'path';
 
 import { getFolderConfig } from './config-api.js';
-import { getBaseFile, getFolderFiles, FILE_TYPES } from './file-manager.js';
+import { getBaseFile, getFolderFiles, FILE_TYPES, compareFiles } from './file-manager.js';
 
 function getTitleId(xml: string, title: string) {
     const regex = new RegExp(`<Input[^>]*?Title="${title}"[^>]*?>`);
@@ -39,9 +39,9 @@ export function createPresetFile(folderPath: string, baseFilePath: string, enabl
     const otherInputsXML: string[] = [];
     const helperInputsXML: string[] = [];
 
-    const otherFiles = fileMap.get(-1) ?? [];
-    otherFiles.forEach((f) => otherInputsXML.push(getFileXML(f, [], [], enableBus)));
-    fileMap.delete(-1);
+    const otherFiles = fileMap.get('') ?? [];
+    otherFiles.forEach((f) => otherInputsXML.push(getFileXML(f, [], ['collapsed'], enableBus)));
+    fileMap.delete('');
 
     const config = getFolderConfig(folderPath);
     if (!micId) {
@@ -57,14 +57,15 @@ export function createPresetFile(folderPath: string, baseFilePath: string, enabl
         });
     }
 
-    const sortedKeys = Array.from(fileMap.keys()).sort((a, b) => a - b);
+    const sortedKeys = Array.from(fileMap.keys()).sort(compareFiles);
 
-    for (const key of sortedKeys) {
+    for (let i = 0; i < sortedKeys.length; i++) {
+        const key = sortedKeys[i];
         const files = fileMap.get(key)!;
         const options = config.get(key) ?? [];
         const layers: string[] = [];
-        if (micId && options.includes('mic')) layers.push(micId);
         if (camId && options.includes('cam')) layers.push(camId);
+        if (micId && !options.includes('cam') && options.includes('mic')) layers.push(micId);
 
         const audios = files.filter((f) => f.type === FILE_TYPES.AUDIO);
         const videos = files.filter((f) => f.type === FILE_TYPES.VIDEO);
@@ -73,30 +74,10 @@ export function createPresetFile(folderPath: string, baseFilePath: string, enabl
 
         console.assert(files.length > 0);
 
-        // Special case when it is camera overlayed by an image
-        if (files.length === 1 && images.length > 0 && options.includes('cam')) {
-            layers.pop(); // remove Cam layer, it will be the base instead
-
-            layers.push(images[0].id);
-            const filename = path.parse(images[0].path).name;
-            inputsXML.push(
-                getVirtualInput(
-                    { id: camId!, newId: crypto.randomUUID(), title: filename },
-                    layers,
-                ),
-            );
-            helperInputsXML.push(getFileXML(images[0], [], [...options, 'collapsed'], enableBus));
-
-            continue;
-        }
-
-        // Ignore any strange cases
         if (audios.length + videos.length > 1) {
+            // Ignore any strange cases
             files.forEach((f) => inputsXML.push(getFileXML(f, layers, options, enableBus)));
-            continue;
-        }
-
-        if (audios.length > 0 || videos.length > 0) {
+        } else if (audios.length > 0 || videos.length > 0) {
             const base = audios[0] ?? videos[0];
             const top = images[0] ?? slideshows[0];
             if (top) {
@@ -105,7 +86,22 @@ export function createPresetFile(folderPath: string, baseFilePath: string, enabl
             }
             inputsXML.push(getFileXML(base, layers, options, enableBus));
         } else {
-            files.forEach((f) => inputsXML.push(getFileXML(f, layers, options, enableBus)));
+            // Special case when it is camera overlayed by an image
+            if (images.length > 0 && options.includes('cam')) {
+                layers.push(images[0].id);
+                const filename = path.parse(images[0].path).name;
+                inputsXML.push(getColorXML(filename, layers, options));
+                helperInputsXML.push(
+                    getFileXML(images[0], [], [...options, 'collapsed'], enableBus),
+                );
+            } else {
+                files.forEach((f) => inputsXML.push(getFileXML(f, layers, options, enableBus)));
+            }
+        }
+
+        const skipCam = options.includes('skip');
+        if (!skipCam && i < sortedKeys.length - 1 && camId) {
+            inputsXML.push(getColorXML('Cam', [camId], []));
         }
     }
 
@@ -189,10 +185,11 @@ function getVideoXML(
     const { volume, gain } = getAudioOptions(options);
     const loop = options.includes('loop') ? 'True' : 'False';
     const enableBusText = enableBus ? `Bus${enableBus}="True"` : '';
+    const collapsed = options.includes('collapsed') ? 'True' : 'False';
 
     return `<Input Type="0" Position="0" RangeStart="0" RangeStop="0" State="1" OriginalTitle=""
         ShortcutMappings="" Key="${file.id}" Loop="${loop}" VolumeF="${volume}" Muted="True" BalanceF="0" AspectRatio="100" Category="0"
-        MouseClickAction="0" GOClickAction="20" Collapsed="False" SoloPFLMode="False" MetersPF="False" Solo="False" BusMVolumeF="1"
+        MouseClickAction="0" GOClickAction="20" Collapsed="${collapsed}" SoloPFLMode="False" MetersPF="False" Solo="False" BusMVolumeF="1"
         HeadphonesVolumeF="1" BusAVolumeF="1" BusBVolumeF="1" BusCVolumeF="1" BusDVolumeF="1" BusEVolumeF="1" BusFVolumeF="1" BusGVolumeF="1"
         MixerCollapsed="False" MixerVisible="True" AudioBusExtended="False" AudioDelay="0" AudioChannel="0" AudioGain="${gain}" AudioPad="False"
         AudioCompressorEnabled="False" AudioCompressorRatio="1" AudioCompressorThreshold="0.1258925" AudioNoiseGateEnabled="False"
@@ -221,10 +218,11 @@ function getAudioXML(
     const { volume, gain } = getAudioOptions(options);
     const loop = options.includes('loop') ? 'True' : 'False';
     const enableBusText = enableBus ? `Bus${enableBus}="True"` : '';
+    const collapsed = options.includes('collapsed') ? 'True' : 'False';
 
     return `<Input Type="13" Position="0" RangeStart="0" RangeStop="0" State="1" OriginalTitle=""
         ShortcutMappings="" Key="${file.id}" Loop="${loop}" VolumeF="${volume}" Muted="True" BalanceF="0" AspectRatio="100"
-        Category="0" MouseClickAction="0" GOClickAction="20" Collapsed="False" SoloPFLMode="False" MetersPF="False" Solo="False"
+        Category="0" MouseClickAction="0" GOClickAction="20" Collapsed="${collapsed}" SoloPFLMode="False" MetersPF="False" Solo="False"
         BusMVolumeF="1" HeadphonesVolumeF="1" BusAVolumeF="1" BusBVolumeF="1" BusCVolumeF="1" BusDVolumeF="1" BusEVolumeF="1"
         BusFVolumeF="1" BusGVolumeF="1" MixerCollapsed="False" MixerVisible="True" AudioBusExtended="False" AudioDelay="0"
         AudioChannel="0" AudioGain="${gain}" AudioPad="False" AudioCompressorEnabled="False" AudioCompressorRatio="1"
@@ -250,10 +248,11 @@ function getAudioXML(
 function getPhotosXML(file: { path: string; id: string }, layers: string[], options: string[]) {
     const slideshowTime = options.find((opt) => opt.endsWith('s')) ?? '10s';
     const time = parseInt(slideshowTime) ?? 10;
+    const collapsed = options.includes('collapsed') ? 'True' : 'False';
 
     return `<Input Type="2" Position="0" RangeStart="0" RangeStop="0" State="1" OriginalTitle=""
         ShortcutMappings="" Key="${file.id}" Loop="True" VolumeF="1" Muted="True" BalanceF="0" AspectRatio="100" Category="0"
-        MouseClickAction="0" GOClickAction="20" Collapsed="True" Solo="False" BusMVolumeF="1" HeadphonesVolumeF="1" BusAVolumeF="1"
+        MouseClickAction="0" GOClickAction="20" Collapsed="${collapsed}" Solo="False" BusMVolumeF="1" HeadphonesVolumeF="1" BusAVolumeF="1"
         BusBVolumeF="1" BusCVolumeF="1" BusDVolumeF="1" BusEVolumeF="1" BusFVolumeF="1" BusGVolumeF="1" BusMaster="True" FrameDelay="0"
         TallyCOMPort="None" TallyNumber="0" AutoAudioMixing="True" AutoPause="True" AutoRestart="True" AutoPlay="False" Mirror="False"
         SelectedIndex="1" Rate="1" FlattenLayers="False" ${getLayersText(layers)} XML="&lt;indexMappings /&gt;" ShaderSource="00000000-0000-0000-0000-000000000000"
@@ -268,6 +267,27 @@ function getPhotosXML(file: { path: string; id: string }, layers: string[], opti
         VideoShader_ToleranceGreenGap="0" VideoShader_GreenFilter="False" VideoShader_GreenFilterTransparencyThreshold="1"
         VideoShader_LumaKeyThreshold="0" VideoShader_AntiAliasing="False" VideoShader_AntiAliasingFilter="0" VideoShader_ClippingX1="0"
         VideoShader_ClippingX2="1" VideoShader_ClippingY1="0" VideoShader_ClippingY2="1" VideoShader_PremultipliedAlpha="False">${escapeXML(file.path)}</Input>`;
+}
+
+function getColorXML(name: string, layers: string[], options: string[]) {
+    const collapsed = options.includes('collapsed') ? 'True' : 'False';
+
+    return `<Input Type="12" Position="0" RangeStart="0" RangeStop="0" State="1" Title="${name}" OriginalTitle="Colour" ShortcutMappings=""
+        Key="${crypto.randomUUID()}" Loop="False" VolumeF="1" Muted="True" BalanceF="0" AspectRatio="100" Category="0" MouseClickAction="0"
+        GOClickAction="20" Collapsed="${collapsed}" Solo="False" BusMVolumeF="1" HeadphonesVolumeF="1" BusAVolumeF="1" BusBVolumeF="1" BusCVolumeF="1"
+        BusDVolumeF="1" BusEVolumeF="1" BusFVolumeF="1" BusGVolumeF="1" BusMaster="True" FrameDelay="0" TallyCOMPort="None" TallyNumber="0"
+        AutoAudioMixing="True" AutoPause="True" AutoRestart="False" AutoPlay="True" Mirror="False" SelectedIndex="0" Rate="1" FlattenLayers="False"
+        ${getLayersText(layers)} MasterOverlayLast8="True" XML="" ShaderSource="00000000-0000-0000-0000-000000000000"
+        PTZProvider="" PTZConnection="" PTZAutoConnect="False" PTZDefaultPanTiltSpeed="0.5" PTZDefaultZoomSpeed="0.5" PTZDefaultPositionSpeed="1"
+        PTZDefaultFocusSpeed="0.5" PTZDefaultFocusEnabled="False" PTZDefaultTallyEnabled="False" PTZAlwaysShowThumbnail="False" Colour="-16777216"
+        ColourBars="False" VideoShader_ColorCorrectionSourceEnabled="0" VideoShader_White="1" VideoShader_Black="0" VideoShader_Red="0" VideoShader_Green="0"
+        VideoShader_Blue="0" VideoShader_Alpha="1" VideoShader_Saturation="1" VideoShader_CCLiftR="0" VideoShader_CCLiftG="0" VideoShader_CCLiftB="0"
+        VideoShader_CCGammaR="1" VideoShader_CCGammaG="1" VideoShader_CCGammaB="1" VideoShader_CCGainR="1" VideoShader_CCGainG="1" VideoShader_CCGainB="1"
+        VideoShader_Saturation2="0" VideoShader_Hue="0" VideoShader_Rec601Fix="False" VideoShader_ColorKey="0" VideoShader_Deinterlace="False"
+        VideoShader_Sharpen="False" VideoShader_ToleranceRed="0" VideoShader_ToleranceGreen="0" VideoShader_ToleranceBlue="0"
+        VideoShader_ToleranceGreenGap="0" VideoShader_GreenFilter="False" VideoShader_GreenFilterTransparencyThreshold="1" VideoShader_LumaKeyThreshold="0"
+        VideoShader_AntiAliasing="False" VideoShader_AntiAliasingFilter="0" VideoShader_ClippingX1="0" VideoShader_ClippingX2="1" VideoShader_ClippingY1="0"
+        VideoShader_ClippingY2="1" VideoShader_PremultipliedAlpha="False"></Input>`;
 }
 
 function getVirtualInput(file: { id: string; newId: string; title: string }, layers: string[]) {
@@ -289,6 +309,5 @@ function getVirtualInput(file: { id: string; newId: string; title: string }, lay
         VideoShader_ToleranceRed="0" VideoShader_ToleranceGreen="0" VideoShader_ToleranceBlue="0" VideoShader_ToleranceGreenGap="0"
         VideoShader_GreenFilter="False" VideoShader_GreenFilterTransparencyThreshold="1" VideoShader_LumaKeyThreshold="0"
         VideoShader_AntiAliasing="False" VideoShader_AntiAliasingFilter="0" VideoShader_ClippingX1="0" VideoShader_ClippingX2="1"
-        VideoShader_ClippingY1="0" VideoShader_ClippingY2="1" VideoShader_PremultipliedAlpha="False">
-  </Input>`;
+        VideoShader_ClippingY1="0" VideoShader_ClippingY2="1" VideoShader_PremultipliedAlpha="False"></Input>`;
 }

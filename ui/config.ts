@@ -1,9 +1,30 @@
 export const FILE_TYPES = { IMAGE: 'Image', VIDEO: 'Video', AUDIO: 'AudioFile', FOLDER: 'Photos' };
 const TYPE_MAP = { Video: 1, AudioFile: 2, Image: 3, Photos: 4 };
 
+function getLeadingNumbers(text: string) {
+    const match = text.match(/^(\d+)(?:_(\d+))?/);
+    if (!match) return [-1, -1];
+
+    const first = Number(match[1]);
+    const second = match[2] !== undefined ? Number(match[2]) : -1;
+
+    return [first, second];
+}
+
+function compareFiles(a: string, b: string) {
+    const [a1, a2] = getLeadingNumbers(a);
+    const [b1, b2] = getLeadingNumbers(b);
+    if (a1 === -1 && a2 === -1) return 0;
+    if (a1 === -1) return 1;
+    if (b1 === -1) return -1;
+    if (a1 !== b1) return a1 - b1;
+    if (a2 !== b2) return a2 - b2;
+    return a.localeCompare(b);
+}
+
 export function renderConfigTable(
-    folderFiles: [number, { path: string; type: string }[]][],
-    config: [number, string[]][],
+    folderFiles: [string, { path: string; type: string }[]][],
+    config: [string, string[]][],
     folderPath: string,
 ) {
     document.getElementById('config-title')!.innerHTML = folderPath;
@@ -11,44 +32,40 @@ export function renderConfigTable(
 
     tbody.innerHTML = '';
 
-    folderFiles.sort((a, b) => {
-        if (a[0] === -1) return 1;
-        if (b[0] === -1) return -1;
-        return a[0] - b[0];
-    });
+    folderFiles.sort((a, b) => compareFiles(a[0], b[0]));
     const configMap = new Map(config);
 
     let html = '';
 
     let i = 0;
-    for (const [index, files] of folderFiles) {
+    for (const [key, files] of folderFiles) {
         files.sort((a: any, b: any) => (TYPE_MAP as any)[a.type] - (TYPE_MAP as any)[b.type]);
         const types = files.map((f) => f.type);
-        const selectedOptions = configMap.get(index) ?? [];
+        const selectedOptions = configMap.get(key) ?? [];
 
         let optionsHtml = '';
 
         const isSkip = selectedOptions.includes('skip') ? 'true' : 'false';
-        optionsHtml += getSkipOptionHtml(isSkip, index);
+        optionsHtml += getSkipOptionHtml(isSkip, key);
 
         const isCam = selectedOptions.includes('cam') ? 'true' : 'false';
-        optionsHtml += getBoolOptionHtml('cam', isCam, index);
+        optionsHtml += getBoolOptionHtml('cam', isCam, key);
 
         const isMic = selectedOptions.includes('mic') ? 'true' : 'false';
-        optionsHtml += getBoolOptionHtml('mic', isMic, index);
+        optionsHtml += getBoolOptionHtml('mic', isMic, key);
 
         if (types.includes(FILE_TYPES.AUDIO) || types.includes(FILE_TYPES.VIDEO)) {
             const isLoop = selectedOptions.includes('loop') ? 'true' : 'false';
-            optionsHtml += getBoolOptionHtml('loop', isLoop, index);
+            optionsHtml += getBoolOptionHtml('loop', isLoop, key);
 
             const opt = selectedOptions.find((opt) => opt.endsWith('%')) ?? '100';
             const parsed = parseInt(opt);
             optionsHtml += getNumberOptionHtml(
                 '%',
                 isNaN(parsed) ? '100' : String(parsed),
-                index,
+                key,
                 0,
-                10000,
+                1000,
             );
         }
         if (types.includes(FILE_TYPES.FOLDER)) {
@@ -57,7 +74,7 @@ export function renderConfigTable(
             optionsHtml += getNumberOptionHtml(
                 's',
                 isNaN(parsed) ? '10' : String(parsed),
-                index,
+                key,
                 1,
                 1000,
             );
@@ -73,7 +90,7 @@ export function renderConfigTable(
         files.forEach((file, i) => {
             html += `<tr class="${rowColor}">`;
             if (i === 0) {
-                html += `<td rowspan="${files.length}" class="align-middle font-semibold">${index === -1 ? '' : index}</td>`;
+                html += `<td rowspan="${files.length}" class="align-middle font-semibold">${key}</td>`;
             }
             const subType = file.type !== FILE_TYPES.AUDIO && file.type !== FILE_TYPES.VIDEO;
             html += `<td class="break-all">${applyTab && subType ? tab : ''}${getFileName(file.path)}</td>`;
@@ -93,28 +110,28 @@ function getFileName(path: string) {
     return parts.slice(-1)[0];
 }
 
-function getBoolOptionHtml(name: string, value: string, index: number) {
-    if (index === -1) return '';
+function getBoolOptionHtml(name: string, value: string, key: string) {
+    if (key === '') return '';
 
     return `<label class="swap ml-2">
-            <input data-index="${index}" data-name="${name}" class="config-option" type="checkbox" ${value === 'true' ? 'checked="checked"' : ''} />
+            <input data-key="${key}" data-name="${name}" class="config-option" type="checkbox" ${value === 'true' ? 'checked="checked"' : ''} />
             <div class="swap-on"><span class="badge badge-primary">${name}</span></div>
             <div class="swap-off"><span class="badge">${name}</span></div>
         </label>`;
 }
 
-function getNumberOptionHtml(name: string, value: string, index: number, min: number, max: number) {
-    if (index === -1) return '';
+function getNumberOptionHtml(name: string, value: string, key: string, min: number, max: number) {
+    if (key === '') return '';
 
-    return `<input data-index="${index}" data-name="${name}" type="number" min="${min}" max="${max}"
+    return `<input data-key="${key}" data-name="${name}" type="number" min="${min}" max="${max}"
          class="config-option input input-sm w-14 ml-2" value="${value}" />&nbsp;${name}`;
 }
 
-function getSkipOptionHtml(value: string, index: number) {
-    if (index === -1) return '';
+function getSkipOptionHtml(value: string, key: string) {
+    if (key === '') return '';
 
     return `<label class="swap ml-2">
-            <input data-index="${index}" data-name="skip" class="config-option" type="checkbox" ${value === 'true' ? 'checked="checked"' : ''} />
+            <input data-key="${key}" data-name="skip" class="config-option" type="checkbox" ${value === 'true' ? 'checked="checked"' : ''} />
             <div class="swap-on"><span class="badge badge-primary">skip next cam</span></div>
             <div class="swap-off"><span class="badge">skip next cam</span></div>
         </label>`;
@@ -132,12 +149,13 @@ function getFileTypeHtml(type: string) {
 
 export function getTableConfig() {
     const options = document.querySelectorAll('.config-option') as NodeListOf<HTMLInputElement>;
-    const configMap = new Map<number, string[]>();
+    const configMap = new Map<string, string[]>();
     options.forEach((opt) => {
-        const index = Number(opt.dataset.index);
-        if (isNaN(index)) {
-            throw new Error('Option index is NaN. ' + opt);
+        const key = opt.dataset.key;
+        if (!key) {
+            throw new Error('Option key is not defined. ' + opt);
         }
+
         const name = opt.dataset.name;
         if (!name) {
             throw new Error('Option name is not defined. ' + opt);
@@ -145,8 +163,8 @@ export function getTableConfig() {
 
         if (opt.type === 'checkbox') {
             if (opt.checked) {
-                if (!configMap.get(index)) configMap.set(index, []);
-                configMap.get(index)!.push(name);
+                if (!configMap.get(key)) configMap.set(key, []);
+                configMap.get(key)!.push(name);
             }
         } else {
             const value = parseInt(opt.value);
@@ -156,32 +174,35 @@ export function getTableConfig() {
             if (name === 's' && value !== 10) {
                 if (1 > value || value > 1000)
                     throw new Error('Slideshow time must be between 1 and 1000 sec');
-                if (!configMap.get(index)) configMap.set(index, []);
-                configMap.get(index)!.push(value + name);
+                if (!configMap.get(key)) configMap.set(key, []);
+                configMap.get(key)!.push(value + name);
             } else if (name === '%' && value !== 100) {
                 if (0 > value || value > 1000)
                     throw new Error('Volume value must be between 0 and 10000 %');
-                if (!configMap.get(index)) configMap.set(index, []);
-                configMap.get(index)!.push(value + name);
+                if (!configMap.get(key)) configMap.set(key, []);
+                configMap.get(key)!.push(value + name);
             }
         }
     });
 
-    const list = Array.from(configMap).sort((a, b) => a[0] - b[0]);
+    const list = Array.from(configMap).sort((a, b) => compareFiles(a[0], b[0]));
     const text = list.map((elem) => elem[0] + ' ' + elem[1].join(' ')).join('\r\n');
     return text;
 }
 
 function setupCamMicLogic(root: HTMLElement) {
-    // group by index (each row group)
     const groups = new Map<string, HTMLElement[]>();
 
     const inputs = root.querySelectorAll<HTMLInputElement>('.config-option[type="checkbox"]');
 
     inputs.forEach((input) => {
-        const index = input.dataset.index!;
-        if (!groups.has(index)) groups.set(index, []);
-        groups.get(index)!.push(input);
+        const key = input.dataset.key;
+        if (!key) {
+            throw new Error('Option key is not defined. ' + input);
+        }
+
+        if (!groups.has(key)) groups.set(key, []);
+        groups.get(key)!.push(input);
     });
 
     groups.forEach((group) => {

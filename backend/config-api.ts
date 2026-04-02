@@ -1,12 +1,14 @@
 import fs from 'fs';
 import path from 'path';
 
+import { getLeadingKey } from './file-manager.js';
+
 export const CONFIG_FILE_NAME = 'folder-player.txt';
 
-export function getFolderConfig(folderPath: string): Map<number, string[]> {
+export function getFolderConfig(folderPath: string) {
     const filePath = path.join(folderPath, CONFIG_FILE_NAME);
 
-    const map = new Map<number, string[]>();
+    const map = new Map<string, string[]>();
 
     let content: string;
     try {
@@ -19,13 +21,9 @@ export function getFolderConfig(folderPath: string): Map<number, string[]> {
     for (const line of lines) {
         const trimmed = line.trim().toLocaleLowerCase();
         if (!trimmed) continue;
-
-        const match = trimmed.match(/^(\d+)\s+(.*)$/);
-        if (!match) continue;
-
-        const key = Number(match[1]);
-
-        const values = match[2].split(/\s+/);
+        const key = getLeadingKey(trimmed);
+        if (key === '') continue;
+        const values = trimmed.split(/\s+/).slice(1);
 
         if (!map.has(key)) map.set(key, []);
 

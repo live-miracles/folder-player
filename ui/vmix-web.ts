@@ -1,8 +1,6 @@
 import { FILE_TYPES } from './config.js';
 import { showErrorAlert, drawAudioLevels } from './utils.js';
 
-let lastTitleNumber = -1;
-
 function getTimeString(date: Date) {
     const h = String(date.getHours()).padStart(2, '0');
     const m = String(date.getMinutes()).padStart(2, '0');
@@ -65,17 +63,10 @@ export function renderVmixWeb(state: any) {
         return;
     }
 
-    let config = null;
-    if ((window as any).presetName === state.preset) {
-        config = (window as any).config;
-    }
-
     state.micNumber = getMicNumber(state);
     state.camNumber = getCamNumber(state);
 
     const activeInput = state.inputs[state.active];
-
-    if (activeInput.titleNumber !== -1) lastTitleNumber = activeInput.titleNumber;
 
     if (state.fadeToBlack) ftbBtn.classList.add('btn-error');
     else ftbBtn.classList.remove('btn-error');
@@ -108,7 +99,7 @@ export function renderVmixWeb(state: any) {
 
     document.getElementById('preset-name')!.innerText = state.preset;
     document.getElementById('program-input-title')!.innerText = activeInput.title;
-    renderInputList(state, config);
+    renderInputList(state);
 
     renderAudioMixer(state);
 
@@ -127,13 +118,23 @@ function getFileIcon(type: string) {
     return '';
 }
 
-function renderInputList(state: any, config: Map<number, string[]> | null) {
+function getLeadingNumbers(text: string) {
+    const match = text.match(/^(\d+)(?:_(\d+))?/);
+    if (!match) return [-1, -1];
+
+    const first = Number(match[1]);
+    const second = match[2] !== undefined ? Number(match[2]) : -1;
+
+    return [first, second];
+}
+
+function renderInputList(state: any) {
     let inputsHtml = '';
 
-    let startIndex = 0;
+    let startIndex = 1;
     for (let i = 1; i < state.inputs.length; i++) {
-        const num = state.inputs[i].titleNumber;
-        if (num === -1) continue;
+        const [num1, _] = getLeadingNumbers(state.inputs[i].title);
+        if (num1 === -1) continue;
         startIndex = i;
         break;
     }
@@ -142,77 +143,52 @@ function renderInputList(state: any, config: Map<number, string[]> | null) {
     let helperIndex = state.inputs.length;
     let max = -1;
     for (let i = 1; i < state.inputs.length; i++) {
-        const num = state.inputs[i].titleNumber;
-        if (num === -1) continue;
-        max = Math.max(max, num);
-        if (num === max) continue;
+        const [num1, _] = getLeadingNumbers(state.inputs[i].title);
+        if (num1 === -1) continue;
+        max = Math.max(max, num1);
+        if (num1 === max) continue;
 
         helperIndex = i;
         break;
     }
 
-    const inputs = state.inputs.slice(startIndex, helperIndex).filter(Boolean);
-    for (let i = 0; i < inputs.length; i++) {
-        const input = inputs[i];
+    const next = state.active + 1 < helperIndex ? state.inputs[state.active + 1] : null;
+    if (next && (getLeadingNumbers(next.title)[0] !== -1 || next.title === 'Cam')) {
+        nextBtn.dataset.index = state.active + 1;
+        nextBtn.classList.add('btn-primary');
+    } else {
+        nextBtn.dataset.index = state.active;
+        nextBtn.classList.remove('btn-primary');
+    }
 
-        const nextInput =
-            i + 1 < inputs.length && inputs[i + 1].titleNumber !== -1 ? inputs[i + 1] : null;
-        let nextCam = null;
-
-        if (state.camNumber && input.number !== state.camNumber && input.titleNumber !== -1) {
-            if (config && !config.get(input.titleNumber)?.includes('skip')) {
-                if (nextInput && input.titleNumber !== inputs[i + 1].titleNumber) {
-                    nextCam = state.inputs[state.camNumber];
-                }
-            }
-        }
-
-        if (state.camNumber === state.active && input.titleNumber === lastTitleNumber) {
-            nextBtn.dataset.index = nextInput?.number ?? -1;
-            nextBtn.disabled = !Boolean(nextInput);
-        }
-
-        if (input.number === state.active && input.number !== state.camNumber) {
-            const next = nextCam ? nextCam : nextInput;
-            nextBtn.dataset.index = next?.number ?? -1;
-            nextBtn.disabled = !Boolean(next);
-        }
-
-        if (config && state.camNumber !== input.number) {
-            inputsHtml += getInputHtml(state, input, null);
-        }
-
-        if (nextCam) {
-            inputsHtml += getInputHtml(state, state.inputs[state.camNumber], input);
-        }
+    for (let i = startIndex; i < helperIndex; i++) {
+        inputsHtml += getInputHtml(state, state.inputs[i]);
     }
 
     document.getElementById('input-list')!.innerHTML = inputsHtml;
 }
 
-function getInputHtml(state: any, input: any, previous: any | null) {
+function getInputHtml(state: any, input: any) {
     let color = 'bg-base-300';
     let hover = 'hover:bg-base-content/10';
 
-    if (previous) {
-        if (state.active === state.camNumber && previous.titleNumber === lastTitleNumber) {
-            color = 'bg-primary text-primary-content font-semibold';
-            hover = 'hover:bg-primary/70';
-        }
-    } else if (state.active === input.number) {
+    if (state.active === input.number) {
         color = 'bg-primary text-primary-content font-semibold';
         hover = 'hover:bg-primary/70';
     }
 
+    const duration = getInputDuration(input);
+
     return `
         <div class="input-item flex items-center justify-between ${color} rounded-lg px-3 py-2 cursor-pointer 
-                ${hover} select-none" data-index="${input.number}" data-previous="${previous ? previous.titleNumber : '-1'}">
+                ${hover} select-none" data-index="${input.number}">
             <div class="flex gap-3 items-center">
                 <i data-lucide="${getFileIcon(input.type)}" class="w-4 h-4 shrink-0"></i>
-                ${getInputDuration(input) ? `<span class="text-sm opacity-70">${getInputDuration(input)}</span>` : ''}
+                ${duration ? `<span class="text-sm opacity-70">${duration}</span>` : ''}
                 <span>${input.title}</span>
             </div>
             <div class="flex gap-2">
+                ${input.overlays.find((over: any) => over.number === state.camNumber) ? '<i data-lucide="video" class="w-4 h-4"></i>' : ''}
                 ${input.overlays.find((over: any) => over.number === state.micNumber) ? '<i data-lucide="mic" class="w-4 h-4"></i>' : ''}
                 ${input.loop ? '<i data-lucide="repeat" class="w-4 h-4"></i>' : ''}
             </div>
@@ -308,15 +284,15 @@ function formatTimeMMSS(ms: number) {
 
 document.getElementById('input-list')!.addEventListener('dblclick', async (e: Event) => {
     const item = (e.target as HTMLElement).closest('.input-item') as HTMLElement;
-    if (!item) return;
+    if (!item) {
+        console.assert(false, 'Target input not found.');
+        return;
+    }
     const index = parseInt(item.dataset.index!);
     console.assert(!isNaN(index) && index > -1);
 
     showLoading();
     await (window as any).api.vMixCall('Stinger1', { Input: index });
-
-    const previous = parseInt(item.dataset.previous!);
-    if (previous !== -1) setTimeout(() => (lastTitleNumber = previous), 1000);
 });
 
 const nextBtn = document.getElementById('vmix-next-btn') as HTMLButtonElement;
@@ -327,8 +303,9 @@ nextBtn.addEventListener('click', async () => {
         return;
     }
     nextBtn.disabled = true;
-    (window as any).api.vMixCall('Stinger1', { Input: index });
     showLoading();
+    await (window as any).api.vMixCall('Stinger1', { Input: index });
+    setTimeout(() => (nextBtn.disabled = false), 1000);
 });
 
 const micBtn = document.getElementById('vmix-mic-btn') as HTMLButtonElement;
