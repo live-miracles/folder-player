@@ -66,8 +66,12 @@ function drawDbMeter(ctx: CanvasRenderingContext2D, dB: number, left: boolean, m
 export function drawAudioLevels(canvas: HTMLCanvasElement, input: any) {
     const ctx = canvas.getContext('2d')!;
     ctx.clearRect(0, 0, 100, 1000);
+
     const left = Math.log10(parseFloat(input.meterF1)) * 20;
     const right = Math.log10(parseFloat(input.meterF2)) * 20;
-    drawDbMeter(ctx, left, true, input.muted === 'True');
-    drawDbMeter(ctx, right, false, input.muted === 'True');
+
+    const muted = input.muted === 'True';
+    const solo = input.solo === 'True';
+    drawDbMeter(ctx, !muted || solo ? left : -100, true, muted);
+    drawDbMeter(ctx, !muted || solo ? right : -100, false, muted);
 }

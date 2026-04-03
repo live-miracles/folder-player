@@ -1,6 +1,6 @@
 {
     "name": "vmix-folder-player",
-    "version": "0.8.0",
+    "version": "1.0.0",
     "description": "Transform folder into vMix preset and control it with simple web UI.",
     "main": "dist/main.js",
     "scripts": {

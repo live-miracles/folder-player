@@ -149,6 +149,13 @@
               image over audio keep the same numbers, i.e. <code>`07&nbsp;Image.png`</code>, <code>`07&nbsp;Audio.mp3`</code>. Add a folder with
               images to create a slideshow.
             </p>
+
+            <h2 class="text-xl font-semibold mt-3">Preview Next Script</h2>
+            <p class="mt-1">
+              If you prefer to use vMix directly instead of the web UI you can make use of the <code>`PreviewNext`</code> script. It will
+              automatically put the next input in the preview after transition. The script is available in
+              <a class="link" href="https://github.com/live-miracles/vmix-master/blob/master/scripts/preview-next.vb" target="_blank">GitHub</a>.
+            </p>
           </div>
         </div>
         <div class="mt-5">&nbsp;</div>
@@ -258,34 +265,36 @@
               </div>
 
               <div class="flex gap-2">
-                <div id="mixer-1" class="flex flex-col items-center w-32 rounded-lg bg-base-200">
+                <div id="mixer-1" class="flex flex-col items-center w-32 rounded-lg bg-base-200 hidden" data-index="-1">
                   <div class="mixer-title text-center badge badge-soft badge-primary font-semibold truncate p-1 m-1 rounded-lg w-28">&nbsp;</div>
 
                   <div class="flex items-stretch gap-2 p-2 w-full h-[165px]">
                     <div class="flex flex-col items-center gap-1 flex-1">
-                      <span class="mixer-volume text-lg font-semibold">&nbsp;</span>
+                      <span class="mixer-volume text-lg font-semibold">100%</span>
 
                       <div class="flex gap-1 flex-wrap justify-center">
-                        <button id="vol-plus" class="btn btn-sm"><i data-lucide="plus" class="w-5 h-5"></i></button>
-                        <button id="vol-minus" class="btn btn-sm"><i data-lucide="minus" class="w-5 h-5"></i></button>
-                        <button id="vol-mute" class="btn btn-sm text-lg"><i data-lucide="headphone-off" class="w-5 h-5"></i></button>
+                        <button class="vol-plus btn btn-sm"><i data-lucide="plus" class="w-5 h-5"></i></button>
+                        <button class="vol-minus btn btn-sm"><i data-lucide="minus" class="w-5 h-5"></i></button>
+                        <button class="vol-mute hidden"></button>
+                        <button class="solo btn btn-sm text-lg"><i data-lucide="headphone-off" class="w-5 h-5"></i></button>
                       </div>
                     </div>
                     <canvas class="mixer-meter w-[20px] bg-base-300 rounded-sm" width="100" height="1000"></canvas>
                   </div>
                 </div>
 
-                <div id="mixer-2" class="flex flex-col items-center w-32 rounded-lg bg-base-200">
+                <div id="mixer-2" class="flex flex-col items-center w-32 rounded-lg bg-base-200 hidden" data-index="-1">
                   <div class="mixer-title badge badge-soft badge-primary font-semibold truncate p-1 m-1 rounded-lg w-28">&nbsp;</div>
 
                   <div class="flex items-stretch gap-2 p-2 w-full h-[165px]">
                     <div class="flex flex-col items-center gap-1 flex-1">
-                      <span class="mixer-volume text-lg font-semibold">&nbsp;</span>
+                      <span class="mixer-volume text-lg font-semibold">100%</span>
 
                       <div class="flex gap-1 flex-wrap justify-center">
-                        <button id="vol-plus" class="btn btn-sm"><i data-lucide="plus" class="w-5 h-5"></i></button>
-                        <button id="vol-minus" class="btn btn-sm"><i data-lucide="minus" class="w-5 h-5"></i></button>
-                        <button id="vol-mute" class="btn btn-sm btn-primary text-lg"><i data-lucide="volume-2" class="w-5 h-5"></i></button>
+                        <button class="vol-plus btn btn-sm"><i data-lucide="plus" class="w-5 h-5"></i></button>
+                        <button class="vol-minus btn btn-sm"><i data-lucide="minus" class="w-5 h-5"></i></button>
+                        <button class="vol-mute btn btn-sm btn-primary text-lg"><i data-lucide="volume-2" class="w-5 h-5"></i></button>
+                        <button class="solo hidden"></button>
                       </div>
                     </div>
                     <canvas class="mixer-meter w-[20px] bg-base-300 rounded-sm" width="100" height="1000"></canvas>

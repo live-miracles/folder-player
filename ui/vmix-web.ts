@@ -19,6 +19,7 @@ function getMicNumber(state: any) {
     const titleInput = state.inputs
         .filter(Boolean)
         .find((input: any) => input.title.trim().split(/\s+/).includes('Mic'));
+    if (titleInput && titleInput.title.startsWith('Offline - ')) return null;
     if (titleInput) return titleInput.number;
 
     const micTypeInput = state.inputs.filter(Boolean).find((input: any) => input.type === 'Audio');
@@ -86,11 +87,12 @@ export function renderVmixWeb(state: any) {
     } else {
         vmixDuration.innerText = getInputProgress(activeInput);
         if (!userSelectedTimeline) {
-            vmixTimeline.value = String(
-                Math.round(
-                    (activeInput.position / activeInput.duration) * Number(vmixTimeline.max),
-                ),
-            );
+            const progress = activeInput.position / activeInput.duration;
+            vmixTimeline.value = String(Math.round(progress * Number(vmixTimeline.max)));
+
+            const remaining = Math.round((activeInput.duration - activeInput.position) / 1000);
+            if (0 < remaining && remaining < 10) vmixDuration.classList.add('text-error');
+            else vmixDuration.classList.remove('text-error');
 
             vmixTimeline.dataset.index = activeInput.number;
             vmixTimeline.dataset.duration = activeInput.duration;
@@ -221,15 +223,34 @@ function getVolumeString(input: any) {
     return `${Math.round(vol * multiplier)}%`;
 }
 
+function getIncreasedVolume(volume: number) {
+    const dB = Math.round(20 * Math.log10(volume / 100));
+
+    if (volume < 100) {
+        return ['+=3', '0'];
+    } else {
+        return ['100', String(Math.min(dB + 1, 24))];
+    }
+}
+
+function getDecreasedVolume(volume: number) {
+    const dB = Math.round(20 * Math.log10(volume / 100));
+
+    if (volume <= 100 || dB === 0) {
+        return ['-=3', '0'];
+    } else {
+        return ['100', String(Math.max(dB - 1, 0))];
+    }
+}
+
 function renderAudioMixer(state: any) {
     drawAudioLevels(
         document.getElementById('master-meter') as HTMLCanvasElement,
         state.audio.master,
     );
 
-    const mixer1 = document.getElementById('mixer-1')!;
     if (state.micNumber !== null) {
-        micBtn.dataset.index = state.micNumber;
+        mixer1.dataset.index = state.micNumber;
 
         if (state.inputs[state.micNumber].muted === 'True') {
             micBtn.classList.remove('btn-primary');
@@ -238,43 +259,47 @@ function renderAudioMixer(state: any) {
             micBtn.classList.add('btn-primary');
             micBtn.innerHTML = '<i data-lucide="mic"></i>';
         }
-
-        const input = state.inputs[state.micNumber];
-
-        drawAudioLevels(mixer1.querySelector('.mixer-meter') as HTMLCanvasElement, input);
-
-        const mixerTitle = mixer1.querySelector('.mixer-title')!;
-        if (input.muted === 'True') {
-            mixerTitle.classList.add('badge-soft');
-        } else {
-            mixerTitle.classList.remove('badge-soft');
-        }
-        mixerTitle.innerHTML = input.title.slice(0, 10);
-        mixer1.querySelector('.mixer-volume')!.innerHTML = getVolumeString(input);
-        mixer1.classList.remove('hidden');
     } else {
+        mixer1.dataset.index = '-1';
         micBtn.disabled = true;
-        mixer1.classList.add('hidden');
     }
 
     const activeInput = state.inputs[state.active];
-    const mixer2 = document.getElementById('mixer-2')!;
     if (activeInput.volume !== undefined) {
-        const input = activeInput;
-        drawAudioLevels(mixer2.querySelector('.mixer-meter') as HTMLCanvasElement, input);
+        mixer2.dataset.index = activeInput.number;
+    } else {
+        mixer2.dataset.index = '-1';
+    }
 
-        const mixerTitle = mixer2.querySelector('.mixer-title')!;
+    [mixer1, mixer2].forEach((mixer) => {
+        const index = parseInt(mixer.dataset.index!);
+        if (index === -1) {
+            mixer.classList.add('hidden');
+            return;
+        }
+        mixer.classList.remove('hidden');
+
+        const input = state.inputs[index];
+        const mixerTitle = mixer.querySelector('.mixer-title')!;
+        const muteBtn = mixer.querySelector('.vol-mute')!;
         if (input.muted === 'True') {
             mixerTitle.classList.add('badge-soft');
+            muteBtn.classList.remove('btn-primary');
         } else {
             mixerTitle.classList.remove('badge-soft');
+            muteBtn.classList.add('btn-primary');
         }
-        mixerTitle.innerHTML = input.title.slice(0, 10);
-        mixer2.querySelector('.mixer-volume')!.innerHTML = getVolumeString(input);
-        mixer2.classList.remove('hidden');
-    } else {
-        mixer2.classList.add('hidden');
-    }
+        mixerTitle.innerHTML = input.title.slice(0, 12);
+        mixer.querySelector('.mixer-volume')!.innerHTML = getVolumeString(input);
+        drawAudioLevels(mixer.querySelector('.mixer-meter') as HTMLCanvasElement, input);
+
+        const soloBtn = mixer.querySelector('.solo')!;
+        if (input.solo === 'True') {
+            soloBtn.classList.add('btn-accent');
+        } else {
+            soloBtn.classList.remove('btn-accent');
+        }
+    });
 }
 
 function getInputDuration(input: any) {
@@ -299,6 +324,10 @@ function formatTimeMMSS(ms: number) {
     return `${hours === 0 ? '' : hours + ':'}${pad(minutes)}:${pad(seconds)}`;
 }
 
+function getTransitionType() {
+    return (document.getElementById('transition-type-input') as HTMLInputElement).value;
+}
+
 document.getElementById('input-list')!.addEventListener('dblclick', async (e: Event) => {
     const item = (e.target as HTMLElement).closest('.input-item') as HTMLElement;
     if (!item) {
@@ -309,7 +338,7 @@ document.getElementById('input-list')!.addEventListener('dblclick', async (e: Ev
     console.assert(!isNaN(index) && index > -1);
 
     showLoading();
-    await (window as any).api.vMixCall('Stinger1', { Input: index });
+    await (window as any).api.vMixCall(getTransitionType(), { Input: index });
 });
 
 const playBtn = document.getElementById('vmix-play-btn') as HTMLButtonElement;
@@ -346,14 +375,14 @@ nextBtn.addEventListener('click', async () => {
     }
     nextBtn.disabled = true;
     showLoading();
-    await (window as any).api.vMixCall('Stinger1', { Input: index });
+    await (window as any).api.vMixCall(getTransitionType(), { Input: index });
     setTimeout(() => (nextBtn.disabled = false), 1000);
 });
 
 const micBtn = document.getElementById('vmix-mic-btn') as HTMLButtonElement;
 micBtn.addEventListener('click', async () => {
-    const index = parseInt(micBtn.dataset.index!);
-    console.assert(!isNaN(index) && index >= 0);
+    const index = parseInt(mixer1.dataset.index!);
+    if (index === -1) return;
     micBtn.disabled = true;
     await (window as any).api.vMixCall('Audio', { Input: index });
     setTimeout(() => (micBtn.disabled = false), 1000);
@@ -393,6 +422,65 @@ function getInputProgress(input: any) {
     if (input.type === 'Photos') return `${input.position + 1} / ${input.duration + 1}`;
     return `${formatTimeMMSS(input.position)} / ${formatTimeMMSS(input.duration)}`;
 }
+
+const mixer1 = document.getElementById('mixer-1') as HTMLDivElement;
+const mixer2 = document.getElementById('mixer-2') as HTMLDivElement;
+
+function getMixerVolume(mixer: HTMLDivElement) {
+    return parseInt(mixer.querySelector('.mixer-volume')!.innerHTML);
+}
+[mixer1, mixer2].forEach((mixer) => {
+    const volPlus = mixer.querySelector('.vol-plus') as HTMLButtonElement;
+    const volMinus = mixer.querySelector('.vol-minus') as HTMLButtonElement;
+    const volMute = mixer.querySelector('.vol-mute') as HTMLButtonElement;
+    const solo = mixer.querySelector('.solo') as HTMLButtonElement;
+
+    volPlus.addEventListener('click', async () => {
+        const index = parseInt(mixer.dataset.index!);
+        if (index === -1) return;
+        volPlus.disabled = true;
+
+        const newVolume = getIncreasedVolume(getMixerVolume(mixer));
+        await (window as any).api.vMixCall('SetVolume', { Input: index, Value: newVolume[0] });
+        setTimeout(
+            () => (window as any).api.vMixCall('SetGain', { Input: index, Value: newVolume[1] }),
+            200,
+        );
+        setTimeout(() => (volPlus.disabled = false), 1000);
+    });
+
+    volMinus.addEventListener('click', async () => {
+        const index = parseInt(mixer.dataset.index!);
+        if (index === -1) return;
+        volMinus.disabled = true;
+
+        const newVolume = getDecreasedVolume(getMixerVolume(mixer));
+        await (window as any).api.vMixCall('SetVolume', { Input: index, Value: newVolume[0] });
+        setTimeout(
+            () => (window as any).api.vMixCall('SetGain', { Input: index, Value: newVolume[1] }),
+            200,
+        );
+        setTimeout(() => (volMinus.disabled = false), 1000);
+    });
+
+    volMute.addEventListener('click', async () => {
+        const index = parseInt(mixer.dataset.index!);
+        if (index === -1) return;
+        volMute.disabled = true;
+
+        await (window as any).api.vMixCall('Audio', { Input: index });
+        setTimeout(() => (volMute.disabled = false), 1000);
+    });
+
+    solo.addEventListener('click', async () => {
+        const index = parseInt(mixer.dataset.index!);
+        if (index === -1) return;
+        solo.disabled = true;
+
+        await (window as any).api.vMixCall('Solo', { Input: index });
+        setTimeout(() => (solo.disabled = false), 1000);
+    });
+});
 
 const overlay = document.getElementById('loading-overlay') as HTMLDivElement;
 const progressBar = document.getElementById('progress-bar') as HTMLProgressElement;
