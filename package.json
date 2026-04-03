@@ -1,7 +1,7 @@
 {
-    "name": "folder-player",
-    "version": "0.7.0",
-    "description": "Folder Player for vMix automation.",
+    "name": "vmix-folder-player",
+    "version": "0.8.0",
+    "description": "Transform folder into vMix preset and control it with simple web UI.",
     "main": "dist/main.js",
     "scripts": {
         "build": "tsc -p backend && tsc -p preload && tsc -p ui",
@@ -16,12 +16,12 @@
         "url": "git@github-2:live-miracles/folder-player.git"
     },
     "keywords": [],
-    "author": "Nandisha",
+    "author": "Live Stream Miracles",
     "license": "MIT",
     "type": "module",
     "build": {
         "appId": "com.livemiracles.folderplayer",
-        "productName": "Folder Player",
+        "productName": "vMix Folder Player",
         "directories": {
             "output": "release"
         },

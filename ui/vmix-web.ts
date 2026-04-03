@@ -101,10 +101,8 @@ export function renderVmixWeb(state: any) {
         restartBtn.dataset.index = activeInput.number;
         playBtn.dataset.index = activeInput.number;
         if (activeInput.state === 'Paused') {
-            playBtn.classList.remove('btn-primary');
             playBtn.innerHTML = '<i data-lucide="play"></i>';
         } else {
-            playBtn.classList.add('btn-primary');
             playBtn.innerHTML = '<i data-lucide="pause"></i>';
         }
 
@@ -414,6 +412,7 @@ function showLoading(duration = 2000) {
         if (percent >= 100) {
             clearInterval(interval);
             overlay.classList.add('opacity-0');
+            progressBar.value = 0;
 
             setTimeout(() => {
                 overlay.classList.add('pointer-events-none');

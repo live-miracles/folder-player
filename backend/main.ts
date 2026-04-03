@@ -19,7 +19,7 @@ let mainWindow: BrowserWindow;
 function createWindow(): void {
     console.log(__dirname, path.join(__dirname, 'preload.js'));
     mainWindow = new BrowserWindow({
-        title: `Folder Player ${app.getVersion()}`,
+        title: `vMix Folder Player ${app.getVersion()}`,
         width: 1200,
         height: 800,
         icon: path.join(__dirname, '../ui/icon-256.ico'),
@@ -84,11 +84,11 @@ ipcMain.handle('select-play-folder', async () => {
     return result.filePaths[0];
 });
 
-ipcMain.handle('create-preset', (_, { folderPath, baseFile, enableBus }) => {
-    createPresetFile(folderPath, baseFile, enableBus);
+ipcMain.handle('create-preset', (_, { folderPath, baseFile, enableBus, collapse }) => {
+    createPresetFile(folderPath, baseFile, enableBus, collapse);
 });
-ipcMain.handle('play-folder', async (_, { folderPath, baseFile, enableBus }) => {
-    await setupVmix(folderPath, baseFile, enableBus);
+ipcMain.handle('play-folder', async (_, { folderPath, baseFile, enableBus, collapse }) => {
+    await setupVmix(folderPath, baseFile, enableBus, collapse);
 });
 
 ipcMain.handle('get-vmix-state', async () => await getVmixState());
@@ -104,7 +104,12 @@ ipcMain.handle('save-folder-config', async (_, { folderPath, text }) =>
 
 // ===== vMix =====
 
-async function setupVmix(folderPath: string, baseFile: string, enableBus: string) {
+async function setupVmix(
+    folderPath: string,
+    baseFile: string,
+    enableBus: string,
+    collapse: boolean,
+) {
     const res = await vMixCall();
     if (res.error) {
         throw new Error('Failed connecting to vMix');
@@ -118,7 +123,7 @@ async function setupVmix(folderPath: string, baseFile: string, enableBus: string
 
     // Create only if it doesn't exist
     if (!fs.existsSync(presetPath)) {
-        createPresetFile(folderPath, baseFile, enableBus);
+        createPresetFile(folderPath, baseFile, enableBus, collapse);
     }
 
     await vMixCall('StopExternal');

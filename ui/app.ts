@@ -36,9 +36,10 @@ updateBtn.onclick = () => (window as any).api.installUpdate();
 const baseFileInput = document.getElementById('base-file-input') as HTMLInputElement;
 const playFolderInput = document.getElementById('play-folder-input') as HTMLInputElement;
 
+const enableBusInput = document.getElementById('enable-bus-input') as HTMLInputElement;
+const collapseInputsInput = document.getElementById('collapse-inputs-input') as HTMLInputElement;
 const programCamInput = document.getElementById('program-cam-input') as HTMLInputElement;
 const previewCamInput = document.getElementById('preview-cam-input') as HTMLInputElement;
-const enableBusInput = document.getElementById('enable-bus-input') as HTMLInputElement;
 const transitionTypeInput = document.getElementById('transition-type-input') as HTMLInputElement;
 const closeVmixWebBtn = document.getElementById('close-vmix-web-btn')!;
 
@@ -131,14 +132,10 @@ async function goToVmixPage() {
     vmixPage.classList.remove('hidden');
 }
 
-function getPresetName(path: string) {
-    const parts = path.replace(/\\/g, '/').split('/').filter(Boolean);
-    return parts.slice(-2).join(' ');
-}
-
 // ===== Local Storage =====
 const STORAGE_KEYS = {
     ENABLE_BUS: 'enableBus',
+    COLLAPSE_INPUTS: 'collapseInputs',
     TRANSITION_TYPE: 'transitionType',
     PROGRAM_CAM: 'programCam',
     PREVIEW_CAM: 'previewCam',
@@ -159,22 +156,25 @@ function addRecentFolder(folder: string) {
     localStorage.setItem(STORAGE_KEYS.RECENT_FOLDERS, JSON.stringify(updated));
     renderRecentFolders();
 }
-
+enableBusInput.addEventListener('input', () => {
+    localStorage.setItem(STORAGE_KEYS.ENABLE_BUS, enableBusInput.value);
+});
+collapseInputsInput.addEventListener('input', () => {
+    localStorage.setItem(STORAGE_KEYS.COLLAPSE_INPUTS, collapseInputsInput.value);
+});
 programCamInput.addEventListener('input', () => {
     localStorage.setItem(STORAGE_KEYS.PROGRAM_CAM, programCamInput.value);
 });
 previewCamInput.addEventListener('input', () => {
     localStorage.setItem(STORAGE_KEYS.PREVIEW_CAM, previewCamInput.value);
 });
-enableBusInput.addEventListener('input', () => {
-    localStorage.setItem(STORAGE_KEYS.ENABLE_BUS, enableBusInput.value);
-});
 transitionTypeInput.addEventListener('input', () => {
     localStorage.setItem(STORAGE_KEYS.TRANSITION_TYPE, transitionTypeInput.value);
 });
 
 function init() {
-    enableBusInput.value = localStorage.getItem(STORAGE_KEYS.ENABLE_BUS) ?? '';
+    enableBusInput.value = localStorage.getItem(STORAGE_KEYS.ENABLE_BUS) ?? 'A';
+    collapseInputsInput.value = localStorage.getItem(STORAGE_KEYS.COLLAPSE_INPUTS) ?? '1';
     transitionTypeInput.value = localStorage.getItem(STORAGE_KEYS.TRANSITION_TYPE) ?? 'Stinger1';
     programCamInput.value = localStorage.getItem(STORAGE_KEYS.PROGRAM_CAM) ?? '';
     previewCamInput.value = localStorage.getItem(STORAGE_KEYS.PREVIEW_CAM) ?? '';
@@ -292,8 +292,9 @@ document.getElementById('create-preset-btn')!.addEventListener('click', async ()
     addRecentFolder(folderPath);
 
     const enableBus = enableBusInput.value;
+    const collapse = collapseInputsInput.value === '1';
     try {
-        await (window as any).api.createPreset({ folderPath, baseFile, enableBus });
+        await (window as any).api.createPreset(folderPath, baseFile, enableBus, collapse);
         showSuccessAlert();
     } catch (err) {
         showErrorAlert(err);
@@ -303,6 +304,7 @@ document.getElementById('create-preset-btn')!.addEventListener('click', async ()
 document.getElementById('play-folder-btn')!.addEventListener('click', async () => {
     const baseFile = baseFileInput.value;
     const folderPath = playFolderInput.value;
+    const collapse = collapseInputsInput.value === '1';
 
     if (!folderPath || !baseFile) {
         alert('Select folder and base file first.');
@@ -324,7 +326,7 @@ document.getElementById('play-folder-btn')!.addEventListener('click', async () =
     const enableBus = enableBusInput.value;
     try {
         goToLoadingPage(10);
-        await (window as any).api.playFolder({ folderPath, baseFile, enableBus });
+        await (window as any).api.playFolder(folderPath, baseFile, enableBus, collapse);
         await sleep(5000);
         goToVmixPage();
     } catch (err) {

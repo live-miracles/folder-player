@@ -41,7 +41,7 @@
     <div class="relative w-full h-full">
       <!-- LOADING PAGE -->
       <div id="loading-page" class="absolute inset-0 overflow-y-auto bg-cover bg-center hidden" style="background-image: url('./mountains.jpg')">
-        <div class="w-full h-full flex items-center justify-center">
+        <div class="w-full h-full flex items-end justify-center pb-[5%]">
           <div class="bg-base-100/40 backdrop-blur-md px-10 py-6 rounded-box text-center w-[750px]">
             <div id="loading-quote" class="text-xl font-semibold leading-relaxed"></div>
             <progress id="loading-progress" class="progress progress-primary w-full mt-6" value="0" max="100"></progress>
@@ -69,9 +69,19 @@
               </select>
             </fieldset>
 
+            <fieldset class="fieldset inline-block w-fit">
+              <legend class="fieldset-legend">
+                <div class="tooltip" data-tip="Inputs will appear minimized in vMix.">Collapse Inputs</div>
+              </legend>
+              <select id="collapse-inputs-input" class="select w-24">
+                <option selected value="1">Yes</option>
+                <option value="0">No</option>
+              </select>
+            </fieldset>
+
             <fieldset class="fieldset inline-block w-fit ml-1">
               <legend class="fieldset-legend">Transition</legend>
-              <select id="transition-type-input" class="select w-32">
+              <select id="transition-type-input" class="select w-28">
                 <option>Fade</option>
                 <option>Cut</option>
                 <option>Stinger1</option>
@@ -195,9 +205,7 @@
                 id="loading-overlay"
                 class="absolute inset-0 bg-white/10 rounded-box flex items-center justify-center opacity-0 pointer-events-none transition-opacity duration-300 z-50">
                 <div class="text-center w-2/3 bg-base-200/90 rounded-box p-3">
-                  <p class="text-white mt-2">Loading...</p>
-
-                  <progress id="progress-bar" class="progress progress-primary w-full mt-4" value="0" max="100"></progress>
+                  <progress id="progress-bar" class="progress progress-primary w-full" value="0" max="100"></progress>
                 </div>
               </div>
             </div>

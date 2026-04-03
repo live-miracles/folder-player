@@ -24,7 +24,12 @@ function getFullXML(xml: string, inputs: string[]) {
     return xml.replace(/(\s*)<State/, `$1${inputs.join('\r\n')}\r\n$1<State`);
 }
 
-export function createPresetFile(folderPath: string, baseFilePath: string, enableBus: string) {
+export function createPresetFile(
+    folderPath: string,
+    baseFilePath: string,
+    enableBus: string,
+    collapse: boolean,
+) {
     const base = getBaseFile(folderPath) ?? baseFilePath;
     console.log('Reading base file: ' + base);
     const baseXML = fs.readFileSync(base, 'utf-8');
@@ -62,7 +67,10 @@ export function createPresetFile(folderPath: string, baseFilePath: string, enabl
     for (let i = 0; i < sortedKeys.length; i++) {
         const key = sortedKeys[i];
         const files = fileMap.get(key)!;
+
         const options = config.get(key) ?? [];
+        if (collapse) options.push('collapsed');
+
         const layers: string[] = [];
         if (camId && options.includes('cam')) layers.push(camId);
         if (micId && !options.includes('cam') && options.includes('mic')) layers.push(micId);
@@ -101,7 +109,7 @@ export function createPresetFile(folderPath: string, baseFilePath: string, enabl
 
         const skipCam = options.includes('skip');
         if (!skipCam && i < sortedKeys.length - 1 && camId) {
-            inputsXML.push(getColorXML('Cam', [camId], []));
+            inputsXML.push(getColorXML('Cam', [camId], ['collapsed']));
         }
     }
 
