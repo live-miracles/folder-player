@@ -274,10 +274,12 @@ function renderAudioMixer(state: any) {
     [mixer1, mixer2].forEach((mixer) => {
         const index = parseInt(mixer.dataset.index!);
         if (index === -1) {
+            mixer.classList.remove('flex');
             mixer.classList.add('hidden');
             return;
         }
         mixer.classList.remove('hidden');
+        mixer.classList.add('flex');
 
         const input = state.inputs[index];
         const mixerTitle = mixer.querySelector('.mixer-title')!;
@@ -507,6 +509,22 @@ function showLoading(duration = 2000) {
             }, 300);
         }
     }, 50);
+}
+
+const previewContainer = document.getElementById('preview-container') as HTMLDivElement | null;
+const fullscreenBtn = document.getElementById('fullscreen-btn') as HTMLButtonElement | null;
+
+if (previewContainer && fullscreenBtn) {
+    fullscreenBtn.addEventListener('click', (e) => {
+        e.stopPropagation();
+        previewContainer.classList.toggle('preview-expanded');
+    });
+
+    document.addEventListener('keydown', (e) => {
+        if (e.key !== 'Escape') return;
+        if (!previewContainer.classList.contains('preview-expanded')) return;
+        previewContainer.classList.remove('preview-expanded');
+    });
 }
 
 renderTime();

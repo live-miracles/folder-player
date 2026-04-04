@@ -254,18 +254,21 @@
               </div>
 
               <!-- Preview -->
-              <div id="preview-container" class="relative group aspect-video w-[350px] bg-black rounded-lg overflow-hidden cursor-pointer">
+              <div id="preview-container" class="relative group aspect-video w-[350px] bg-black/75 rounded-lg overflow-hidden cursor-pointer">
                 <!-- Video -->
                 <video id="preview-video" class="w-full h-full"></video>
 
                 <!-- Overlay button -->
-                <button id="fullscreen-btn" class="absolute bottom-2 right-2 btn btn-ghost btn-circle opacity-0 group-hover:opacity-100 transition">
+                <button
+                  id="fullscreen-btn"
+                  type="button"
+                  class="absolute bottom-2 right-2 z-10 btn btn-ghost btn-circle opacity-0 group-hover:opacity-100 transition">
                   <i data-lucide="maximize" class="w-4 h-4"></i>
                 </button>
               </div>
 
               <div class="flex gap-2">
-                <div id="mixer-1" class="flex flex-col items-center w-32 rounded-lg bg-base-200 hidden" data-index="-1">
+                <div id="mixer-1" class="hidden flex-col items-center w-32 rounded-lg bg-base-200" data-index="-1">
                   <div class="mixer-title text-center badge badge-soft badge-primary font-semibold truncate p-1 m-1 rounded-lg w-28">&nbsp;</div>
 
                   <div class="flex items-stretch gap-2 p-2 w-full h-[165px]">
@@ -283,7 +286,7 @@
                   </div>
                 </div>
 
-                <div id="mixer-2" class="flex flex-col items-center w-32 rounded-lg bg-base-200 hidden" data-index="-1">
+                <div id="mixer-2" class="hidden flex-col items-center w-32 rounded-lg bg-base-200" data-index="-1">
                   <div class="mixer-title badge badge-soft badge-primary font-semibold truncate p-1 m-1 rounded-lg w-28">&nbsp;</div>
 
                   <div class="flex items-stretch gap-2 p-2 w-full h-[165px]">
