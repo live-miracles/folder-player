@@ -27,9 +27,13 @@ export function showSuccessAlert(text: string = 'Success!') {
 }
 
 // Draw the segmented dB meter with peak indicator
-function drawDbMeter(ctx: CanvasRenderingContext2D, dB: number, left: boolean, muted: boolean) {
-    const canvasHeight = 1000;
-
+function drawDbMeter(
+    canvas: HTMLCanvasElement,
+    ctx: CanvasRenderingContext2D,
+    dB: number,
+    left: boolean,
+    muted: boolean,
+) {
     // Define dB ranges and colors
     const dbRanges = [
         { min: -100, max: -90, frac: 0.07, colorOn: '#008000', colorOff: '#008080' },
@@ -44,7 +48,7 @@ function drawDbMeter(ctx: CanvasRenderingContext2D, dB: number, left: boolean, m
 
     dbRanges.forEach((range) => {
         if (dB >= range.min) {
-            const rangeHeight = range.frac * canvasHeight;
+            const rangeHeight = range.frac * canvas.height;
 
             // Calculate the portion of this range to be filled
             const filledFraction = Math.min(dB, range.max) - range.min;
@@ -53,9 +57,9 @@ function drawDbMeter(ctx: CanvasRenderingContext2D, dB: number, left: boolean, m
             // Draw the segment for this range
             ctx.fillStyle = muted ? range.colorOff : range.colorOn;
             ctx.fillRect(
-                left ? 0 : 53,
-                canvasHeight - accumulatedHeight - filledHeight,
-                47,
+                left ? 0 : canvas.width * 0.55,
+                canvas.height - accumulatedHeight - filledHeight,
+                canvas.width * 0.45,
                 filledHeight,
             );
             accumulatedHeight += rangeHeight;
@@ -65,13 +69,13 @@ function drawDbMeter(ctx: CanvasRenderingContext2D, dB: number, left: boolean, m
 
 export function drawAudioLevels(canvas: HTMLCanvasElement, input: any) {
     const ctx = canvas.getContext('2d')!;
-    ctx.clearRect(0, 0, 100, 1000);
+    ctx.clearRect(0, 0, canvas.width, canvas.height);
 
     const left = Math.log10(parseFloat(input.meterF1)) * 20;
     const right = Math.log10(parseFloat(input.meterF2)) * 20;
 
     const muted = input.muted === 'True';
     const solo = input.solo === 'True';
-    drawDbMeter(ctx, !muted || solo ? left : -100, true, muted);
-    drawDbMeter(ctx, !muted || solo ? right : -100, false, muted);
+    drawDbMeter(canvas, ctx, !muted || solo ? left : -100, true, muted);
+    drawDbMeter(canvas, ctx, !muted || solo ? right : -100, false, muted);
 }
