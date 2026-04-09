@@ -259,9 +259,10 @@ function renderAudioMixer(state: any) {
             micBtn.classList.add('btn-primary');
             micBtn.innerHTML = '<i data-lucide="mic"></i>';
         }
+        micBtn.classList.remove('hidden');
     } else {
         mixer1.dataset.index = '-1';
-        micBtn.disabled = true;
+        micBtn.classList.add('hidden');
     }
 
     const activeInput = state.inputs[state.active];
