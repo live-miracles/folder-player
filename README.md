@@ -16,7 +16,7 @@ Just number the files in the folder and this app will automatically generate a v
 <img width="1920" height="1049" alt="image" src="https://github.com/user-attachments/assets/388d5a8e-7926-4ed0-9c16-cb1ba75a84a1" />
 
 4. It will also open a simple Web UI view like this, which can be used for users who are new to vMix and need just one "Next" button:
-<img width="1920" height="1049" alt="image" src="https://github.com/user-attachments/assets/f7ac8a6a-84cf-446e-ab69-9510e79cfe38" />
+<img width="1920" height="1044" alt="image" src="https://github.com/user-attachments/assets/a988eecd-7dc0-43b8-bfc5-43d96a6b02e7" />
 
 5. You can read the App Homepage for more information.
 
