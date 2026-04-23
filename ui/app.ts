@@ -294,8 +294,15 @@ document.getElementById('create-preset-btn')!.addEventListener('click', async ()
     const enableBus = enableBusInput.value;
     const collapse = collapseInputsInput.value === '1';
     try {
-        await (window as any).api.createPreset(folderPath, baseFile, enableBus, collapse);
-        showSuccessAlert();
+        const result = await (window as any).api.createPreset(
+            folderPath,
+            baseFile,
+            enableBus,
+            collapse,
+        );
+        if (result > 1) showSuccessAlert(`Successfully created presets for ${result} folders.`);
+        else if (result > 0) showSuccessAlert(`Successfully created preset for 1 folder.`);
+        else showErrorAlert('No folders with `folder-player.txt` config file found.');
     } catch (err) {
         showErrorAlert(err);
     }

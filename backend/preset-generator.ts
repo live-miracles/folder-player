@@ -24,6 +24,43 @@ function getFullXML(xml: string, inputs: string[]) {
     return xml.replace(/(\s*)<State/, `$1${inputs.join('\r\n')}\r\n$1<State`);
 }
 
+export function createPresetFileRecursively(
+    folderPath: string,
+    baseFilePath: string,
+    enableBus: string,
+    collapse: boolean,
+): number {
+    let foldersFoundCount = 0;
+
+    function traverseDirectory(currentPath: string, depth: number) {
+        // Check if 'folder-player.txt' exists in the current directory
+        const configFilePath = path.join(currentPath, 'folder-player.txt');
+        if (fs.existsSync(configFilePath)) {
+            createPresetFile(currentPath, baseFilePath, enableBus, collapse);
+            foldersFoundCount++;
+        }
+
+        // Use native fs.readdirSync to get directory entries
+        const entries = fs.readdirSync(currentPath, { withFileTypes: true });
+
+        // Iterate through entries to find subdirectories and recurse
+        for (const entry of entries) {
+            if (entry.isDirectory()) {
+                if (depth <= 1) return;
+
+                const subfolderPath = path.join(currentPath, entry.name);
+                traverseDirectory(subfolderPath, depth - 1);
+            }
+        }
+    }
+
+    // Start the traversal from the initial folderPath provided
+    traverseDirectory(folderPath, 3);
+
+    // Return the total number of configs created
+    return foldersFoundCount;
+}
+
 export function createPresetFile(
     folderPath: string,
     baseFilePath: string,
@@ -299,7 +336,7 @@ function getColorXML(name: string, layers: string[], options: string[]) {
 }
 
 function getVirtualInput(file: { id: string; newId: string; title: string }, layers: string[]) {
-    return `<Input Type="22" Position="0" RangeStart="0" RangeStop="0" State="1" Title="${file.title}" OriginalTitle="" 
+    return `<Input Type="22" Position="0" RangeStart="0" RangeStop="0" State="1" Title="${file.title}" OriginalTitle=""
         ShortcutMappings="" Key="${file.newId}" Loop="False" VolumeF="1" Muted="True" BalanceF="0" AspectRatio="100"
         Category="0" MouseClickAction="0" GOClickAction="20" Collapsed="False" Solo="False" BusMVolumeF="1"
         HeadphonesVolumeF="1" BusAVolumeF="1" BusBVolumeF="1" BusCVolumeF="1" BusDVolumeF="1" BusEVolumeF="1"

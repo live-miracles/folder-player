@@ -94,9 +94,8 @@ export function renderConfigTable(
             }
             const subType = file.type !== FILE_TYPES.AUDIO && file.type !== FILE_TYPES.VIDEO;
             html += `<td class="break-all">${applyTab && subType ? tab : ''}${getFileName(file.path)}</td>`;
-            html += `<td class="break-all w-[120px]">${getFileTypeHtml(file.type)}</td>`;
-            if (i === 0)
-                html += `<td class="w-[480px]" rowspan="${files.length}">${optionsHtml}</td>`;
+            html += `<td class="break-all w-30">${getFileTypeHtml(file.type)}</td>`;
+            if (i === 0) html += `<td class="w-120" rowspan="${files.length}">${optionsHtml}</td>`;
             html += `</tr>`;
         });
     }

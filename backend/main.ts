@@ -3,7 +3,7 @@ import path from 'path';
 import fs from 'fs';
 import { fileURLToPath } from 'url';
 
-import { createPresetFile } from './preset-generator.js';
+import { createPresetFile, createPresetFileRecursively } from './preset-generator.js';
 import { vMixCall, getVmixState } from './vmix-api.js';
 import { getFolderFiles } from './file-manager.js';
 import { getFolderConfig, saveFolderConfig } from './config-api.js';
@@ -90,7 +90,7 @@ ipcMain.handle('select-play-folder', async () => {
 });
 
 ipcMain.handle('create-preset', (_, { folderPath, baseFile, enableBus, collapse }) => {
-    createPresetFile(folderPath, baseFile, enableBus, collapse);
+    return createPresetFileRecursively(folderPath, baseFile, enableBus, collapse);
 });
 ipcMain.handle('play-folder', async (_, { folderPath, baseFile, enableBus, collapse }) => {
     await setupVmix(folderPath, baseFile, enableBus, collapse);
