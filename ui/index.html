@@ -108,12 +108,14 @@
               Default Base Preset:
               <input type="text" class="grow" id="base-file-input" readonly />
               <button id="select-base-file-btn" class="btn btn-primary btn-xs">Select</button>
+              <button id="clear-base-file-btn" class="btn btn-error btn-xs">Clear</button>
             </label>
 
             <label class="input w-full mt-1">
               Content Folder:
               <input type="text" class="grow" id="play-folder-input" readonly />
               <button id="select-play-folder-btn" class="btn btn-primary btn-xs">Select</button>
+              <button id="clear-play-folder-btn" class="btn btn-error btn-xs">Clear</button>
             </label>
 
             <div class="overflow-x-auto">
@@ -138,8 +140,8 @@
           <div class="mx-auto max-w-200 bg-base-200/75 rounded-box mt-10 p-3">
             <h2 class="text-xl font-semibold">Base vMix Preset</h2>
             <p class="mt-1">
-              Select a base vMix preset. Camera input title should be <code>`Cam`</code> and microphone <code>`Mic`</code>. If you keep a file named
-              <code>`base.vmix`</code> in the content or parent folder, it will be used instead.
+              Select a base vMix preset. If you keep a file named <code>`base.vmix`</code> in the content or parent folder, it will be used instead.
+              Camera input title should be <code>`Cam`</code> and microphone <code>`Mic`</code>.
             </p>
 
             <h2 class="text-xl font-semibold mt-3">Playing Folder</h2>

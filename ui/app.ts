@@ -232,8 +232,30 @@ function renderRecentFolders() {
         });
 
         tr.appendChild(td);
+
+        // Add delete button
+        const deleteTd = document.createElement('td');
+        deleteTd.className = 'w-5';
+
+        const deleteBtn = document.createElement('button');
+        deleteBtn.textContent = '✕';
+        deleteBtn.className = 'btn btn-error btn-soft btn-xs'; // Basic styling for delete button
+        deleteBtn.addEventListener('click', (event) => {
+            event.stopPropagation(); // Prevent triggering the folder click event
+            removeRecentFolder(folder);
+        });
+        deleteTd.appendChild(deleteBtn);
+        tr.appendChild(deleteTd);
+
         tBody.appendChild(tr);
     });
+}
+
+function removeRecentFolder(folderPath: string) {
+    const folders = getRecentFolders();
+    const updatedFolders = folders.filter((folder) => folder !== folderPath);
+    localStorage.setItem(STORAGE_KEYS.RECENT_FOLDERS, JSON.stringify(updatedFolders));
+    renderRecentFolders(); // Re-render the list after deletion
 }
 
 const editConfigBtn = document.getElementById('edit-config-btn') as HTMLButtonElement;
@@ -267,6 +289,11 @@ document.getElementById('select-base-file-btn')!.addEventListener('click', async
     }
 });
 
+document.getElementById('clear-base-file-btn')!.addEventListener('click', () => {
+    baseFileInput.value = '';
+    localStorage.setItem(STORAGE_KEYS.BASE_FILE, '');
+});
+
 document.getElementById('select-play-folder-btn')!.addEventListener('click', async () => {
     const folder = await (window as any).api.selectPlayFolder();
 
@@ -275,6 +302,10 @@ document.getElementById('select-play-folder-btn')!.addEventListener('click', asy
         addRecentFolder(folder);
     }
 });
+
+document
+    .getElementById('clear-play-folder-btn')!
+    .addEventListener('click', () => (playFolderInput.value = ''));
 
 function sleep(ms: number) {
     return new Promise((res) => setTimeout(res, ms));
