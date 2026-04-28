@@ -68,6 +68,13 @@ export function createPresetFile(
     collapse: boolean,
 ) {
     const base = getBaseFile(folderPath) ?? baseFilePath;
+
+    if (base === '') {
+        throw new Error(
+            `Not able to find the base preset for folder '${folderPath}'. Please create a 'base.vmix' file in the folder or its parent folder or provide a default base preset.`,
+        );
+    }
+
     console.log('Reading base file: ' + base);
     const baseXML = fs.readFileSync(base, 'utf-8');
 
@@ -86,6 +93,8 @@ export function createPresetFile(
     fileMap.delete('');
 
     const config = getFolderConfig(folderPath);
+    const addCamerasInBetween = config.get('__options__')?.includes('cams');
+
     if (!micId) {
         config.forEach((list, _) => {
             const index = list.indexOf('mic');
@@ -145,7 +154,7 @@ export function createPresetFile(
         }
 
         const skipCam = options.includes('skip');
-        if (!skipCam && i < sortedKeys.length - 1 && camId) {
+        if (addCamerasInBetween && !skipCam && i < sortedKeys.length - 1 && camId) {
             inputsXML.push(getColorXML('Cam', [camId], ['collapsed']));
         }
     }

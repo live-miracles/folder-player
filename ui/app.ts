@@ -263,7 +263,7 @@ editConfigBtn.addEventListener('click', async () => {
     const folderPath = playFolderInput.value;
 
     if (!folderPath) {
-        alert('Select folder and base file first.');
+        alert('Please select the content folder.');
         return;
     }
 
@@ -315,8 +315,8 @@ document.getElementById('create-preset-btn')!.addEventListener('click', async ()
     const baseFile = baseFileInput.value;
     const folderPath = playFolderInput.value;
 
-    if (!folderPath || !baseFile) {
-        alert('Select folder and base file first.');
+    if (!folderPath) {
+        alert('Please select the content folder.');
         return;
     }
 
@@ -344,8 +344,8 @@ document.getElementById('play-folder-btn')!.addEventListener('click', async () =
     const folderPath = playFolderInput.value;
     const collapse = collapseInputsInput.value === '1';
 
-    if (!folderPath || !baseFile) {
-        alert('Select folder and base file first.');
+    if (!folderPath) {
+        alert('Please select the content folder.');
         return;
     }
 
@@ -382,7 +382,7 @@ saveConfigBtn.addEventListener('click', async () => {
     const folderPath = playFolderInput.value;
 
     if (!folderPath) {
-        alert('Select folder and base file first.');
+        showErrorAlert('Content folder is not found.');
         return;
     }
     saveConfigBtn.disabled = true;

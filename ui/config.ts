@@ -1,6 +1,9 @@
 export const FILE_TYPES = { IMAGE: 'Image', VIDEO: 'Video', AUDIO: 'AudioFile', FOLDER: 'Photos' };
 const TYPE_MAP = { Video: 1, AudioFile: 2, Image: 3, Photos: 4 };
 
+const camsOption = document.getElementById('cams-option') as HTMLInputElement;
+const configTable = document.getElementById('config-table') as HTMLTableSectionElement;
+
 function getLeadingNumbers(text: string) {
     const match = text.match(/^(\d+)(?:_(\d+))?/);
     if (!match) return [-1, -1];
@@ -28,12 +31,14 @@ export function renderConfigTable(
     folderPath: string,
 ) {
     document.getElementById('config-title')!.innerHTML = folderPath;
-    const tbody = document.getElementById('config-table')!;
 
-    tbody.innerHTML = '';
+    configTable.innerHTML = '';
 
     folderFiles.sort((a, b) => compareFiles(a[0], b[0]));
     const configMap = new Map(config);
+
+    const options = configMap.get('__options__') ?? [];
+    camsOption.checked = options.includes('cams');
 
     let html = '';
 
@@ -100,8 +105,9 @@ export function renderConfigTable(
         });
     }
 
-    tbody.innerHTML = html;
-    setupCamMicLogic(tbody);
+    configTable.innerHTML = html;
+    setupCamMicLogic();
+    updateSkipOptions();
 }
 
 function getFileName(path: string) {
@@ -130,7 +136,7 @@ function getSkipOptionHtml(value: string, key: string) {
     if (key === '') return '';
 
     return `<label class="swap ml-2">
-            <input data-key="${key}" data-name="skip" class="config-option" type="checkbox" ${value === 'true' ? 'checked="checked"' : ''} />
+            <input data-key="${key}" data-name="skip" class="config-option" type="checkbox" ${value === 'true' ? 'checked="checked"' : ''}/>
             <div class="swap-on"><span class="badge badge-primary">skip next cam</span></div>
             <div class="swap-off"><span class="badge">skip next cam</span></div>
         </label>`;
@@ -186,18 +192,21 @@ export function getTableConfig() {
 
     const list = Array.from(configMap).sort((a, b) => compareFiles(a[0], b[0]));
     const text = list.map((elem) => elem[0] + ' ' + elem[1].join(' ')).join('\r\n');
-    return text;
+    const configOptions = camsOption.checked ? '\r\n__options__ cams' : '';
+    return text + configOptions;
 }
 
-function setupCamMicLogic(root: HTMLElement) {
+function setupCamMicLogic() {
     const groups = new Map<string, HTMLElement[]>();
 
-    const inputs = root.querySelectorAll<HTMLInputElement>('.config-option[type="checkbox"]');
+    const inputs = configTable.querySelectorAll<HTMLInputElement>(
+        '.config-option[type="checkbox"]',
+    );
 
     inputs.forEach((input) => {
         const key = input.dataset.key;
         if (!key) {
-            throw new Error('Option key is not defined. ' + input);
+            throw new Error('Option key is not defined. ' + input.dataset);
         }
 
         if (!groups.has(key)) groups.set(key, []);
@@ -215,7 +224,6 @@ function setupCamMicLogic(root: HTMLElement) {
                 mic.checked = true;
                 mic.disabled = true;
 
-                // optional UI feedback
                 mic.closest('label')?.classList.add('opacity-50');
                 mic.closest('label')?.classList.add('pointer-events-none');
             } else {
@@ -229,5 +237,34 @@ function setupCamMicLogic(root: HTMLElement) {
 
         // run once on init
         update();
+    });
+}
+
+camsOption.addEventListener('change', updateSkipOptions);
+
+function updateSkipOptions() {
+    const inputs = configTable.querySelectorAll<HTMLInputElement>(
+        '.config-option[type="checkbox"]',
+    );
+
+    inputs.forEach((input) => {
+        const name = input.dataset.name;
+        if (!name) {
+            throw new Error('Option name is not defined. ' + input.dataset);
+        }
+
+        if (name !== 'skip') return;
+
+        if (!camsOption.checked) {
+            input.checked = false;
+            input.disabled = true;
+
+            input.closest('label')?.classList.add('opacity-50');
+            input.closest('label')?.classList.add('pointer-events-none');
+        } else {
+            input.disabled = false;
+            input.closest('label')?.classList.remove('opacity-50');
+            input.closest('label')?.classList.remove('pointer-events-none');
+        }
     });
 }

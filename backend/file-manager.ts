@@ -14,6 +14,8 @@ function getLeadingNumbers(text: string) {
 }
 
 export function getLeadingKey(text: string) {
+    if (text.startsWith('__options__ ')) return '__options__';
+
     const [first, second] = getLeadingNumbers(text);
 
     if (first === -1) return '';
