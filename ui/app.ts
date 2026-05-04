@@ -3,6 +3,8 @@ import { renderVmixWeb } from './vmix-web.js';
 import { showErrorAlert, showSuccessAlert } from './utils.js';
 import { getRandomQuote } from './quotes.js';
 
+const RECENT_FOLDERS_LIMIT = 50;
+
 // ===== Updates =====
 const updateText = document.getElementById('update-text')!;
 const updateBtn = document.getElementById('update-btn')!;
@@ -151,7 +153,7 @@ function getRecentFolders(): string[] {
 function addRecentFolder(folder: string) {
     const folders = getRecentFolders();
 
-    const updated = [folder, ...folders.filter((f) => f !== folder)].slice(0, 7);
+    const updated = [folder, ...folders.filter((f) => f !== folder)].slice(0, RECENT_FOLDERS_LIMIT);
 
     localStorage.setItem(STORAGE_KEYS.RECENT_FOLDERS, JSON.stringify(updated));
     renderRecentFolders();
