@@ -184,6 +184,67 @@ function init() {
     renderRecentFolders();
 }
 
+// ===== Page Zooming like in Chrome =====
+const container = document.getElementById('zoom-ui') as HTMLDivElement;
+const zoomLabel = document.getElementById('zoom-level') as HTMLSpanElement;
+const btnIn = document.getElementById('zoom-in') as HTMLButtonElement;
+const btnOut = document.getElementById('zoom-out') as HTMLButtonElement;
+
+let hideTimer: number | null = null;
+
+function show() {
+    console.log('show in ui');
+    container.classList.remove('hidden');
+
+    requestAnimationFrame(() => {
+        container.classList.remove('opacity-0', 'scale-90');
+        container.classList.add('opacity-100', 'scale-100');
+    });
+
+    if (hideTimer) clearTimeout(hideTimer);
+
+    hideTimer = window.setTimeout(() => {
+        container.classList.add('opacity-0');
+
+        setTimeout(() => {
+            container.classList.add('hidden');
+        }, 200);
+    }, 3000);
+}
+
+// Button handlers
+btnIn.onclick = () => (window as any).api.zoomIn();
+btnOut.onclick = () => (window as any).api.zoomOut();
+
+// Listen to zoom updates
+(window as any).api.onChange((z: number) => {
+    zoomLabel.textContent = `${Math.round(z * 100)}%`;
+    show();
+});
+
+// Detect zoom key presses
+window.addEventListener('keydown', (e) => {
+    if (!e.ctrlKey && !e.metaKey) return;
+
+    // Normalize keys
+    const key = e.key;
+
+    if (key === '=' || key === '+') {
+        e.preventDefault();
+        (window as any).api.zoomIn();
+    }
+
+    if (key === '-') {
+        e.preventDefault();
+        (window as any).api.zoomOut();
+    }
+
+    if (key === '0') {
+        e.preventDefault();
+        (window as any).api.reset();
+    }
+});
+
 // ===== Home Page =====
 async function loadDevices() {
     const devices = (await navigator.mediaDevices.enumerateDevices()).filter((d) =>

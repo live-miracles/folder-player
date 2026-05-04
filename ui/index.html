@@ -38,6 +38,14 @@
       </div>
     </div>
 
+    <div id="zoom-ui" class="fixed top-4 right-4 hidden transition-all duration-200 opacity-0 scale-90 z-999">
+      <div class="card bg-base-200 shadow-lg p-2 flex flex-row items-center gap-2">
+        <button id="zoom-out" class="btn btn-sm">−</button>
+        <span id="zoom-level" class="w-12 text-center text-sm">100%</span>
+        <button id="zoom-in" class="btn btn-sm">+</button>
+      </div>
+    </div>
+
     <div class="relative w-full h-full">
       <!-- LOADING PAGE -->
       <div id="loading-page" class="absolute inset-0 overflow-y-auto bg-cover bg-center hidden" style="background-image: url('./mountains.jpg')">

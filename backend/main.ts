@@ -36,6 +36,8 @@ function createWindow(): void {
 
     mainWindow.loadFile(path.join(__dirname, '../ui/index.html'));
 
+    setupZoom(mainWindow);
+
     // For Camera / Mic permissions
     session.defaultSession.setPermissionRequestHandler((webContents, permission, callback) => {
         if (permission === 'media') {
@@ -144,4 +146,27 @@ async function setupVmix(
 
 function sleep(ms: number) {
     return new Promise((res) => setTimeout(res, ms));
+}
+
+// ===== Zooming =====
+
+export function setupZoom(win: BrowserWindow) {
+    const zoom = (delta: number) => {
+        const wc = win.webContents;
+        let z = wc.getZoomFactor();
+
+        z = Math.max(0.25, Math.min(3, z + delta));
+        wc.setZoomFactor(z);
+
+        win.webContents.send('zoom-changed', z);
+    };
+
+    const setZoom = (z: number) => {
+        win.webContents.setZoomFactor(z);
+        win.webContents.send('zoom-changed', z);
+    };
+
+    ipcMain.on('zoom-in', () => zoom(0.1));
+    ipcMain.on('zoom-out', () => zoom(-0.1));
+    ipcMain.on('zoom-reset', () => setZoom(1));
 }
