@@ -77,6 +77,9 @@ export function getFolderFiles(folderPath: string) {
 
     const fileMap = new Map<string, { path: string; type: string; id: string }[]>();
     for (const name of fileNames) {
+        if (name.startsWith('__')) {
+            continue;
+        }
         const key = getLeadingKey(name);
         const fullPath = path.join(folderPath, name);
         const type = getFileType(fullPath);

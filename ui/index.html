@@ -148,16 +148,19 @@
           <div class="mx-auto max-w-200 bg-base-200/75 rounded-box mt-10 p-3">
             <h2 class="text-xl font-semibold">Base vMix Preset</h2>
             <p class="mt-1">
-              Select a base vMix preset. If you keep a file named <code>`base.vmix`</code> in the content or parent folder, it will be used instead.
-              Camera input title should be <code>`Cam`</code> and microphone <code>`Mic`</code>.
+              You can select a default base vMix preset. If you keep a file named <code>`base.vmix`</code> in the content or parent folder, it will be
+              used instead. Camera input title should be <code>`Cam`</code> and microphone <code>`Mic`</code>.
             </p>
 
-            <h2 class="text-xl font-semibold mt-3">Playing Folder</h2>
+            <h2 class="text-xl font-semibold mt-3">Content Folder</h2>
             <p class="mt-1">
               App automatically creates a vMix playlist with the files inside. Use numbers in the file names to order, i.e.
               <code>`05&nbsp;Video.mp4`</code>. You can also use underscores to extend numbers, i.e. <code>`06_1&nbsp;Slide.png`</code>. To layer
               image over audio keep the same numbers, i.e. <code>`07&nbsp;Image.png`</code>, <code>`07&nbsp;Audio.mp3`</code>. Add a folder with
-              images to create a slideshow.<br /><br />
+              images to create a slideshow.<br />
+              If a file start with double underscore i.e. <code>`__Image.png`</code>, it will be ignored. It is useful if you have several versions of
+              the same file (i.e. <code>`05 CET Slide.png`</code> and <code>`__05 CEST Slide.png`</code>). Or if you have already added file in the
+              <code>`base.vmix`</code> preset.<br /><br />
               If folder has other subfolders with the <code>`folder-player.txt`</code> config file, the script will generate a preset for each
               subfolder.
             </p>
