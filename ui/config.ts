@@ -103,7 +103,7 @@ export function renderConfigPage(state: {
             }
             const subType = file.type !== FILE_TYPES.AUDIO && file.type !== FILE_TYPES.VIDEO;
             html += `<td class="break-all">${applyTab && subType ? tab : ''}${getFileName(file.path)}</td>`;
-            html += `<td class="break-all w-30">${getFileTypeHtml(file.type)}</td>`;
+            html += `<td class="break-all w-30">${getFileTypeHtml(file.type, key)}</td>`;
             if (i === 0) html += `<td class="w-120" rowspan="${files.length}">${optionsHtml}</td>`;
             html += `</tr>`;
         });
@@ -166,17 +166,53 @@ function getSkipOptionHtml(value: string, key: string) {
         </label>`;
 }
 
-function getFileTypeHtml(type: string) {
+function getFileTypeHtml(type: string, key: string) {
     let color = '';
     if (type === FILE_TYPES.AUDIO) color = 'badge-primary';
     if (type === FILE_TYPES.VIDEO) color = 'badge-secondary';
     if (type === FILE_TYPES.IMAGE) color = 'badge-accent';
     if (type === FILE_TYPES.FOLDER) color = 'badge-warning';
 
-    return `<span class="badge badge-soft ${color}">${type}</span>`;
+    return `<span class="${key ? 'config-type' : ''} badge badge-soft ${color}" data-key="${key}">${type}</span>`;
 }
 
 export function getTableConfig() {
+    const types = document.querySelectorAll('.config-type') as NodeListOf<HTMLInputElement>;
+    const typeMap = new Map<string, string[]>();
+
+    types.forEach((elem) => {
+        const key = elem.dataset.key;
+        if (!key) {
+            throw new Error('Type key is not defined. ' + JSON.stringify(elem.dataset));
+        }
+        const type = elem.innerText;
+        if (!typeMap.get(key)) typeMap.set(key, []);
+        typeMap.get(key)!.push(type);
+    });
+
+    for (const [key, types] of typeMap.entries()) {
+        if (types.length > 2) {
+            typeMap.delete(key);
+            continue;
+        }
+
+        if (types.length === 2) {
+            if (types[0] === types[1]) {
+                typeMap.delete(key);
+                continue;
+            }
+
+            if (types.includes(FILE_TYPES.VIDEO) && types.includes(FILE_TYPES.AUDIO)) {
+                typeMap.delete(key);
+                continue;
+            }
+
+            if (types[1] === FILE_TYPES.AUDIO || types[1] === FILE_TYPES.VIDEO) {
+                typeMap.set(key, [types[1], types[0]]);
+            }
+        }
+    }
+
     const options = document.querySelectorAll('.config-option') as NodeListOf<HTMLInputElement>;
     const configMap = new Map<string, string[]>();
     options.forEach((opt) => {
@@ -215,7 +251,14 @@ export function getTableConfig() {
     });
 
     const list = Array.from(configMap).sort((a, b) => compareFiles(a[0], b[0]));
-    const text = list.map((elem) => elem[0] + ' ' + elem[1].join(' ')).join('\r\n');
+    const text = list
+        .map((elem) => {
+            const types = typeMap.get(elem[0]) ?? [];
+            return (
+                elem[0] + ' ' + types.join(' ') + (types.length > 0 ? ' ' : '') + elem[1].join(' ')
+            );
+        })
+        .join('\r\n');
     const configOptions = camsOption.checked ? '\r\n__options__ cams' : '';
     return text + configOptions;
 }

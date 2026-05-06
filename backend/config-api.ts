@@ -28,7 +28,7 @@ function getFolderConfig(folderPath: string) {
     const lines = content.split(/\r?\n/);
 
     for (const line of lines) {
-        const trimmed = line.trim().toLocaleLowerCase();
+        const trimmed = line.trim();
         if (!trimmed) continue;
         const key = getLeadingKey(trimmed);
         if (key === '') continue;
@@ -57,12 +57,12 @@ function getAlerts(
     const alerts: { key: string; type: string; msg: string }[] = [];
 
     // Check for config keys that don't have corresponding files
-    for (const key of configMap.keys()) {
+    for (const [key, options] of configMap.entries()) {
         if (!fileMap.has(key)) {
             alerts.push({
                 key,
                 type: ALERT.ERROR,
-                msg: `Config for "${key}" exists, but no file with such number.`,
+                msg: `Config exists (${options.join(' ')}), but no file with such number.`,
             });
         }
     }
@@ -111,7 +111,10 @@ function getAlerts(
                 type: ALERT.ERROR,
                 msg: `Audio and video files have the same number.`,
             });
-        } else if (hasAudio && files.length === 1) {
+            continue;
+        }
+
+        if (hasAudio && files.length === 1) {
             alerts.push({
                 key,
                 type: ALERT.WARNING,
@@ -122,6 +125,20 @@ function getAlerts(
                 key,
                 type: ALERT.WARNING,
                 msg: `Video file overlayed by an image or slideshow.`,
+            });
+        }
+
+        const options = configMap.get(key) ?? [];
+
+        const allTypes = [FILE_TYPES.AUDIO, FILE_TYPES.VIDEO, FILE_TYPES.IMAGE, FILE_TYPES.FOLDER];
+        const configTypes = allTypes.filter((type) => options.includes(type)).join('+');
+        const folderTypes = allTypes.filter((type) => types.includes(type)).join('+');
+
+        if (options.length > 0 && configTypes !== folderTypes) {
+            alerts.push({
+                key,
+                type: ALERT.ERROR,
+                msg: `Config type "${configTypes}" do not match the actual type "${folderTypes}".`,
             });
         }
     }
