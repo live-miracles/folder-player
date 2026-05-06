@@ -3,10 +3,10 @@ import path from 'path';
 import fs from 'fs';
 import { fileURLToPath } from 'url';
 
-import { createPresetFile, createPresetFileRecursively } from './preset-generator.js';
+import { createPresetFileRecursively } from './preset-generator.js';
 import { vMixCall, getVmixState } from './vmix-api.js';
 import { getFolderFiles } from './file-manager.js';
-import { getFolderConfig, saveFolderConfig } from './config-api.js';
+import { ALERT, getFolderState, saveFolderConfig } from './config-api.js';
 
 import updater from 'electron-updater';
 const { autoUpdater } = updater;
@@ -102,9 +102,25 @@ ipcMain.handle('get-vmix-state', async () => await getVmixState());
 ipcMain.handle('vmix-call', async (_, { func, params }) => vMixCall(func, params));
 
 ipcMain.handle('get-folder-files', async (_, folderPath) => Array.from(getFolderFiles(folderPath)));
-ipcMain.handle('get-folder-config', async (_, folderPath) =>
-    Array.from(getFolderConfig(folderPath)),
-);
+ipcMain.handle('get-folder-state', async (_, folderPath) => {
+    const state = getFolderState(folderPath);
+    if (state === null) {
+        return null;
+    }
+    if (state.config === null) {
+        state.config = new Map();
+        state.alerts.push({
+            key: '',
+            type: ALERT.WARNING,
+            msg: 'No config file in the folder.',
+        });
+    }
+    return {
+        files: Array.from(state.files.entries()),
+        config: Array.from(state.config.entries()),
+        alerts: state.alerts,
+    };
+});
 ipcMain.handle('save-folder-config', async (_, { folderPath, text }) =>
     saveFolderConfig(folderPath, text),
 );
@@ -128,9 +144,8 @@ async function setupVmix(
     const outputName = `${parentName} ${folderName}.vmix`;
     const presetPath = path.join(folderPath, outputName);
 
-    // Create only if it doesn't exist
     if (!fs.existsSync(presetPath)) {
-        createPresetFile(folderPath, baseFile, enableBus, collapse);
+        throw new Error('Please generate vMix preset first.');
     }
 
     await vMixCall('StopExternal');

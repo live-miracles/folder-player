@@ -1,4 +1,4 @@
-import { getTableConfig, renderConfigTable } from './config.js';
+import { getTableConfig, renderConfigPage } from './config.js';
 import { renderVmixWeb } from './vmix-web.js';
 import { showErrorAlert, showSuccessAlert } from './utils.js';
 import { getRandomQuote } from './quotes.js';
@@ -332,9 +332,8 @@ editConfigBtn.addEventListener('click', async () => {
 
     editConfigBtn.disabled = true;
     try {
-        const folderFiles = await (window as any).api.getFolderFiles(folderPath);
-        const config = await (window as any).api.getFolderConfig(folderPath);
-        renderConfigTable(folderFiles, config, folderPath);
+        const state = await (window as any).api.getFolderState(folderPath);
+        renderConfigPage(state);
         addRecentFolder(folderPath);
         goToConfigPage();
     } catch (err) {
@@ -388,15 +387,52 @@ document.getElementById('create-preset-btn')!.addEventListener('click', async ()
     const enableBus = enableBusInput.value;
     const collapse = collapseInputsInput.value === '1';
     try {
-        const result = await (window as any).api.createPreset(
+        const reports: { folder: string; alerts: any[] }[] = await (window as any).api.createPreset(
             folderPath,
             baseFile,
             enableBus,
             collapse,
         );
-        if (result > 1) showSuccessAlert(`Successfully created presets for ${result} folders.`);
-        else if (result > 0) showSuccessAlert(`Successfully created preset for 1 folder.`);
-        else showErrorAlert('No folders with `folder-player.txt` config file found.');
+
+        const alertsList = document.getElementById('home-alerts-list')!;
+        alertsList.innerHTML = ''; // Clear previous alerts
+
+        if (!reports || reports.length === 0) {
+            showErrorAlert('No folders with `folder-player.txt` config file found.');
+            return;
+        }
+
+        const folderText = reports.length === 1 ? 'folder' : 'folders';
+        document.getElementById('preset-creation-summary')!.textContent =
+            `Created presets for ${reports.length} ${folderText}`;
+
+        reports.forEach((report) => {
+            const folderReportDiv = document.createElement('div');
+            folderReportDiv.className = 'mb-4 p-3 bg-base-200 rounded-box';
+
+            let html = `<h3 class="text-md font-bold mb-2">Folder: <span class="font-normal">${report.folder}</span></h3>`;
+
+            if (report.alerts && report.alerts.length > 0) {
+                html += '<ul class="space-y-2">';
+                html += report.alerts
+                    .map(
+                        (alert) => `
+                        <li class="flex items-start">
+                            <span class="mr-2">${alert.type === 'error' ? '❌' : '⚠️'}</span>
+                            <p>${alert.msg}</p>
+                        </li>`,
+                    )
+                    .join('');
+                html += '</ul>';
+            } else {
+                html += '<p class="text-success">No issues found.</p>';
+            }
+
+            folderReportDiv.innerHTML = html;
+            alertsList.appendChild(folderReportDiv);
+        });
+
+        (document.getElementById('create-preset-alerts') as any).showModal();
     } catch (err) {
         showErrorAlert(err);
     }

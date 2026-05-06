@@ -46,6 +46,19 @@
       </div>
     </div>
 
+    <dialog id="create-preset-alerts" class="modal">
+      <div class="modal-box max-w-200">
+        <h2 id="preset-creation-summary" class="text-xl font-bold mb-4"></h2>
+        <div id="home-alerts-list" class="max-h-[calc(100vh-250px)] overflow-y-auto"></div>
+
+        <div class="modal-action">
+          <form method="dialog">
+            <button class="btn">Close</button>
+          </form>
+        </div>
+      </div>
+    </dialog>
+
     <div class="relative w-full h-full">
       <!-- LOADING PAGE -->
       <div id="loading-page" class="absolute inset-0 overflow-y-auto bg-cover bg-center hidden" style="background-image: url('./mountains.jpg')">
@@ -191,18 +204,31 @@
               </label>
             </div>
 
-            <div class="overflow-x-auto mt-3">
-              <table class="table">
-                <thead>
-                  <tr>
-                    <th></th>
-                    <th>File</th>
-                    <th>Type</th>
-                    <th>Options</th>
-                  </tr>
-                </thead>
-                <tbody id="config-table"></tbody>
-              </table>
+            <div class="max-h-[calc(100vh-250px)] overflow-y-auto">
+              <div id="config-alerts" class="mt-5 p-3 bg-base-100 rounded-box shadow-lg">
+                <div class="flex justify-between items-center mb-3">
+                  <h2 class="text-lg font-bold">Report</h2>
+                  <div class="flex justify-start items-center space-x-4">
+                    <p class="text-error font-semibold">Errors: <span id="config-error-cnt"></span></p>
+                    <p class="text-warning font-semibold">Warnings: <span id="config-warning-cnt"></span></p>
+                  </div>
+                </div>
+                <ul id="config-alerts-list" class="space-y-2"></ul>
+              </div>
+
+              <div class="overflow-x-auto mt-3">
+                <table class="table">
+                  <thead>
+                    <tr>
+                      <th></th>
+                      <th>File</th>
+                      <th>Type</th>
+                      <th>Options</th>
+                    </tr>
+                  </thead>
+                  <tbody id="config-table"></tbody>
+                </table>
+              </div>
             </div>
 
             <div class="divider"></div>
@@ -212,8 +238,6 @@
             </div>
           </div>
         </div>
-
-        <div class="mt-5">&nbsp;</div>
       </div>
 
       <!-- VMIX PAGE -->

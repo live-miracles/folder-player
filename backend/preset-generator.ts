@@ -1,7 +1,7 @@
 import fs from 'fs';
 import path from 'path';
 
-import { getFolderConfig } from './config-api.js';
+import { getFolderState } from './config-api.js';
 import { getBaseFile, getFolderFiles, FILE_TYPES, compareFiles } from './file-manager.js';
 
 function getTitleId(xml: string, title: string) {
@@ -29,15 +29,14 @@ export function createPresetFileRecursively(
     baseFilePath: string,
     enableBus: string,
     collapse: boolean,
-): number {
-    let foldersFoundCount = 0;
+) {
+    const report: { folder: string; alerts: any[] }[] = [];
 
     function traverseDirectory(currentPath: string, depth: number) {
-        // Check if 'folder-player.txt' exists in the current directory
-        const configFilePath = path.join(currentPath, 'folder-player.txt');
-        if (fs.existsSync(configFilePath)) {
-            createPresetFile(currentPath, baseFilePath, enableBus, collapse);
-            foldersFoundCount++;
+        const state = getFolderState(currentPath);
+        if (state.config !== null) {
+            createPresetFile(currentPath, baseFilePath, enableBus, collapse, state.config);
+            report.push({ folder: currentPath, alerts: state.alerts });
         }
 
         // Use native fs.readdirSync to get directory entries
@@ -57,15 +56,15 @@ export function createPresetFileRecursively(
     // Start the traversal from the initial folderPath provided
     traverseDirectory(folderPath, 3);
 
-    // Return the total number of configs created
-    return foldersFoundCount;
+    return report;
 }
 
-export function createPresetFile(
+function createPresetFile(
     folderPath: string,
     baseFilePath: string,
     enableBus: string,
     collapse: boolean,
+    config: Map<string, string[]>,
 ) {
     const base = getBaseFile(folderPath) ?? baseFilePath;
 
@@ -92,7 +91,6 @@ export function createPresetFile(
     otherFiles.forEach((f) => otherInputsXML.push(getFileXML(f, [], ['collapsed'], enableBus)));
     fileMap.delete('');
 
-    const config = getFolderConfig(folderPath);
     const addCamerasInBetween = config.get('__options__')?.includes('cams');
 
     if (!micId) {

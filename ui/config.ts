@@ -1,5 +1,6 @@
 export const FILE_TYPES = { IMAGE: 'Image', VIDEO: 'Video', AUDIO: 'AudioFile', FOLDER: 'Photos' };
 const TYPE_MAP = { Video: 1, AudioFile: 2, Image: 3, Photos: 4 };
+const ALERT = { ERROR: 'error', WARNING: 'warning' };
 
 const camsOption = document.getElementById('cams-option') as HTMLInputElement;
 const configTable = document.getElementById('config-table') as HTMLTableSectionElement;
@@ -25,17 +26,20 @@ function compareFiles(a: string, b: string) {
     return a.localeCompare(b);
 }
 
-export function renderConfigTable(
-    folderFiles: [string, { path: string; type: string }[]][],
-    config: [string, string[]][],
-    folderPath: string,
-) {
-    document.getElementById('config-title')!.innerHTML = folderPath;
+export function renderConfigPage(state: {
+    folder: string;
+    files: [string, { path: string; type: string }[]][];
+    config: [string, string[]][] | null;
+    alerts: { key: string; type: string; msg: string }[];
+}) {
+    document.getElementById('config-title')!.innerHTML = state.folder;
+
+    renderFolderAlerts(state.alerts);
 
     configTable.innerHTML = '';
 
-    folderFiles.sort((a, b) => compareFiles(a[0], b[0]));
-    const configMap = new Map(config);
+    state.files.sort((a, b) => compareFiles(a[0], b[0]));
+    const configMap = new Map(state.config);
 
     const options = configMap.get('__options__') ?? [];
     camsOption.checked = options.includes('cams');
@@ -43,7 +47,7 @@ export function renderConfigTable(
     let html = '';
 
     let i = 0;
-    for (const [key, files] of folderFiles) {
+    for (const [key, files] of state.files) {
         files.sort((a: any, b: any) => (TYPE_MAP as any)[a.type] - (TYPE_MAP as any)[b.type]);
         const types = files.map((f) => f.type);
         const selectedOptions = configMap.get(key) ?? [];
@@ -108,6 +112,26 @@ export function renderConfigTable(
     configTable.innerHTML = html;
     setupCamMicLogic();
     updateSkipOptions();
+}
+
+function renderFolderAlerts(alerts: { key: string; type: string; msg: string }[]) {
+    const errorNum = String(alerts.filter((a) => a.type === ALERT.ERROR).length);
+    const warningNum = String(alerts.filter((a) => a.type === ALERT.WARNING).length);
+
+    document.getElementById('config-error-cnt')!.innerText = errorNum;
+    document.getElementById('config-warning-cnt')!.innerText = warningNum;
+
+    document.getElementById('config-alerts-list')!.innerHTML = alerts
+        .map(
+            (alert) => `
+                <li class="flex items-start">
+                    <span class="text-error mr-2">${alert.type === ALERT.ERROR ? '❌' : '⚠️'}</span>
+                    <div>
+                        <p><strong>${alert.type}</strong>${alert.key ? ` in <strong>${alert.key}</strong>` : ''}: ${alert.msg}</p>
+                    </div>
+                </li>`,
+        )
+        .join('');
 }
 
 function getFileName(path: string) {
