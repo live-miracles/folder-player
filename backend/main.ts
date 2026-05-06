@@ -116,6 +116,7 @@ ipcMain.handle('get-folder-state', async (_, folderPath) => {
         });
     }
     return {
+        folder: state.folder,
         files: Array.from(state.files.entries()),
         config: Array.from(state.config.entries()),
         alerts: state.alerts,
