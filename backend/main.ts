@@ -171,7 +171,7 @@ export function setupZoom(win: BrowserWindow) {
         const wc = win.webContents;
         let z = wc.getZoomFactor();
 
-        z = Math.max(0.25, Math.min(3, z + delta));
+        z = Math.round(Math.max(0.3, Math.min(3, z + delta)) * 10) / 10;
         wc.setZoomFactor(z);
 
         win.webContents.send('zoom-changed', z);

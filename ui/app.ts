@@ -1,6 +1,6 @@
 import { getTableConfig, renderConfigPage } from './config.js';
 import { renderVmixWeb } from './vmix-web.js';
-import { showErrorAlert, showSuccessAlert } from './utils.js';
+import { showErrorAlert, showSuccessAlert, capitalize } from './utils.js';
 import { getRandomQuote } from './quotes.js';
 
 const RECENT_FOLDERS_LIMIT = 50;
@@ -406,6 +406,22 @@ document.getElementById('create-preset-btn')!.addEventListener('click', async ()
         document.getElementById('preset-creation-summary')!.textContent =
             `Created presets for ${reports.length} ${folderText}`;
 
+        const allAlerts = reports.flatMap((r) => r.alerts);
+        const totalErrors = allAlerts.filter((a) => a.type === 'error').length;
+        const totalWarnings = allAlerts.filter((a) => a.type === 'warning').length;
+        const summaryContainer = document.getElementById('preset-report-summary')!;
+
+        if (totalErrors === 0 && totalWarnings === 0) {
+            summaryContainer.innerHTML = '<p class="text-success">No issues found.</p>';
+        } else {
+            summaryContainer.innerHTML = `
+                <div class="flex justify-start items-center space-x-4">
+                    <p class="text-error font-semibold">Errors: <span>${totalErrors}</span></p>
+                    <p class="text-warning font-semibold">Warnings: <span>${totalWarnings}</span></p>
+                </div>
+            `;
+        }
+
         reports.forEach((report) => {
             const folderReportDiv = document.createElement('div');
             folderReportDiv.className = 'mb-4 p-3 bg-base-200 rounded-box';
@@ -419,7 +435,7 @@ document.getElementById('create-preset-btn')!.addEventListener('click', async ()
                         (alert) => `
                         <li class="flex items-start">
                             <span class="mr-2">${alert.type === 'error' ? '❌' : '⚠️'}</span>
-                            <p>${alert.msg}</p>
+                            <p><strong>${capitalize(alert.type)}</strong>${alert.key ? ` in <strong>${alert.key}</strong>` : ''}: ${alert.msg}</p>
                         </li>`,
                     )
                     .join('');

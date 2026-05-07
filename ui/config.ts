@@ -1,3 +1,4 @@
+import { capitalize } from './utils.js';
 export const FILE_TYPES = { IMAGE: 'Image', VIDEO: 'Video', AUDIO: 'AudioFile', FOLDER: 'Photos' };
 const TYPE_MAP = { Video: 1, AudioFile: 2, Image: 3, Photos: 4 };
 const ALERT = { ERROR: 'error', WARNING: 'warning' };
@@ -115,23 +116,34 @@ export function renderConfigPage(state: {
 }
 
 function renderFolderAlerts(alerts: { key: string; type: string; msg: string }[]) {
-    const errorNum = String(alerts.filter((a) => a.type === ALERT.ERROR).length);
-    const warningNum = String(alerts.filter((a) => a.type === ALERT.WARNING).length);
+    const errorNum = alerts.filter((a) => a.type === ALERT.ERROR).length;
+    const warningNum = alerts.filter((a) => a.type === ALERT.WARNING).length;
 
-    document.getElementById('config-error-cnt')!.innerText = errorNum;
-    document.getElementById('config-warning-cnt')!.innerText = warningNum;
+    const configReportSummary = document.getElementById('config-report-summary')!;
+    const alertsListElement = document.getElementById('config-alerts-list')!;
 
-    document.getElementById('config-alerts-list')!.innerHTML = alerts
-        .map(
-            (alert) => `
-                <li class="flex items-start">
-                    <span class="text-error mr-2">${alert.type === ALERT.ERROR ? '❌' : '⚠️'}</span>
-                    <div>
-                        <p><strong>${alert.type}</strong>${alert.key ? ` in <strong>${alert.key}</strong>` : ''}: ${alert.msg}</p>
-                    </div>
-                </li>`,
-        )
-        .join('');
+    if (errorNum === 0 && warningNum === 0) {
+        configReportSummary.innerHTML = '<p class="text-success">No issues found.</p>';
+        alertsListElement.innerHTML = ''; // Clear any previous alerts
+    } else {
+        configReportSummary.innerHTML = `
+            <div class="flex justify-start items-center space-x-4">
+                <p class="text-error font-semibold">Errors: <span id="config-error-cnt">${errorNum}</span></p>
+                <p class="text-warning font-semibold">Warnings: <span id="config-warning-cnt">${warningNum}</span></p>
+            </div>
+        `;
+        alertsListElement.innerHTML = alerts
+            .map(
+                (alert) => `
+                    <li class="flex items-start">
+                        <span class="text-error mr-2">${alert.type === ALERT.ERROR ? '❌' : '⚠️'}</span>
+                        <div>
+                            <p><strong>${capitalize(alert.type)}</strong>${alert.key ? ` in <strong>${alert.key}</strong>` : ''}: ${alert.msg}</p>
+                        </div>
+                    </li>`,
+            )
+            .join('');
+    }
 }
 
 function getFileName(path: string) {

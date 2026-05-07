@@ -26,6 +26,10 @@ export function showSuccessAlert(text: string = 'Success!') {
     }, 3000);
 }
 
+export function capitalize(text: string) {
+    return text.charAt(0).toUpperCase() + text.slice(1);
+}
+
 // Draw the segmented dB meter with peak indicator
 function drawDbMeter(
     canvas: HTMLCanvasElement,
