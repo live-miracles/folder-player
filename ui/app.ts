@@ -426,22 +426,24 @@ document.getElementById('create-preset-btn')!.addEventListener('click', async ()
             const folderReportDiv = document.createElement('div');
             folderReportDiv.className = 'mb-4 p-3 bg-base-200 rounded-box';
 
-            let html = `<h3 class="text-md font-bold mb-2">Folder: <span class="font-normal">${report.folder}</span></h3>`;
-
+            let html = `
+                <div class="flex justify-between items-center mb-2">
+                    <h3 class="text-md font-bold">Folder: <span class="font-normal">${report.folder}</span></h3>
+                    ${report.alerts && report.alerts.length > 0 ? '' : '<p class="text-success">No issues found.</p>'}
+                </div>
+            `;
             if (report.alerts && report.alerts.length > 0) {
                 html += '<ul class="space-y-2">';
                 html += report.alerts
                     .map(
                         (alert) => `
                         <li class="flex items-start">
-                            <span class="mr-2">${alert.type === 'error' ? '❌' : '⚠️'}</span>
+                            <span class="${alert.type === 'error' ? 'text-error' : 'text-warning'} mr-2">${alert.type === 'error' ? '❌' : '⚠️'}</span>
                             <p><strong>${capitalize(alert.type)}</strong>${alert.key ? ` in <strong>${alert.key}</strong>` : ''}: ${alert.msg}</p>
                         </li>`,
                     )
                     .join('');
                 html += '</ul>';
-            } else {
-                html += '<p class="text-success">No issues found.</p>';
             }
 
             folderReportDiv.innerHTML = html;
