@@ -195,7 +195,6 @@ const btnOut = document.getElementById('zoom-out') as HTMLButtonElement;
 let hideTimer: number | null = null;
 
 function show() {
-    console.log('show in ui');
     container.classList.remove('hidden');
 
     requestAnimationFrame(() => {
@@ -241,9 +240,9 @@ window.addEventListener('keydown', (e) => {
         (window as any).api.zoomOut();
     }
 
-    if (key === '0') {
+    if (e.code === 'Digit0' || e.code === 'Numpad0') {
         e.preventDefault();
-        (window as any).api.reset();
+        (window as any).api.zoomReset();
     }
 });
 

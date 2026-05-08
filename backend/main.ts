@@ -141,9 +141,7 @@ async function setupVmix(
 
     // Build preset path
     const folderName = path.basename(folderPath);
-    const parentName = path.basename(path.dirname(folderPath));
-    const outputName = `${parentName} ${folderName}.vmix`;
-    const presetPath = path.join(folderPath, outputName);
+    const presetPath = path.join(folderPath, `${folderName}.vmix`);
 
     if (!fs.existsSync(presetPath)) {
         throw new Error('Please generate vMix preset first.');

@@ -158,10 +158,7 @@ function createPresetFile(
     }
 
     const folderName = path.basename(folderPath);
-    const parentName = path.basename(path.dirname(folderPath));
-
-    const outputName = `${parentName} ${folderName}.vmix`;
-    const outputPath = path.join(folderPath, outputName);
+    const outputPath = path.join(folderPath, `${folderName}.vmix`);
 
     // Save file
     const newXML = getFullXML(baseXML, [...inputsXML, ...otherInputsXML, ...helperInputsXML]);
