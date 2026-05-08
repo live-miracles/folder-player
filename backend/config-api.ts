@@ -1,7 +1,13 @@
 import fs from 'fs';
 import path from 'path';
 
-import { getFolderFiles, getLeadingKey, FILE_TYPES } from './file-manager.js';
+import {
+    getFolderFiles,
+    getLeadingKey,
+    FILE_TYPES,
+    compareFiles,
+    getLeadingNumbers,
+} from './file-manager.js';
 export const ALERT = { ERROR: 'error', WARNING: 'warning' };
 
 export const CONFIG_FILE_NAME = 'folder-player.txt';
@@ -67,10 +73,43 @@ function getAlerts(
         }
     }
 
+    // Check for gaps between keys
+    const keys = [...fileMap.keys()].sort(compareFiles);
+
+    for (let i = 1; i < keys.length; i++) {
+        const prevKey = keys[i - 1];
+        const currKey = keys[i];
+        const [p1, p2] = getLeadingNumbers(prevKey);
+        const [c1, c2] = getLeadingNumbers(currKey);
+
+        if (p1 === -1) continue;
+
+        if (c1 > p1) {
+            if (c1 > p1 + 1) {
+                alerts.push({
+                    key: `${p1 + 1}`,
+                    type: ALERT.WARNING,
+                    msg: `Sequence number is missing.`,
+                });
+            }
+        } else {
+            console.assert(p1 === c1);
+            if (p2 === -1) continue;
+            if (c2 > p2 + 1) {
+                alerts.push({
+                    key: `${p1}_${p2 + 1}`,
+                    type: ALERT.WARNING,
+                    msg: `Sequence number is missing.`,
+                });
+            }
+        }
+    }
+
     // Check file combinations for each key
-    for (const [key, files] of fileMap.entries()) {
+    for (const key of keys) {
         if (key === '') continue;
 
+        const files = fileMap.get(key)!;
         const types = files.map((f) => f.type);
         const typeCounts = types.reduce(
             (acc, type) => {

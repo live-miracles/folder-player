@@ -3,7 +3,7 @@ import path from 'path';
 
 export const FILE_TYPES = { IMAGE: 'Image', VIDEO: 'Video', AUDIO: 'AudioFile', FOLDER: 'Photos' };
 
-function getLeadingNumbers(text: string) {
+export function getLeadingNumbers(text: string) {
     const match = text.match(/^(\d+)(?:_(\d+))?/);
     if (!match) return [-1, -1];
 
