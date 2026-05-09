@@ -74,8 +74,7 @@ function getAlerts(
     }
 
     // Check for gaps between keys
-    const keys = [...fileMap.keys()].sort(compareFiles);
-
+    const keys = Array.from(fileMap.keys());
     for (let i = 1; i < keys.length; i++) {
         const prevKey = keys[i - 1];
         const currKey = keys[i];
@@ -106,10 +105,9 @@ function getAlerts(
     }
 
     // Check file combinations for each key
-    for (const key of keys) {
+    for (const [key, files] of fileMap.entries()) {
         if (key === '') continue;
 
-        const files = fileMap.get(key)!;
         const types = files.map((f) => f.type);
         const typeCounts = types.reduce(
             (acc, type) => {
@@ -182,5 +180,5 @@ function getAlerts(
         }
     }
 
-    return alerts;
+    return alerts.sort((a, b) => compareFiles(a.key, b.key));
 }
