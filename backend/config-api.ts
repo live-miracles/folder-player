@@ -3,7 +3,7 @@ import path from 'path';
 
 import {
     getFolderFiles,
-    getLeadingKey,
+    getLeadingKeys,
     FILE_TYPES,
     compareFiles,
     getLeadingNumbers,
@@ -36,13 +36,15 @@ function getFolderConfig(folderPath: string) {
     for (const line of lines) {
         const trimmed = line.trim();
         if (!trimmed) continue;
-        const key = getLeadingKey(trimmed);
-        if (key === '') continue;
         const values = trimmed.split(/\s+/).slice(1);
 
-        if (!map.has(key)) map.set(key, []);
+        for (const key of getLeadingKeys(trimmed)) {
+            if (key === '') continue;
 
-        map.get(key)!.push(...values);
+            if (!map.has(key)) map.set(key, []);
+
+            map.get(key)!.push(...values);
+        }
     }
 
     return map;
@@ -74,7 +76,7 @@ function getAlerts(
     }
 
     // Check for gaps between keys
-    const keys = Array.from(fileMap.keys());
+    const keys = Array.from(fileMap.keys()).sort(compareFiles);
     for (let i = 1; i < keys.length; i++) {
         const prevKey = keys[i - 1];
         const currKey = keys[i];
@@ -161,7 +163,7 @@ function getAlerts(
             alerts.push({
                 key,
                 type: ALERT.WARNING,
-                msg: `Video file overlayed by an image or slideshow.`,
+                msg: `Video file overlaid by an image or slideshow.`,
             });
         }
 

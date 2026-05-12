@@ -138,7 +138,7 @@ function createPresetFile(
             }
             inputsXML.push(getFileXML(base, layers, options, enableBus));
         } else {
-            // Special case when it is camera overlayed by an image
+            // Special case when it is camera overlaid by an image
             if (images.length > 0 && options.includes('cam')) {
                 layers.push(images[0].id);
                 const filename = path.parse(images[0].path).name;

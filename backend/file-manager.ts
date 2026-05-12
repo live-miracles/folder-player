@@ -13,14 +13,19 @@ export function getLeadingNumbers(text: string) {
     return [first, second];
 }
 
-export function getLeadingKey(text: string) {
-    if (text.startsWith('__options__ ')) return '__options__';
+export function getLeadingKeys(text: string) {
+    if (text.startsWith('__options__ ')) return ['__options__'];
 
-    const [first, second] = getLeadingNumbers(text);
+    const match = text.match(/^[\d_+]+/);
+    if (!match) return [''];
 
-    if (first === -1) return '';
+    const keys = match[0]
+        .split('+')
+        .map((key) => getLeadingNumbers(key))
+        .filter(([first]) => first !== -1)
+        .map(([first, second]) => `${String(first)}${second !== -1 ? `_${String(second)}` : ''}`);
 
-    return `${String(first)}${second !== -1 ? `_${String(second)}` : ''}`;
+    return keys.length > 0 ? keys : [''];
 }
 
 export function compareFiles(a: string, b: string) {
@@ -70,8 +75,17 @@ function getFileType(filePath: string) {
     return null;
 }
 
+function addFile(
+    fileMap: Map<string, { path: string; type: string; id: string }[]>,
+    key: string,
+    file: { path: string; type: string; id: string },
+) {
+    if (!fileMap.has(key)) fileMap.set(key, []);
+    fileMap.get(key)!.push(file);
+}
+
 export function getFolderFiles(folderPath: string) {
-    let fileNames = fs.readdirSync(folderPath, 'utf8');
+    const fileNames = fs.readdirSync(folderPath, 'utf8');
 
     fileNames.sort(compareFiles);
 
@@ -80,14 +94,14 @@ export function getFolderFiles(folderPath: string) {
         if (name.startsWith('__')) {
             continue;
         }
-        const key = getLeadingKey(name);
         const fullPath = path.join(folderPath, name);
         const type = getFileType(fullPath);
 
         if (!type) continue;
 
-        if (!fileMap.get(key)) fileMap.set(key, []);
-        fileMap.get(key)?.push({ path: fullPath, type: type, id: crypto.randomUUID() });
+        for (const key of getLeadingKeys(name)) {
+            addFile(fileMap, key, { path: fullPath, type: type, id: crypto.randomUUID() });
+        }
     }
 
     return fileMap;
