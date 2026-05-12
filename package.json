@@ -1,6 +1,6 @@
 {
     "name": "vmix-folder-player",
-    "version": "3.1.1",
+    "version": "3.2.0",
     "description": "Transform folder into vMix preset and control it with simple web UI.",
     "main": "dist/main.js",
     "scripts": {
@@ -9,7 +9,9 @@
         "publish": "dotenv -e .env -- npm run build && dotenv -e .env -- electron-builder --publish=always",
         "dev": "concurrently \"tsc -p backend -w\" \"tsc -p preload -w\" \"tsc -p ui -w\" \"electronmon .\"",
         "css": "npx tailwindcss -i ./ui/input.css -o ./ui/dist/output.css --watch",
-        "format": "prettier --write ."
+        "format": "prettier --write .",
+        "format:check": "prettier --check .",
+        "test": "npm run build && node --test"
     },
     "repository": {
         "type": "git",

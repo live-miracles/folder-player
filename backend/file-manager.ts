@@ -31,6 +31,9 @@ export function getLeadingKeys(text: string) {
 export function compareFiles(a: string, b: string) {
     const [a1, a2] = getLeadingNumbers(a);
     const [b1, b2] = getLeadingNumbers(b);
+    if (a1 === -1 && b1 === -1) return 0;
+    if (a1 === -1) return 1;
+    if (b1 === -1) return -1;
     if (a1 !== b1) return a1 - b1;
     if (a2 !== b2) return a2 - b2;
     return a.localeCompare(b);
