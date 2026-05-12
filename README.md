@@ -28,11 +28,36 @@ npm run css
 npm run dev
 ```
 
+## Publish
+
+Create a `.env` file in the project root with a GitHub token:
+
+```sh
+GH_TOKEN=ghp_***
+```
+
+Then run:
+
+```sh
+npm run publish
+```
+
+This builds the app and publishes the Electron release to GitHub.
+
 ## Format
 
 ```sh
 npm run format
 ```
+
+## Test
+
+```sh
+npm run format:check
+npm test
+```
+
+GitHub Actions runs the same checks on every push and pull request.
 
 ## Links
 
