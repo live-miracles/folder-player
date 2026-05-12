@@ -124,7 +124,7 @@ function createPresetFile(
         const images = files.filter((f) => f.type === FILE_TYPES.IMAGE);
         const slideshows = files.filter((f) => f.type === FILE_TYPES.FOLDER);
 
-        console.assert(files.length > 0);
+        console.assert(files.length > 0, `No files found for key ${key}.`);
 
         if (audios.length + videos.length > 1) {
             // Ignore any strange cases

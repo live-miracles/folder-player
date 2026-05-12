@@ -199,7 +199,7 @@ function getInputHtml(state: any, input: any) {
     const duration = getInputDuration(input);
 
     return `
-        <div class="input-item flex items-center justify-between ${color} rounded-lg px-3 py-2 cursor-pointer 
+        <div class="input-item flex items-center justify-between ${color} rounded-lg px-3 py-2 cursor-pointer
                 ${hover} select-none" data-index="${input.number}">
             <div class="flex gap-3 items-center">
                 <i data-lucide="${getFileIcon(input.type)}" class="w-4 h-4 shrink-0"></i>
@@ -308,7 +308,10 @@ function renderAudioMixer(state: any) {
 function getInputDuration(input: any) {
     if (input.duration === 0) return '';
 
-    console.assert(['Video', 'AudioFile', 'Photos'].includes(input.type), input);
+    console.assert(
+        ['Video', 'AudioFile', 'Photos'].includes(input.type),
+        input + ' is not a valid input type',
+    );
     const duration = parseInt(input.duration);
     if (input.type === 'Photos') {
         return duration + 1;
@@ -338,7 +341,7 @@ document.getElementById('input-list')!.addEventListener('dblclick', async (e: Ev
         return;
     }
     const index = parseInt(item.dataset.index!);
-    console.assert(!isNaN(index) && index > -1);
+    console.assert(!isNaN(index) && index > -1, 'Invalid input index: ' + index);
 
     showLoading();
     await (window as any).api.vMixCall(getTransitionType(), { Input: index });

@@ -83,7 +83,7 @@ function getAlerts(
         const [p1, p2] = getLeadingNumbers(prevKey);
         const [c1, c2] = getLeadingNumbers(currKey);
 
-        if (p1 === -1) continue;
+        if (p1 === -1 || c1 === -1) continue;
 
         if (c1 > p1) {
             if (c1 > p1 + 1) {
@@ -94,7 +94,7 @@ function getAlerts(
                 });
             }
         } else {
-            console.assert(p1 === c1);
+            console.assert(p1 === c1, `Key mismatch: ${prevKey} vs ${currKey}`);
             if (p2 === -1) continue;
             if (c2 > p2 + 1) {
                 alerts.push({

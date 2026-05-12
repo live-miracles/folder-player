@@ -128,7 +128,7 @@ class VmixInfo {
 
 function getBusName(bus: string, capital = false) {
     const name = { M: 'master', A: 'busA', B: 'busB' }[bus]!;
-    console.assert(name !== undefined, bus);
+    console.assert(name !== undefined, bus + ' is not a valid bus name');
     return capital ? name.charAt(0).toUpperCase() + name.slice(1) : name;
 }
 
