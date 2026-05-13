@@ -51,7 +51,8 @@ function createWindow(): void {
 app.whenReady().then(() => {
     createWindow();
 
-    autoUpdater.checkForUpdatesAndNotify();
+    autoUpdater.autoDownload = false;
+    autoUpdater.checkForUpdates();
 
     autoUpdater.on('update-available', () => {
         mainWindow.webContents.send('update-available');
@@ -66,6 +67,7 @@ app.whenReady().then(() => {
     });
 });
 
+ipcMain.on('download-update', () => autoUpdater.downloadUpdate());
 ipcMain.on('install-update', () => autoUpdater.quitAndInstall());
 
 app.on('window-all-closed', () => {

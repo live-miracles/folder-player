@@ -5,6 +5,7 @@ contextBridge.exposeInMainWorld('api', {
     onUpdateProgress: (cb: (progress: number) => void) =>
         ipcRenderer.on('update-progress', (_, p) => cb(p)),
     onUpdateReady: (cb: () => void) => ipcRenderer.on('update-ready', cb),
+    downloadUpdate: () => ipcRenderer.send('download-update'),
     installUpdate: () => ipcRenderer.send('install-update'),
 
     selectPlayFolder: () => ipcRenderer.invoke('select-play-folder'),

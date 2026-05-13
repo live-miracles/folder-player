@@ -8,17 +8,22 @@ const RECENT_FOLDERS_LIMIT = 50;
 // ===== Updates =====
 const updateText = document.getElementById('update-text')!;
 const updateBtn = document.getElementById('update-btn')!;
+const updateDownloadBtn = document.getElementById('update-download-btn')!;
+const updateDismissBtn = document.getElementById('update-dismiss-btn')!;
 const updateProgress = document.getElementById('update-progress') as HTMLProgressElement;
+const updateToast = document.getElementById('update-toast')!;
 
 function showToast() {
-    document.getElementById('update-toast')!.classList.remove('hidden');
+    updateToast.classList.remove('hidden');
 }
 
 (window as any).api.onUpdateAvailable(() => {
     showToast();
-    updateText.innerText = 'Downloading...';
-    updateProgress.classList.remove('hidden');
+    updateText.innerText = 'New version';
+    updateProgress.classList.add('hidden');
     updateBtn.classList.add('hidden');
+    updateDownloadBtn.classList.remove('hidden');
+    updateDismissBtn.classList.remove('hidden');
 });
 
 (window as any).api.onUpdateProgress((p: number) => {
@@ -30,8 +35,19 @@ function showToast() {
     updateText.innerText = 'Downloaded';
     updateProgress.classList.add('hidden');
     updateBtn.classList.remove('hidden');
+    updateDownloadBtn.classList.add('hidden');
+    updateDismissBtn.classList.add('hidden');
 });
 
+updateDownloadBtn.onclick = () => {
+    updateText.innerText = 'Downloading...';
+    updateProgress.value = 0;
+    updateProgress.classList.remove('hidden');
+    updateDownloadBtn.classList.add('hidden');
+    updateDismissBtn.classList.add('hidden');
+    (window as any).api.downloadUpdate();
+};
+updateDismissBtn.onclick = () => updateToast.classList.add('hidden');
 updateBtn.onclick = () => (window as any).api.installUpdate();
 
 // ===== UI Elements =====
