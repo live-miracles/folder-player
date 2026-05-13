@@ -19,7 +19,7 @@ function showToast() {
 
 (window as any).api.onUpdateAvailable(() => {
     showToast();
-    updateText.innerText = 'New version';
+    updateText.innerText = '';
     updateProgress.classList.add('hidden');
     updateBtn.classList.add('hidden');
     updateDownloadBtn.classList.remove('hidden');
