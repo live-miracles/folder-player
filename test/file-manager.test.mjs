@@ -37,7 +37,7 @@ test('compareFiles orders numeric prefixes before sub-items and unnumbered files
     ]);
 });
 
-test('getFolderFiles maps one physical overlay folder to multiple numbered inputs', () => {
+test('getFolderFiles maps numbered files and ignores unnumbered files', () => {
     const folderPath = fs.mkdtempSync(path.join(os.tmpdir(), 'folder-player-'));
 
     try {
@@ -46,6 +46,7 @@ test('getFolderFiles maps one physical overlay folder to multiple numbered input
         fs.mkdirSync(path.join(folderPath, '03+08 Photos'));
         fs.writeFileSync(path.join(folderPath, '04_Sadhguru_IECO and Possiblities.mp4'), '');
         fs.writeFileSync(path.join(folderPath, '__05 Hidden.mp3'), '');
+        fs.writeFileSync(path.join(folderPath, 'Intro.mp3'), '');
 
         const fileMap = getFolderFiles(folderPath);
 
@@ -53,6 +54,7 @@ test('getFolderFiles maps one physical overlay folder to multiple numbered input
         assert.equal(fileMap.get('8')?.length, 2);
         assert.equal(fileMap.get('4')?.[0].type, FILE_TYPES.VIDEO);
         assert.equal(fileMap.has('5'), false);
+        assert.equal(fileMap.has(''), false);
         assert.equal(
             fileMap.get('3')?.some((file) => path.basename(file.path) === '03+08 Photos'),
             true,

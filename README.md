@@ -4,6 +4,8 @@ Number the files in a folder and this app will automatically generate a vMix pla
 
 To reuse one image or photos folder for several audio files, join the target numbers with `+`. For example, `03+08 Photos` overlays the same photos folder on both `03 Audio.mp3` and `08 Audio.mp3`.
 
+Files and folders without leading numbers are ignored.
+
 # Overview
 
 1. Create a folder and order all the files with leading numbers.

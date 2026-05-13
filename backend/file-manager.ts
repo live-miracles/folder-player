@@ -94,15 +94,13 @@ export function getFolderFiles(folderPath: string) {
 
     const fileMap = new Map<string, { path: string; type: string; id: string }[]>();
     for (const name of fileNames) {
-        if (name.startsWith('__')) {
-            continue;
-        }
         const fullPath = path.join(folderPath, name);
         const type = getFileType(fullPath);
 
         if (!type) continue;
 
         for (const key of getLeadingKeys(name)) {
+            if (key === '') continue;
             addFile(fileMap, key, { path: fullPath, type: type, id: crypto.randomUUID() });
         }
     }
