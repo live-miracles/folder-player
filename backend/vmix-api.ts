@@ -13,15 +13,24 @@ async function fetchUrl(url: string) {
 }
 
 export async function vMixCall(func = '', params: Record<string, any> = {}, host = 'localhost') {
-    const fullHost = host.includes(':') ? host : host + ':8088';
+    const apiUrl = normalizeVmixApiUrl(host);
     const query = new URLSearchParams({ Function: func, ...params });
-    const url = `http:/${fullHost}/api/?${func ? query : ''}`;
+    const url = `${apiUrl}/api/?${func ? query : ''}`;
 
     return await fetchUrl(url);
 }
 
-export async function getVmixState() {
-    const res = await vMixCall();
+function normalizeVmixApiUrl(host: string) {
+    const value = host.trim().replace(/\/api\/?$/i, '') || 'localhost';
+    const url =
+        value.startsWith('http://') || value.startsWith('https://') ? value : `http://${value}`;
+    const withPort = /:\d+(?:\/|$)/.test(url) ? url : `${url}:8088`;
+
+    return withPort.replace(/\/+$/, '');
+}
+
+export async function getVmixState(host = 'localhost') {
+    const res = await vMixCall('', {}, host);
 
     if (res.status === 200) {
         try {

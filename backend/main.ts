@@ -96,12 +96,17 @@ ipcMain.handle('select-play-folder', async () => {
 ipcMain.handle('create-preset', (_, { folderPath, baseFile, enableBus, collapse }) => {
     return createPresetFileRecursively(folderPath, baseFile, enableBus, collapse);
 });
-ipcMain.handle('play-folder', async (_, { folderPath, baseFile, enableBus, collapse }) => {
-    await setupVmix(folderPath, baseFile, enableBus, collapse);
-});
+ipcMain.handle(
+    'play-folder',
+    async (_, { folderPath, baseFile, enableBus, collapse, vmixApiUrl }) => {
+        await setupVmix(folderPath, baseFile, enableBus, collapse, vmixApiUrl);
+    },
+);
 
-ipcMain.handle('get-vmix-state', async () => await getVmixState());
-ipcMain.handle('vmix-call', async (_, { func, params }) => vMixCall(func, params));
+ipcMain.handle('get-vmix-state', async (_, vmixApiUrl) => await getVmixState(vmixApiUrl));
+ipcMain.handle('vmix-call', async (_, { func, params, vmixApiUrl }) =>
+    vMixCall(func, params, vmixApiUrl),
+);
 
 ipcMain.handle('get-folder-files', async (_, folderPath) => Array.from(getFolderFiles(folderPath)));
 ipcMain.handle('get-folder-state', async (_, folderPath) => {
@@ -135,8 +140,9 @@ async function setupVmix(
     baseFile: string,
     enableBus: string,
     collapse: boolean,
+    vmixApiUrl: string,
 ) {
-    const res = await vMixCall();
+    const res = await vMixCall('', {}, vmixApiUrl);
     if (res.error) {
         throw new Error('Failed connecting to vMix');
     }
@@ -149,15 +155,15 @@ async function setupVmix(
         throw new Error('Please generate vMix preset first.');
     }
 
-    await vMixCall('StopExternal');
+    await vMixCall('StopExternal', {}, vmixApiUrl);
     await sleep(500);
-    await vMixCall('StopStreaming');
+    await vMixCall('StopStreaming', {}, vmixApiUrl);
     await sleep(500);
-    await vMixCall('StopRecording');
+    await vMixCall('StopRecording', {}, vmixApiUrl);
     await sleep(500);
-    await vMixCall('OpenPreset', { Value: presetPath });
+    await vMixCall('OpenPreset', { Value: presetPath }, vmixApiUrl);
     await sleep(5000);
-    await vMixCall('StartExternal');
+    await vMixCall('StartExternal', {}, vmixApiUrl);
 }
 
 function sleep(ms: number) {

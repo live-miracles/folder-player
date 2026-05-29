@@ -53,6 +53,7 @@ updateBtn.onclick = () => (window as any).api.installUpdate();
 // ===== UI Elements =====
 const baseFileInput = document.getElementById('base-file-input') as HTMLInputElement;
 const playFolderInput = document.getElementById('play-folder-input') as HTMLInputElement;
+const vmixApiUrlInput = document.getElementById('vmix-api-url-input') as HTMLInputElement;
 
 const enableBusInput = document.getElementById('enable-bus-input') as HTMLInputElement;
 const collapseInputsInput = document.getElementById('collapse-inputs-input') as HTMLInputElement;
@@ -60,6 +61,7 @@ const programCamInput = document.getElementById('program-cam-input') as HTMLInpu
 const previewCamInput = document.getElementById('preview-cam-input') as HTMLInputElement;
 const transitionTypeInput = document.getElementById('transition-type-input') as HTMLInputElement;
 const closeVmixWebBtn = document.getElementById('close-vmix-web-btn')!;
+const documentationModal = document.getElementById('documentation-modal') as HTMLDialogElement;
 
 // ===== Navigation =====
 
@@ -109,11 +111,11 @@ function goToConfigPage() {
 }
 
 async function goToVmixPage() {
-    const res = await (window as any).api.getVmixState();
+    const res = await (window as any).api.getVmixState(getVmixApiUrl());
 
     if (res.error) {
         showErrorAlert(
-            'Could not connect to vMix on port 8088. Make sure it is running and HTTP API is enabled.\n\n' +
+            'Could not connect to vMix. Make sure it is running and HTTP API is enabled.\n\n' +
                 res.error,
         );
         return;
@@ -158,6 +160,7 @@ const STORAGE_KEYS = {
     PROGRAM_CAM: 'programCam',
     PREVIEW_CAM: 'previewCam',
     BASE_FILE: 'baseFile',
+    VMIX_API_URL: 'vmixApiUrl',
     RECENT_FOLDERS: 'recentFolders',
 };
 
@@ -189,6 +192,9 @@ previewCamInput.addEventListener('input', () => {
 transitionTypeInput.addEventListener('input', () => {
     localStorage.setItem(STORAGE_KEYS.TRANSITION_TYPE, transitionTypeInput.value);
 });
+vmixApiUrlInput.addEventListener('input', () => {
+    localStorage.setItem(STORAGE_KEYS.VMIX_API_URL, vmixApiUrlInput.value);
+});
 
 function init() {
     enableBusInput.value = localStorage.getItem(STORAGE_KEYS.ENABLE_BUS) ?? 'A';
@@ -196,10 +202,16 @@ function init() {
     transitionTypeInput.value = localStorage.getItem(STORAGE_KEYS.TRANSITION_TYPE) ?? 'Stinger1';
     programCamInput.value = localStorage.getItem(STORAGE_KEYS.PROGRAM_CAM) ?? '';
     previewCamInput.value = localStorage.getItem(STORAGE_KEYS.PREVIEW_CAM) ?? '';
+    vmixApiUrlInput.value =
+        localStorage.getItem(STORAGE_KEYS.VMIX_API_URL) ?? 'http://localhost:8088';
 
     baseFileInput.value = localStorage.getItem(STORAGE_KEYS.BASE_FILE) ?? '';
     playFolderInput.value = getRecentFolders()[0] ?? '';
     renderRecentFolders();
+}
+
+function getVmixApiUrl() {
+    return vmixApiUrlInput.value.trim();
 }
 
 // ===== Page Zooming like in Chrome =====
@@ -337,6 +349,10 @@ function removeRecentFolder(folderPath: string) {
 }
 
 const editConfigBtn = document.getElementById('edit-config-btn') as HTMLButtonElement;
+document
+    .getElementById('documentation-btn')!
+    .addEventListener('click', () => documentationModal.showModal());
+
 editConfigBtn.addEventListener('click', async () => {
     const folderPath = playFolderInput.value;
 
@@ -481,11 +497,11 @@ document.getElementById('play-folder-btn')!.addEventListener('click', async () =
         return;
     }
 
-    const res = await (window as any).api.getVmixState();
+    const res = await (window as any).api.getVmixState(getVmixApiUrl());
 
     if (res.error) {
         showErrorAlert(
-            'Could not connect to vMix on port 8088. Make sure it is running and HTTP API is enabled.\n\n' +
+            'Could not connect to vMix. Make sure it is running and HTTP API is enabled.\n\n' +
                 res.error,
         );
         return;
@@ -496,7 +512,13 @@ document.getElementById('play-folder-btn')!.addEventListener('click', async () =
     const enableBus = enableBusInput.value;
     try {
         goToLoadingPage(10);
-        await (window as any).api.playFolder(folderPath, baseFile, enableBus, collapse);
+        await (window as any).api.playFolder(
+            folderPath,
+            baseFile,
+            enableBus,
+            collapse,
+            getVmixApiUrl(),
+        );
         await sleep(5000);
         goToVmixPage();
     } catch (err) {
@@ -537,7 +559,7 @@ closeVmixWebBtn.addEventListener('click', () => {
 });
 
 async function fetchVmixState() {
-    return await (window as any).api.getVmixState();
+    return await (window as any).api.getVmixState(getVmixApiUrl());
 }
 
 (async () => {

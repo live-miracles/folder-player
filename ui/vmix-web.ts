@@ -334,6 +334,14 @@ function getTransitionType() {
     return (document.getElementById('transition-type-input') as HTMLInputElement).value;
 }
 
+function getVmixApiUrl() {
+    return (document.getElementById('vmix-api-url-input') as HTMLInputElement).value.trim();
+}
+
+async function vMixCall(func: string, params: Record<string, any> = {}) {
+    return await (window as any).api.vMixCall(func, params, getVmixApiUrl());
+}
+
 document.getElementById('input-list')!.addEventListener('dblclick', async (e: Event) => {
     const item = (e.target as HTMLElement).closest('.input-item') as HTMLElement;
     if (!item) {
@@ -344,14 +352,14 @@ document.getElementById('input-list')!.addEventListener('dblclick', async (e: Ev
     console.assert(!isNaN(index) && index > -1, 'Invalid input index: ' + index);
 
     showLoading();
-    await (window as any).api.vMixCall(getTransitionType(), { Input: index });
+    await vMixCall(getTransitionType(), { Input: index });
 });
 
 const playBtn = document.getElementById('vmix-play-btn') as HTMLButtonElement;
 playBtn.addEventListener('click', async () => {
     const index = parseInt(playBtn.dataset.index!);
     playBtn.disabled = true;
-    await (window as any).api.vMixCall('PlayPause', { Input: index });
+    await vMixCall('PlayPause', { Input: index });
     setTimeout(() => (playBtn.disabled = false), 1000);
 });
 
@@ -359,7 +367,7 @@ const restartBtn = document.getElementById('vmix-restart-btn') as HTMLButtonElem
 restartBtn.addEventListener('click', async () => {
     const index = parseInt(restartBtn.dataset.index!);
     restartBtn.disabled = true;
-    await (window as any).api.vMixCall('Restart', { Input: index });
+    await vMixCall('Restart', { Input: index });
     setTimeout(() => (restartBtn.disabled = false), 1000);
 });
 
@@ -368,7 +376,7 @@ loopBtn.addEventListener('click', async () => {
     const index = parseInt(loopBtn.dataset.index!);
 
     loopBtn.disabled = true;
-    await (window as any).api.vMixCall('Loop', { Input: index });
+    await vMixCall('Loop', { Input: index });
     setTimeout(() => (loopBtn.disabled = false), 1000);
 });
 
@@ -381,7 +389,7 @@ nextBtn.addEventListener('click', async () => {
     }
     nextBtn.disabled = true;
     showLoading();
-    await (window as any).api.vMixCall(getTransitionType(), { Input: index });
+    await vMixCall(getTransitionType(), { Input: index });
     setTimeout(() => (nextBtn.disabled = false), 1000);
 });
 
@@ -390,14 +398,14 @@ micBtn.addEventListener('click', async () => {
     const index = parseInt(mixer1.dataset.index!);
     if (index === -1) return;
     micBtn.disabled = true;
-    await (window as any).api.vMixCall('Audio', { Input: index });
+    await vMixCall('Audio', { Input: index });
     setTimeout(() => (micBtn.disabled = false), 1000);
 });
 
 const ftbBtn = document.getElementById('vmix-ftb-btn') as HTMLButtonElement;
 ftbBtn.addEventListener('click', async () => {
     ftbBtn.disabled = true;
-    await (window as any).api.vMixCall('FadeToBlack');
+    await vMixCall('FadeToBlack');
     setTimeout(() => (ftbBtn.disabled = false), 1000);
 });
 
@@ -409,7 +417,7 @@ vmixTimeline.addEventListener('change', async () => {
     const duration = parseInt(vmixTimeline.dataset.duration!);
     const position = Math.round((value / Number(vmixTimeline.max)) * duration);
 
-    await (window as any).api.vMixCall('SetPosition', { Input: index, Value: position });
+    await vMixCall('SetPosition', { Input: index, Value: position });
 });
 
 let timelineInteractionTimeout: ReturnType<typeof setTimeout> | null = null;
@@ -447,11 +455,8 @@ function getMixerVolume(mixer: HTMLDivElement) {
         volPlus.disabled = true;
 
         const newVolume = getIncreasedVolume(getMixerVolume(mixer));
-        await (window as any).api.vMixCall('SetVolume', { Input: index, Value: newVolume[0] });
-        setTimeout(
-            () => (window as any).api.vMixCall('SetGain', { Input: index, Value: newVolume[1] }),
-            200,
-        );
+        await vMixCall('SetVolume', { Input: index, Value: newVolume[0] });
+        setTimeout(() => vMixCall('SetGain', { Input: index, Value: newVolume[1] }), 200);
         setTimeout(() => (volPlus.disabled = false), 1000);
     });
 
@@ -461,11 +466,8 @@ function getMixerVolume(mixer: HTMLDivElement) {
         volMinus.disabled = true;
 
         const newVolume = getDecreasedVolume(getMixerVolume(mixer));
-        await (window as any).api.vMixCall('SetVolume', { Input: index, Value: newVolume[0] });
-        setTimeout(
-            () => (window as any).api.vMixCall('SetGain', { Input: index, Value: newVolume[1] }),
-            200,
-        );
+        await vMixCall('SetVolume', { Input: index, Value: newVolume[0] });
+        setTimeout(() => vMixCall('SetGain', { Input: index, Value: newVolume[1] }), 200);
         setTimeout(() => (volMinus.disabled = false), 1000);
     });
 
@@ -474,7 +476,7 @@ function getMixerVolume(mixer: HTMLDivElement) {
         if (index === -1) return;
         volMute.disabled = true;
 
-        await (window as any).api.vMixCall('Audio', { Input: index });
+        await vMixCall('Audio', { Input: index });
         setTimeout(() => (volMute.disabled = false), 1000);
     });
 
@@ -483,7 +485,7 @@ function getMixerVolume(mixer: HTMLDivElement) {
         if (index === -1) return;
         solo.disabled = true;
 
-        await (window as any).api.vMixCall('Solo', { Input: index });
+        await vMixCall('Solo', { Input: index });
         setTimeout(() => (solo.disabled = false), 1000);
     });
 });
