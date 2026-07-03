@@ -2,9 +2,79 @@
 
 Number the files in a folder and this app will automatically generate a vMix playlist, plus a simplified web UI for users who only need the essential controls.
 
-To reuse one image or photos folder for several audio files, join the target numbers with `+`. For example, `03+08 Photos` overlays the same photos folder on both `03 Audio.mp3` and `08 Audio.mp3`.
+## Base vMix Preset
 
-Files and folders without leading numbers are ignored.
+Choose a default `.vmix` preset. A nearby `base.vmix` overrides it.
+
+```text
+Selected default base preset
+        |
+        v
+Content folder
+  |-- base.vmix        <- used first, when present
+  |-- 01 Video.mp4
+  |-- 02 Audio.mp3
+
+Parent folder
+  |-- base.vmix        <- fallback for child folders
+  |-- Session A
+      |-- 01 Video.mp4
+```
+
+For overlays, title base inputs exactly:
+
+```text
+Cam  -> camera input
+Mic  -> microphone input
+```
+
+## Content Folder
+
+Number files to set playlist order. Unnumbered items are ignored.
+
+```text
+Content folder
+  |-- 01 Welcome.mp4
+  |-- 02 Teaching.mkv
+  |-- 03 Meditation.mp3
+  |-- 03 Slide.png        <- overlays 03 Meditation.mp3
+  |-- 04 Deck.pptx        <- PowerPoint slideshow
+  |-- 05 Photos           <- folder slideshow
+  |   |-- image-1.jpg
+  |   |-- image-2.jpg
+  |-- Notes.txt           <- ignored
+```
+
+Same number = overlay:
+
+```text
+07 Audio.mp3
+07 Image.png
+
+Result:
+07 Audio.mp3 + Image.png overlay
+```
+
+`+` = reuse one overlay:
+
+```text
+03 Audio.mp3
+08 Audio.mp3
+03+08 Photos
+
+Result:
+03 Audio.mp3 + Photos overlay
+08 Audio.mp3 + Photos overlay
+```
+
+`_` = sub-item ordering:
+
+```text
+06_1 Slide.png
+06_2 Slide.png
+```
+
+Supported inputs include images, video files, audio files, photo folders, and PowerPoint `.pptx` files.
 
 # Overview
 

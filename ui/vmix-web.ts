@@ -130,6 +130,7 @@ function getFileIcon(type: string) {
     else if (type === FILE_TYPES.VIDEO) return 'clapperboard';
     else if (type === FILE_TYPES.IMAGE) return 'image';
     else if (type === FILE_TYPES.FOLDER) return 'presentation';
+    else if (type === FILE_TYPES.POWERPOINT) return 'presentation';
     else if (type === 'Capture') return 'camera';
     else if (type === 'Audio') return 'mic-vocal';
     else if (type === 'Colour') return 'palette';
@@ -309,11 +310,11 @@ function getInputDuration(input: any) {
     if (input.duration === 0) return '';
 
     console.assert(
-        ['Video', 'AudioFile', 'Photos'].includes(input.type),
+        ['Video', 'AudioFile', 'Photos', 'PowerPoint'].includes(input.type),
         input + ' is not a valid input type',
     );
     const duration = parseInt(input.duration);
-    if (input.type === 'Photos') {
+    if (input.type === 'Photos' || input.type === 'PowerPoint') {
         return duration + 1;
     }
 

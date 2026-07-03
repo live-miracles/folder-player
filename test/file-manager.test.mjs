@@ -45,6 +45,10 @@ test('getFolderFiles maps numbered files and ignores unnumbered files', () => {
         fs.writeFileSync(path.join(folderPath, '08 Audio.mp3'), '');
         fs.mkdirSync(path.join(folderPath, '03+08 Photos'));
         fs.writeFileSync(path.join(folderPath, '04_Sadhguru_IECO and Possiblities.mp4'), '');
+        fs.writeFileSync(path.join(folderPath, '06 Audio.m4a'), '');
+        fs.writeFileSync(path.join(folderPath, '07 Video.mkv'), '');
+        fs.writeFileSync(path.join(folderPath, '10 Deck.pptx'), '');
+        fs.writeFileSync(path.join(folderPath, '09 Protected Video.m4p'), '');
         fs.writeFileSync(path.join(folderPath, '__05 Hidden.mp3'), '');
         fs.writeFileSync(path.join(folderPath, 'Intro.mp3'), '');
 
@@ -53,6 +57,10 @@ test('getFolderFiles maps numbered files and ignores unnumbered files', () => {
         assert.equal(fileMap.get('3')?.length, 2);
         assert.equal(fileMap.get('8')?.length, 2);
         assert.equal(fileMap.get('4')?.[0].type, FILE_TYPES.VIDEO);
+        assert.equal(fileMap.get('6')?.[0].type, FILE_TYPES.AUDIO);
+        assert.equal(fileMap.get('7')?.[0].type, FILE_TYPES.VIDEO);
+        assert.equal(fileMap.get('10')?.[0].type, FILE_TYPES.POWERPOINT);
+        assert.equal(fileMap.get('9')?.[0].type, FILE_TYPES.VIDEO);
         assert.equal(fileMap.has('5'), false);
         assert.equal(fileMap.has(''), false);
         assert.equal(

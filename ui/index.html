@@ -64,35 +64,64 @@
       </div>
     </dialog>
 
-    <dialog id="documentation-modal" class="modal">
-      <div class="modal-box max-w-200">
+    <dialog id="documentation-modal" class="modal py-6">
+      <div class="modal-box max-w-200 max-h-[calc(100vh-3rem)]">
         <h2 class="text-xl font-semibold">Base vMix Preset</h2>
         <p class="mt-1">
-          You can select a default base vMix preset. If the content folder or its parent folder contains a file named
-          <code>`base.vmix`</code>, that file will be used instead. The camera input title should be <code>`Cam`</code>, and the microphone input
-          title should be <code>`Mic`</code>.
+          Choose a default preset. A nearby <code>`base.vmix`</code> overrides it. For overlays, title base inputs <code>`Cam`</code> and
+          <code>`Mic`</code>.
         </p>
+        <pre class="bg-base-300/50 rounded-lg p-3 mt-2 overflow-x-auto text-sm"><code>Selected default base preset
+        |
+        v
+Content folder
+  |-- base.vmix        &lt;- used first, when present
+  |-- 01 Video.mp4
+  |-- 02 Audio.mp3
+
+Parent folder
+  |-- base.vmix        &lt;- fallback for child folders
+  |-- Session A
+      |-- 01 Video.mp4
+
+Required input titles:
+Cam  - camera input
+Mic  - microphone input</code></pre>
 
         <h2 class="text-xl font-semibold mt-3">Content Folder</h2>
         <p class="mt-1">
-          The app creates a vMix playlist from the files in this folder. Use leading numbers to set the order, for example
-          <code>`05&nbsp;Video.mp4`</code>. Use underscores for sub-items, for example <code>`06_1&nbsp;Slide.png`</code>. To layer an image over
-          audio, give both files the same number, for example <code>`07&nbsp;Image.png`</code> and <code>`07&nbsp;Audio.mp3`</code>. Add a folder of
-          images to create a slideshow.<br />
-          To reuse the same image or photos folder for multiple audio files, join the target numbers with <code>`+`</code>; for example,
-          <code>`03+08&nbsp;Photos`</code> overlays both <code>`03&nbsp;Audio.mp3`</code> and <code>`08&nbsp;Audio.mp3`</code>.<br />
-          Files and folders without leading numbers are ignored. This is useful when you keep alternate versions of the same file, such as
-          <code>`05 CET Slide.png`</code> and <code>`CEST Slide.png`</code>, or when a file is already included in the
-          <code>`base.vmix`</code> preset.<br /><br />
-          If this folder contains subfolders with a <code>`folder-player.txt`</code> config file, the app will generate a preset for each configured
-          subfolder.
+          Number files to set order. Same number means overlay, <code>`+`</code> reuses an overlay, and unnumbered items are ignored. Configured
+          subfolders with <code>`folder-player.txt`</code> get their own presets.
         </p>
+        <pre class="bg-base-300/50 rounded-lg p-3 mt-2 overflow-x-auto text-sm"><code>Content folder
+  |-- 01 Welcome.mp4
+  |-- 02 Teaching.mkv
+  |-- 03 Meditation.mp3
+  |-- 03 Slide.png        &lt;- overlays 03 Meditation.mp3
+  |-- 04 Deck.pptx        &lt;- PowerPoint slideshow
+  |-- 05 Photos           &lt;- folder slideshow
+  |   |-- image-1.jpg
+  |   |-- image-2.jpg
+  |-- Notes.txt           &lt;- ignored
+
+Same-number overlay:
+07 Audio.mp3
+07 Image.png
+=> 07 Audio.mp3 + Image.png overlay
+
+Reusable overlay:
+03 Audio.mp3
+08 Audio.mp3
+03+08 Photos
+=> Photos overlays both 03 and 08</code></pre>
 
         <h2 class="text-xl font-semibold mt-3">vMix Script: Preview Next</h2>
         <p class="mt-1">
           If you prefer to use vMix directly instead of the web UI, you can use the <code>`PreviewNext`</code> script. It automatically moves the next
           input into preview after each transition. The script is available on
-          <a class="link" href="https://github.com/live-miracles/vmix-master/blob/master/scripts/preview-next.vb" target="_blank">GitHub</a>.
+          <a class="link" href="https://github.com/live-miracles/vmix-master/blob/master/vmix-scripts/preview-next.vb" target="_blank"
+            >preview-next.vb</a
+          >.
         </p>
 
         <div class="modal-action">
@@ -138,8 +167,8 @@
                 <div class="tooltip" data-tip="Inputs will appear minimized in vMix.">Collapse Inputs</div>
               </legend>
               <select id="collapse-inputs-input" class="select w-24">
-                <option selected value="1">Yes</option>
-                <option value="0">No</option>
+                <option value="1">Yes</option>
+                <option selected value="0">No</option>
               </select>
             </fieldset>
 

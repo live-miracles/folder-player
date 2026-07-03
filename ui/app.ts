@@ -198,7 +198,7 @@ vmixApiUrlInput.addEventListener('input', () => {
 
 function init() {
     enableBusInput.value = localStorage.getItem(STORAGE_KEYS.ENABLE_BUS) ?? 'A';
-    collapseInputsInput.value = localStorage.getItem(STORAGE_KEYS.COLLAPSE_INPUTS) ?? '1';
+    collapseInputsInput.value = localStorage.getItem(STORAGE_KEYS.COLLAPSE_INPUTS) ?? '0';
     transitionTypeInput.value = localStorage.getItem(STORAGE_KEYS.TRANSITION_TYPE) ?? 'Stinger1';
     programCamInput.value = localStorage.getItem(STORAGE_KEYS.PROGRAM_CAM) ?? '';
     previewCamInput.value = localStorage.getItem(STORAGE_KEYS.PREVIEW_CAM) ?? '';

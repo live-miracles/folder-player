@@ -1,6 +1,12 @@
 import { capitalize } from './utils.js';
-export const FILE_TYPES = { IMAGE: 'Image', VIDEO: 'Video', AUDIO: 'AudioFile', FOLDER: 'Photos' };
-const TYPE_MAP = { Video: 1, AudioFile: 2, Image: 3, Photos: 4 };
+export const FILE_TYPES = {
+    IMAGE: 'Image',
+    VIDEO: 'Video',
+    AUDIO: 'AudioFile',
+    FOLDER: 'Photos',
+    POWERPOINT: 'PowerPoint',
+};
+const TYPE_MAP = { Video: 1, AudioFile: 2, Image: 3, Photos: 4, PowerPoint: 5 };
 const ALERT = { ERROR: 'error', WARNING: 'warning' };
 
 const camsOption = document.getElementById('cams-option') as HTMLInputElement;
@@ -78,7 +84,7 @@ export function renderConfigPage(state: {
                 1000,
             );
         }
-        if (types.includes(FILE_TYPES.FOLDER)) {
+        if (types.includes(FILE_TYPES.FOLDER) || types.includes(FILE_TYPES.POWERPOINT)) {
             const opt = selectedOptions.find((opt) => opt.endsWith('s')) ?? '10';
             const parsed = parseInt(opt);
             optionsHtml += getNumberOptionHtml(
@@ -184,6 +190,7 @@ function getFileTypeHtml(type: string, key: string) {
     if (type === FILE_TYPES.VIDEO) color = 'badge-secondary';
     if (type === FILE_TYPES.IMAGE) color = 'badge-accent';
     if (type === FILE_TYPES.FOLDER) color = 'badge-warning';
+    if (type === FILE_TYPES.POWERPOINT) color = 'badge-info';
 
     return `<span class="${key ? 'config-type' : ''} badge badge-soft ${color}" data-key="${key}">${type}</span>`;
 }

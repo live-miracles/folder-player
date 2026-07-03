@@ -169,7 +169,13 @@ function getAlerts(
 
         const options = configMap.get(key) ?? [];
 
-        const allTypes = [FILE_TYPES.AUDIO, FILE_TYPES.VIDEO, FILE_TYPES.IMAGE, FILE_TYPES.FOLDER];
+        const allTypes = [
+            FILE_TYPES.AUDIO,
+            FILE_TYPES.VIDEO,
+            FILE_TYPES.IMAGE,
+            FILE_TYPES.FOLDER,
+            FILE_TYPES.POWERPOINT,
+        ];
         const configTypes = allTypes.filter((type) => options.includes(type)).join('+');
         const folderTypes = allTypes.filter((type) => types.includes(type)).join('+');
 

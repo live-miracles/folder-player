@@ -122,7 +122,9 @@ function createPresetFile(
         const audios = files.filter((f) => f.type === FILE_TYPES.AUDIO);
         const videos = files.filter((f) => f.type === FILE_TYPES.VIDEO);
         const images = files.filter((f) => f.type === FILE_TYPES.IMAGE);
-        const slideshows = files.filter((f) => f.type === FILE_TYPES.FOLDER);
+        const slideshows = files.filter(
+            (f) => f.type === FILE_TYPES.FOLDER || f.type === FILE_TYPES.POWERPOINT,
+        );
 
         console.assert(files.length > 0, `No files found for key ${key}.`);
 
@@ -207,6 +209,8 @@ function getFileXML(
         return getAudioXML(file, layers, options, enableBus);
     } else if (file.type === FILE_TYPES.FOLDER) {
         return getPhotosXML(file, layers, options);
+    } else if (file.type === FILE_TYPES.POWERPOINT) {
+        return getPptxInput(file, layers, options);
     }
 
     return '';
@@ -337,6 +341,28 @@ function getColorXML(name: string, layers: string[], options: string[]) {
         VideoShader_ToleranceGreenGap="0" VideoShader_GreenFilter="False" VideoShader_GreenFilterTransparencyThreshold="1" VideoShader_LumaKeyThreshold="0"
         VideoShader_AntiAliasing="False" VideoShader_AntiAliasingFilter="0" VideoShader_ClippingX1="0" VideoShader_ClippingX2="1" VideoShader_ClippingY1="0"
         VideoShader_ClippingY2="1" VideoShader_PremultipliedAlpha="False"></Input>`;
+}
+
+function getPptxInput(file: { path: string; id: string }, layers: string[], options: string[]) {
+    const slideshowTime = options.find((opt) => opt.endsWith('s')) ?? '10s';
+    const time = parseInt(slideshowTime) ?? 10;
+    const collapsed = options.includes('collapsed') ? 'True' : 'False';
+
+    return `<Input Type="3" Position="0" RangeStart="0" RangeStop="0" State="1" OriginalTitle="Practice Instructions Module.pptx" ShortcutMappings=""
+      Key="${file.id}" Loop="True" VolumeF="1" Muted="True" BalanceF="0" AspectRatio="100" Category="0" MouseClickAction="0"
+      GOClickAction="20" Collapsed="${collapsed}" Solo="False" BusMVolumeF="1" HeadphonesVolumeF="1" BusAVolumeF="1" BusBVolumeF="1" BusCVolumeF="1" BusDVolumeF="1"
+      BusEVolumeF="1" BusFVolumeF="1" BusGVolumeF="1" BusMaster="True" FrameDelay="0" TallyCOMPort="None" TallyNumber="0" AutoAudioMixing="True" AutoPause="True"
+      AutoRestart="True" AutoPlay="False" Mirror="False" SelectedIndex="1" Rate="1" FlattenLayers="False" ${getLayersText(layers)} XML="&lt;indexMappings /&gt;"
+      ShaderSource="00000000-0000-0000-0000-000000000000" PTZProvider="" PTZConnection="" PTZAutoConnect="False" PTZDefaultPanTiltSpeed="0.5" PTZDefaultZoomSpeed="0.5"
+      PTZDefaultPositionSpeed="1" PTZDefaultFocusSpeed="0.5" PTZDefaultFocusEnabled="False" PTZDefaultTallyEnabled="False" PTZAlwaysShowThumbnail="False"
+      PictureTransition="${String(time)}" PictureDuration="500" PictureEffect="0" PictureBlackBorders="True" VideoShader_ColorCorrectionSourceEnabled="0" VideoShader_White="1"
+      VideoShader_Black="0" VideoShader_Red="0" VideoShader_Green="0" VideoShader_Blue="0" VideoShader_Alpha="1" VideoShader_Saturation="1" VideoShader_CCLiftR="0"
+      VideoShader_CCLiftG="0" VideoShader_CCLiftB="0" VideoShader_CCGammaR="1" VideoShader_CCGammaG="1" VideoShader_CCGammaB="1" VideoShader_CCGainR="1"
+      VideoShader_CCGainG="1" VideoShader_CCGainB="1" VideoShader_Saturation2="0" VideoShader_Hue="0" VideoShader_Rec601Fix="False" VideoShader_ColorKey="0"
+      VideoShader_Deinterlace="False" VideoShader_Sharpen="False" VideoShader_ToleranceRed="0" VideoShader_ToleranceGreen="0" VideoShader_ToleranceBlue="0"
+      VideoShader_ToleranceGreenGap="0" VideoShader_GreenFilter="False" VideoShader_GreenFilterTransparencyThreshold="1" VideoShader_LumaKeyThreshold="0"
+      VideoShader_AntiAliasing="False" VideoShader_AntiAliasingFilter="0" VideoShader_ClippingX1="0" VideoShader_ClippingX2="1" VideoShader_ClippingY1="0"
+      VideoShader_ClippingY2="1" VideoShader_PremultipliedAlpha="False">${escapeXML(file.path)}</Input>`;
 }
 
 function getVirtualInput(file: { id: string; newId: string; title: string }, layers: string[]) {

@@ -1,7 +1,13 @@
 import fs from 'fs';
 import path from 'path';
 
-export const FILE_TYPES = { IMAGE: 'Image', VIDEO: 'Video', AUDIO: 'AudioFile', FOLDER: 'Photos' };
+export const FILE_TYPES = {
+    IMAGE: 'Image',
+    VIDEO: 'Video',
+    AUDIO: 'AudioFile',
+    FOLDER: 'Photos',
+    POWERPOINT: 'PowerPoint',
+};
 
 export function getLeadingNumbers(text: string) {
     const match = text.match(/^(\d+)(?:_(\d+))?/);
@@ -63,8 +69,22 @@ export function getBaseFile(folderPath: string) {
 
 function getFileType(filePath: string) {
     const IMAGE_EXT = ['.jpg', '.png', '.jpeg'];
-    const VIDEO_EXT = ['.mp4', '.mov', '.m4a'];
-    const AUDIO_EXT = ['.mp3', '.wav'];
+    const POWERPOINT_EXT = ['.pptx'];
+    const VIDEO_EXT = [
+        '.mp4',
+        '.mov',
+        '.m4p',
+        '.m4v',
+        '.mkv',
+        '.avi',
+        '.wmv',
+        '.mpg',
+        '.mpeg',
+        '.ts',
+        '.m2ts',
+        '.mts',
+    ];
+    const AUDIO_EXT = ['.mp3', '.wav', '.m4a', '.aac', '.wma', '.flac', '.ogg'];
 
     const stat = fs.statSync(filePath);
 
@@ -72,6 +92,7 @@ function getFileType(filePath: string) {
     const ext = path.extname(filePath).toLowerCase();
 
     if (IMAGE_EXT.includes(ext)) return FILE_TYPES.IMAGE;
+    if (POWERPOINT_EXT.includes(ext)) return FILE_TYPES.POWERPOINT;
     if (VIDEO_EXT.includes(ext)) return FILE_TYPES.VIDEO;
     if (AUDIO_EXT.includes(ext)) return FILE_TYPES.AUDIO;
 
