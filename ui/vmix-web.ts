@@ -56,6 +56,10 @@ const endTimeElement = document.getElementById('live-time')!;
 const vmixDuration = document.getElementById('vmix-duration')!;
 const vmixTimeline = document.getElementById('vmix-timeline') as HTMLInputElement;
 
+function isSlideshowInput(input: any) {
+    return input.type === FILE_TYPES.FOLDER || input.type === FILE_TYPES.POWERPOINT;
+}
+
 export function renderVmixWeb(state: any) {
     if (!state) {
         showErrorAlert('Not able to fetch vMix status.');
@@ -72,7 +76,7 @@ export function renderVmixWeb(state: any) {
     if (state.fadeToBlack) ftbBtn.classList.add('btn-error');
     else ftbBtn.classList.remove('btn-error');
 
-    if (activeInput.duration === 0 || activeInput.type === 'Photos') {
+    if (activeInput.duration === 0 || isSlideshowInput(activeInput)) {
         if (liveStartTime === null) liveStartTime = Date.now();
         endTimeElement.classList.add('hidden');
     } else {
@@ -434,7 +438,7 @@ vmixTimeline.addEventListener('pointerup', () => (userSelectedTimeline = false))
 vmixTimeline.addEventListener('pointercancel', () => (userSelectedTimeline = false));
 
 function getInputProgress(input: any) {
-    if (input.type === 'Photos') return `${input.position + 1} / ${input.duration + 1}`;
+    if (isSlideshowInput(input)) return `${input.position + 1} / ${input.duration + 1}`;
     return `${formatTimeMMSS(input.position)} / ${formatTimeMMSS(input.duration)}`;
 }
 

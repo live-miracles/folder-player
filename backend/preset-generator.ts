@@ -4,6 +4,8 @@ import path from 'path';
 import { getFolderState } from './config-api.js';
 import { getBaseFile, getFolderFiles, FILE_TYPES, compareFiles } from './file-manager.js';
 
+type PresetFile = { path: string; type: string; id: string };
+
 function getTitleId(xml: string, title: string) {
     const regex = new RegExp(`<Input[^>]*?Title="${title}"[^>]*?>`);
     const inputMatch = xml.match(regex);
@@ -121,9 +123,11 @@ function createPresetFile(
 
         const audios = files.filter((f) => f.type === FILE_TYPES.AUDIO);
         const videos = files.filter((f) => f.type === FILE_TYPES.VIDEO);
-        const images = files.filter((f) => f.type === FILE_TYPES.IMAGE);
-        const slideshows = files.filter(
-            (f) => f.type === FILE_TYPES.FOLDER || f.type === FILE_TYPES.POWERPOINT,
+        const visuals = files.filter(
+            (f) =>
+                f.type === FILE_TYPES.IMAGE ||
+                f.type === FILE_TYPES.FOLDER ||
+                f.type === FILE_TYPES.POWERPOINT,
         );
 
         console.assert(files.length > 0, `No files found for key ${key}.`);
@@ -133,20 +137,20 @@ function createPresetFile(
             files.forEach((f) => inputsXML.push(getFileXML(f, layers, options, enableBus)));
         } else if (audios.length > 0 || videos.length > 0) {
             const base = audios[0] ?? videos[0];
-            const top = images[0] ?? slideshows[0];
+            const top = visuals[0];
             if (top) {
                 layers.push(top.id);
                 helperInputsXML.push(getFileXML(top, [], [...options, 'collapsed'], enableBus));
             }
             inputsXML.push(getFileXML(base, layers, options, enableBus));
         } else {
-            // Special case when it is camera overlaid by an image
-            if (images.length > 0 && options.includes('cam')) {
-                layers.push(images[0].id);
-                const filename = path.parse(images[0].path).name;
+            // Special case when it is camera overlaid by a visual input.
+            if (visuals.length > 0 && options.includes('cam')) {
+                layers.push(visuals[0].id);
+                const filename = path.parse(visuals[0].path).name;
                 inputsXML.push(getColorXML(filename, layers, options));
                 helperInputsXML.push(
-                    getFileXML(images[0], [], [...options, 'collapsed'], enableBus),
+                    getFileXML(visuals[0], [], [...options, 'collapsed'], enableBus),
                 );
             } else {
                 files.forEach((f) => inputsXML.push(getFileXML(f, layers, options, enableBus)));
@@ -195,12 +199,7 @@ function getAudioOptions(options: string[]) {
     };
 }
 
-function getFileXML(
-    file: { path: string; type: string; id: string },
-    layers: string[],
-    options: string[],
-    enableBus: string,
-) {
+function getFileXML(file: PresetFile, layers: string[], options: string[], enableBus: string) {
     if (file.type === FILE_TYPES.IMAGE) {
         return getImageXML(file, layers, options);
     } else if (file.type === FILE_TYPES.VIDEO) {
