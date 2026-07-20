@@ -31,13 +31,21 @@ export function createPresetFileRecursively(
     baseFilePath: string,
     enableBus: string,
     collapse: boolean,
+    customParentFolder = '',
 ) {
     const report: { folder: string; alerts: any[] }[] = [];
 
     function traverseDirectory(currentPath: string, depth: number) {
         const state = getFolderState(currentPath);
         if (state.config !== null) {
-            createPresetFile(currentPath, baseFilePath, enableBus, collapse, state.config);
+            createPresetFile(
+                currentPath,
+                baseFilePath,
+                enableBus,
+                collapse,
+                state.config,
+                customParentFolder,
+            );
             report.push({ folder: currentPath, alerts: state.alerts });
         }
 
@@ -67,8 +75,10 @@ function createPresetFile(
     enableBus: string,
     collapse: boolean,
     config: Map<string, string[]>,
+    customParentFolder: string,
 ) {
-    const base = getBaseFile(folderPath) ?? baseFilePath;
+    const nearbyBase = getBaseFile(folderPath);
+    const base = nearbyBase ?? baseFilePath;
 
     if (base === '') {
         throw new Error(
@@ -84,13 +94,19 @@ function createPresetFile(
     console.log('Identified micId: ' + micId + ' and camId: ' + camId);
 
     const fileMap = getFolderFiles(folderPath);
+    const rewriteSourceParent = nearbyBase
+        ? path.dirname(path.dirname(nearbyBase))
+        : path.dirname(folderPath);
+    const rewriteFilePath = getFilePathRewriter(rewriteSourceParent, customParentFolder);
 
     const inputsXML: string[] = [];
     const otherInputsXML: string[] = [];
     const helperInputsXML: string[] = [];
 
     const otherFiles = fileMap.get('') ?? [];
-    otherFiles.forEach((f) => otherInputsXML.push(getFileXML(f, [], ['collapsed'], enableBus)));
+    otherFiles.forEach((f) =>
+        otherInputsXML.push(getFileXML(rewriteFilePath(f), [], ['collapsed'], enableBus)),
+    );
     fileMap.delete('');
 
     const addCamerasInBetween = config.get('__options__')?.includes('cams');
@@ -134,10 +150,12 @@ function createPresetFile(
 
         if (audios.length + videos.length > 1) {
             // Ignore any strange cases
-            files.forEach((f) => inputsXML.push(getFileXML(f, layers, options, enableBus)));
+            files.forEach((f) =>
+                inputsXML.push(getFileXML(rewriteFilePath(f), layers, options, enableBus)),
+            );
         } else if (audios.length > 0 || videos.length > 0) {
-            const base = audios[0] ?? videos[0];
-            const top = visuals[0];
+            const base = rewriteFilePath(audios[0] ?? videos[0]);
+            const top = visuals[0] ? rewriteFilePath(visuals[0]) : undefined;
             if (top) {
                 layers.push(top.id);
                 helperInputsXML.push(getFileXML(top, [], [...options, 'collapsed'], enableBus));
@@ -147,13 +165,14 @@ function createPresetFile(
             // Special case when it is camera overlaid by a visual input.
             if (visuals.length > 0 && options.includes('cam')) {
                 layers.push(visuals[0].id);
-                const filename = path.parse(visuals[0].path).name;
+                const visual = rewriteFilePath(visuals[0]);
+                const filename = path.parse(visual.path).name;
                 inputsXML.push(getColorXML(filename, layers, options));
-                helperInputsXML.push(
-                    getFileXML(visuals[0], [], [...options, 'collapsed'], enableBus),
-                );
+                helperInputsXML.push(getFileXML(visual, [], [...options, 'collapsed'], enableBus));
             } else {
-                files.forEach((f) => inputsXML.push(getFileXML(f, layers, options, enableBus)));
+                files.forEach((f) =>
+                    inputsXML.push(getFileXML(rewriteFilePath(f), layers, options, enableBus)),
+                );
             }
         }
 
@@ -171,6 +190,33 @@ function createPresetFile(
     fs.writeFileSync(outputPath, newXML, 'utf-8');
 
     return outputPath;
+}
+
+export function getRewrittenFilePath(
+    filePath: string,
+    sourceParentPath: string,
+    customParentFolder: string,
+) {
+    const replacementParent = customParentFolder.trim();
+    if (!replacementParent) return filePath;
+
+    const relativePath = path.relative(sourceParentPath, filePath);
+    const isOutsideBaseParent =
+        relativePath === '' ||
+        relativePath === '..' ||
+        relativePath.startsWith(`..${path.sep}`) ||
+        path.isAbsolute(relativePath);
+
+    if (isOutsideBaseParent) return filePath;
+
+    return path.join(replacementParent, relativePath);
+}
+
+function getFilePathRewriter(sourceParentPath: string, customParentFolder: string) {
+    return (file: PresetFile): PresetFile => ({
+        ...file,
+        path: getRewrittenFilePath(file.path, sourceParentPath, customParentFolder),
+    });
 }
 
 // ===== XML Inputs =====

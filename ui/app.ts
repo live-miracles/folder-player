@@ -54,6 +54,9 @@ updateBtn.onclick = () => (window as any).api.installUpdate();
 const baseFileInput = document.getElementById('base-file-input') as HTMLInputElement;
 const playFolderInput = document.getElementById('play-folder-input') as HTMLInputElement;
 const vmixApiUrlInput = document.getElementById('vmix-api-url-input') as HTMLInputElement;
+const customParentFolderInput = document.getElementById(
+    'custom-parent-folder-input',
+) as HTMLInputElement;
 
 const enableBusInput = document.getElementById('enable-bus-input') as HTMLInputElement;
 const collapseInputsInput = document.getElementById('collapse-inputs-input') as HTMLInputElement;
@@ -62,6 +65,16 @@ const previewCamInput = document.getElementById('preview-cam-input') as HTMLInpu
 const transitionTypeInput = document.getElementById('transition-type-input') as HTMLInputElement;
 const closeVmixWebBtn = document.getElementById('close-vmix-web-btn')!;
 const documentationModal = document.getElementById('documentation-modal') as HTMLDialogElement;
+const homeConfigModeInput = document.getElementById('home-config-mode-input') as HTMLInputElement;
+const homeVmixModeInput = document.getElementById('home-vmix-mode-input') as HTMLInputElement;
+const configModeFields = document.getElementById('config-mode-fields')!;
+const vmixModeFields = document.getElementById('vmix-mode-fields')!;
+const customParentFolderRow = document.getElementById('custom-parent-folder-row')!;
+const defaultBasePresetRow = document.getElementById('default-base-preset-row')!;
+const editConfigBtn = document.getElementById('edit-config-btn') as HTMLButtonElement;
+const createPresetBtn = document.getElementById('create-preset-btn') as HTMLButtonElement;
+const playFolderBtn = document.getElementById('play-folder-btn') as HTMLButtonElement;
+const openVmixBtn = document.getElementById('open-vmix-btn') as HTMLButtonElement;
 
 // ===== Navigation =====
 
@@ -160,6 +173,7 @@ const STORAGE_KEYS = {
     PROGRAM_CAM: 'programCam',
     PREVIEW_CAM: 'previewCam',
     BASE_FILE: 'baseFile',
+    CUSTOM_PARENT_FOLDER: 'customParentFolder',
     VMIX_API_URL: 'vmixApiUrl',
     RECENT_FOLDERS: 'recentFolders',
 };
@@ -195,18 +209,42 @@ transitionTypeInput.addEventListener('input', () => {
 vmixApiUrlInput.addEventListener('input', () => {
     localStorage.setItem(STORAGE_KEYS.VMIX_API_URL, vmixApiUrlInput.value);
 });
+customParentFolderInput.addEventListener('input', () => {
+    localStorage.setItem(STORAGE_KEYS.CUSTOM_PARENT_FOLDER, customParentFolderInput.value);
+});
+
+function updateHomeMode() {
+    const isVmixMode = homeVmixModeInput.checked;
+
+    configModeFields.classList.toggle('hidden', isVmixMode);
+    configModeFields.classList.toggle('flex', !isVmixMode);
+    vmixModeFields.classList.toggle('hidden', !isVmixMode);
+    vmixModeFields.classList.toggle('flex', isVmixMode);
+    customParentFolderRow.classList.toggle('hidden', isVmixMode);
+    defaultBasePresetRow.classList.toggle('hidden', isVmixMode);
+    editConfigBtn.classList.toggle('hidden', isVmixMode);
+    createPresetBtn.classList.toggle('hidden', isVmixMode);
+    playFolderBtn.classList.toggle('hidden', !isVmixMode);
+    openVmixBtn.classList.toggle('hidden', !isVmixMode);
+}
+
+homeConfigModeInput.addEventListener('change', updateHomeMode);
+homeVmixModeInput.addEventListener('change', updateHomeMode);
 
 function init() {
+    homeConfigModeInput.checked = true;
+    homeVmixModeInput.checked = false;
     enableBusInput.value = localStorage.getItem(STORAGE_KEYS.ENABLE_BUS) ?? 'A';
     collapseInputsInput.value = localStorage.getItem(STORAGE_KEYS.COLLAPSE_INPUTS) ?? '0';
     transitionTypeInput.value = localStorage.getItem(STORAGE_KEYS.TRANSITION_TYPE) ?? 'Stinger1';
     programCamInput.value = localStorage.getItem(STORAGE_KEYS.PROGRAM_CAM) ?? '';
     previewCamInput.value = localStorage.getItem(STORAGE_KEYS.PREVIEW_CAM) ?? '';
-    vmixApiUrlInput.value =
-        localStorage.getItem(STORAGE_KEYS.VMIX_API_URL) ?? 'http://localhost:8088';
+    vmixApiUrlInput.value = localStorage.getItem(STORAGE_KEYS.VMIX_API_URL) ?? '';
+    customParentFolderInput.value = localStorage.getItem(STORAGE_KEYS.CUSTOM_PARENT_FOLDER) ?? '';
 
     baseFileInput.value = localStorage.getItem(STORAGE_KEYS.BASE_FILE) ?? '';
     playFolderInput.value = getRecentFolders()[0] ?? '';
+    updateHomeMode();
     renderRecentFolders();
 }
 
@@ -348,7 +386,6 @@ function removeRecentFolder(folderPath: string) {
     renderRecentFolders(); // Re-render the list after deletion
 }
 
-const editConfigBtn = document.getElementById('edit-config-btn') as HTMLButtonElement;
 document
     .getElementById('documentation-btn')!
     .addEventListener('click', () => documentationModal.showModal());
@@ -404,7 +441,7 @@ function sleep(ms: number) {
     return new Promise((res) => setTimeout(res, ms));
 }
 
-document.getElementById('create-preset-btn')!.addEventListener('click', async () => {
+createPresetBtn.addEventListener('click', async () => {
     const baseFile = baseFileInput.value;
     const folderPath = playFolderInput.value;
 
@@ -417,12 +454,14 @@ document.getElementById('create-preset-btn')!.addEventListener('click', async ()
 
     const enableBus = enableBusInput.value;
     const collapse = collapseInputsInput.value === '1';
+    const customParentFolder = customParentFolderInput.value.trim();
     try {
         const reports: { folder: string; alerts: any[] }[] = await (window as any).api.createPreset(
             folderPath,
             baseFile,
             enableBus,
             collapse,
+            customParentFolder,
         );
 
         const alertsList = document.getElementById('home-alerts-list')!;
@@ -487,7 +526,7 @@ document.getElementById('create-preset-btn')!.addEventListener('click', async ()
     }
 });
 
-document.getElementById('play-folder-btn')!.addEventListener('click', async () => {
+playFolderBtn.addEventListener('click', async () => {
     const baseFile = baseFileInput.value;
     const folderPath = playFolderInput.value;
     const collapse = collapseInputsInput.value === '1';
@@ -551,7 +590,7 @@ saveConfigBtn.addEventListener('click', async () => {
 });
 
 // ===== vMix Page =====
-document.getElementById('open-vmix-btn')?.addEventListener('click', goToVmixPage);
+openVmixBtn.addEventListener('click', goToVmixPage);
 
 closeVmixWebBtn.addEventListener('click', () => {
     const res = confirm('Are you sure you want to close vMix Web?');

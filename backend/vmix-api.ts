@@ -1,6 +1,7 @@
 import { XMLParser } from 'fast-xml-parser';
 
 const parser = new XMLParser({ ignoreAttributes: false, attributeNamePrefix: '' });
+const DEFAULT_VMIX_API_URL = 'http://localhost:8088';
 
 async function fetchUrl(url: string) {
     try {
@@ -12,7 +13,11 @@ async function fetchUrl(url: string) {
     }
 }
 
-export async function vMixCall(func = '', params: Record<string, any> = {}, host = 'localhost') {
+export async function vMixCall(
+    func = '',
+    params: Record<string, any> = {},
+    host = DEFAULT_VMIX_API_URL,
+) {
     const apiUrl = normalizeVmixApiUrl(host);
     const query = new URLSearchParams({ Function: func, ...params });
     const url = `${apiUrl}/api/?${func ? query : ''}`;
@@ -20,8 +25,8 @@ export async function vMixCall(func = '', params: Record<string, any> = {}, host
     return await fetchUrl(url);
 }
 
-function normalizeVmixApiUrl(host: string) {
-    const value = host.trim().replace(/\/api\/?$/i, '') || 'localhost';
+export function normalizeVmixApiUrl(host: string) {
+    const value = host.trim().replace(/\/api\/?$/i, '') || DEFAULT_VMIX_API_URL;
     const url =
         value.startsWith('http://') || value.startsWith('https://') ? value : `http://${value}`;
     const withPort = /:\d+(?:\/|$)/.test(url) ? url : `${url}:8088`;
@@ -29,7 +34,7 @@ function normalizeVmixApiUrl(host: string) {
     return withPort.replace(/\/+$/, '');
 }
 
-export async function getVmixState(host = 'localhost') {
+export async function getVmixState(host = DEFAULT_VMIX_API_URL) {
     const res = await vMixCall('', {}, host);
 
     if (res.status === 200) {

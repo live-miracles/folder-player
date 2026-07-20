@@ -93,9 +93,18 @@ ipcMain.handle('select-play-folder', async () => {
     return result.filePaths[0];
 });
 
-ipcMain.handle('create-preset', (_, { folderPath, baseFile, enableBus, collapse }) => {
-    return createPresetFileRecursively(folderPath, baseFile, enableBus, collapse);
-});
+ipcMain.handle(
+    'create-preset',
+    (_, { folderPath, baseFile, enableBus, collapse, customParentFolder }) => {
+        return createPresetFileRecursively(
+            folderPath,
+            baseFile,
+            enableBus,
+            collapse,
+            customParentFolder,
+        );
+    },
+);
 ipcMain.handle(
     'play-folder',
     async (_, { folderPath, baseFile, enableBus, collapse, vmixApiUrl }) => {

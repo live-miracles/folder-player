@@ -109,11 +109,34 @@ Same-number overlay:
 07 Image.png
 => 07 Audio.mp3 + Image.png overlay
 
+Underscore ordering:
+03_1 Intro.mp4
+03_2 Teaching.mp4
+03_3 Meditation.mp3
+=> plays 03_1, then 03_2, then 03_3
+
 Reusable overlay:
 03 Audio.mp3
 08 Audio.mp3
 03+08 Photos
 => Photos overlays both 03 and 08</code></pre>
+
+        <h2 class="text-xl font-semibold mt-3">Custom Parent Folder</h2>
+        <p class="mt-1">
+          When Custom Parent Folder is filled, generated preset input paths replace only the folder path before the playlist source folder. If a
+          nearby base preset is found, the base preset parent folder name is kept. If the default base preset is used instead, the content folder
+          parent is replaced.
+        </p>
+        <pre class="bg-base-300/50 rounded-lg p-3 mt-2 overflow-x-auto text-sm"><code>Nearby base preset:
+Base preset: C:\a\b\base file.vmix
+Media file:  C:\a\b\content\video.mp4
+Custom:      C:\custom\path
+Generated:   C:\custom\path\b\content\video.mp4
+
+Default base preset fallback:
+Media file:  C:\a\b\content\video.mp4
+Custom:      C:\custom\path
+Generated:   C:\custom\path\content\video.mp4</code></pre>
 
         <h2 class="text-xl font-semibold mt-3">vMix Script: Preview Next</h2>
         <p class="mt-1">
@@ -146,63 +169,93 @@ Reusable overlay:
       <!-- HOME PAGE -->
       <div id="home-page" class="absolute inset-0 overflow-y-auto bg-cover bg-center" style="background-image: url('./mountains.jpg')">
         <div class="w-full flex items-center justify-center p-3" style="min-height: 100%">
-          <div class="mx-auto w-full max-w-200 bg-base-200/75 rounded-box p-3">
-            <fieldset class="fieldset inline-block w-fit">
-              <legend class="fieldset-legend">
-                <div class="tooltip" data-tip="This Bus will be enabled for all the inputs in the playlist.">Enable Bus</div>
-              </legend>
-              <select id="enable-bus-input" class="select w-24">
-                <option value="">None</option>
-                <option selected>A</option>
-                <option>B</option>
-                <option>C</option>
-                <option>D</option>
-                <option>E</option>
-                <option>F</option>
-              </select>
-            </fieldset>
+          <div class="relative mx-auto w-full max-w-200 bg-base-200/75 rounded-box p-3">
+            <button id="documentation-btn" type="button" class="btn btn-primary absolute top-3 left-3" title="Documentation">
+              <i data-lucide="book-open" class="w-5 h-5"></i>
+            </button>
 
-            <fieldset class="fieldset inline-block w-fit">
-              <legend class="fieldset-legend">
-                <div class="tooltip" data-tip="Inputs will appear minimized in vMix.">Collapse Inputs</div>
-              </legend>
-              <select id="collapse-inputs-input" class="select w-24">
-                <option value="1">Yes</option>
-                <option selected value="0">No</option>
-              </select>
-            </fieldset>
+            <div class="mb-2 flex justify-center">
+              <div class="join">
+                <input id="home-config-mode-input" class="join-item btn" type="radio" name="home-mode" aria-label="Config" checked />
+                <input id="home-vmix-mode-input" class="join-item btn" type="radio" name="home-mode" aria-label="vMix Web" />
+              </div>
+            </div>
 
-            <fieldset class="fieldset inline-block w-fit ml-1">
-              <legend class="fieldset-legend">Transition</legend>
-              <select id="transition-type-input" class="select w-28">
-                <option>Fade</option>
-                <option>Cut</option>
-                <option>Stinger1</option>
-                <option>Stinger2</option>
-                <option>Stinger3</option>
-              </select>
-            </fieldset>
+            <div id="config-mode-fields" class="flex flex-wrap items-end gap-1">
+              <fieldset class="fieldset w-fit">
+                <legend class="fieldset-legend">
+                  <div class="tooltip" data-tip="This Bus will be enabled for all the inputs in the playlist.">Enable Bus</div>
+                </legend>
+                <select id="enable-bus-input" class="select w-24">
+                  <option value="">None</option>
+                  <option selected>A</option>
+                  <option>B</option>
+                  <option>C</option>
+                  <option>D</option>
+                  <option>E</option>
+                  <option>F</option>
+                </select>
+              </fieldset>
 
-            <fieldset class="fieldset inline-block w-fit ml-1">
-              <legend class="fieldset-legend">Program Output</legend>
-              <select id="program-cam-input" class="select w-48">
-                <option value="" selected>None</option>
-              </select>
-            </fieldset>
+              <fieldset class="fieldset w-fit">
+                <legend class="fieldset-legend">
+                  <div class="tooltip" data-tip="Inputs will appear minimized in vMix.">Collapse Inputs</div>
+                </legend>
+                <select id="collapse-inputs-input" class="select w-24">
+                  <option value="1">Yes</option>
+                  <option selected value="0">No</option>
+                </select>
+              </fieldset>
 
-            <fieldset class="fieldset inline-block w-fit ml-1">
-              <legend class="fieldset-legend">Cam Output</legend>
-              <select id="preview-cam-input" class="select w-48">
-                <option value="" selected>None</option>
-              </select>
-            </fieldset>
+              <fieldset class="fieldset w-fit">
+                <legend class="fieldset-legend">Transition</legend>
+                <select id="transition-type-input" class="select w-28">
+                  <option>Fade</option>
+                  <option>Cut</option>
+                  <option>Stinger1</option>
+                  <option>Stinger2</option>
+                  <option>Stinger3</option>
+                </select>
+              </fieldset>
 
-            <label class="input w-full mt-1">
-              vMix API URL:
-              <input type="text" class="grow" id="vmix-api-url-input" />
-            </label>
+              <fieldset id="custom-parent-folder-row" class="fieldset min-w-80 flex-1">
+                <legend class="fieldset-legend">Custom Parent Folder</legend>
+                <label class="input w-full">
+                  <input type="text" class="grow" id="custom-parent-folder-input" list="custom-parent-folder-options" placeholder="D:\Livestream" />
+                  <datalist id="custom-parent-folder-options">
+                    <option value="D:\Livestream"></option>
+                  </datalist>
+                </label>
+              </fieldset>
+            </div>
 
-            <label class="input w-full mt-1">
+            <div id="vmix-mode-fields" class="hidden flex-wrap items-end gap-1">
+              <fieldset class="fieldset w-fit">
+                <legend class="fieldset-legend">Program Output</legend>
+                <select id="program-cam-input" class="select w-48">
+                  <option value="" selected>None</option>
+                </select>
+              </fieldset>
+
+              <fieldset class="fieldset w-fit">
+                <legend class="fieldset-legend">Cam Output</legend>
+                <select id="preview-cam-input" class="select w-48">
+                  <option value="" selected>None</option>
+                </select>
+              </fieldset>
+
+              <fieldset class="fieldset min-w-80 flex-1">
+                <legend class="fieldset-legend">vMix API URL</legend>
+                <label class="input w-full">
+                  <input type="text" class="grow" id="vmix-api-url-input" list="vmix-api-url-options" placeholder="http://localhost:8088" />
+                  <datalist id="vmix-api-url-options">
+                    <option value="http://localhost:8088"></option>
+                  </datalist>
+                </label>
+              </fieldset>
+            </div>
+
+            <label id="default-base-preset-row" class="input mt-1 w-full">
               Default Base Preset:
               <input type="text" class="grow" id="base-file-input" readonly />
               <button id="select-base-file-btn" class="btn btn-primary btn-xs">Select</button>
@@ -228,13 +281,10 @@ Reusable overlay:
             </div>
 
             <div class="text-center mt-3">
-              <button id="documentation-btn" type="button" class="btn btn-primary mr-16" title="Documentation">
-                <i data-lucide="book-open" class="w-5 h-5"></i>
-              </button>
               <button id="edit-config-btn" class="btn btn-accent">Open Config</button>
               <button id="create-preset-btn" class="btn btn-accent ml-2">Create vMix Preset</button>
-              <button id="play-folder-btn" class="btn btn-primary ml-2">Setup Folder in vMix</button>
-              <button id="open-vmix-btn" class="btn btn-primary ml-2">Open Current vMix</button>
+              <button id="play-folder-btn" class="btn btn-accent ml-2 hidden">Setup Folder in vMix</button>
+              <button id="open-vmix-btn" class="btn btn-accent ml-2 hidden">Open Current vMix</button>
             </div>
           </div>
         </div>
