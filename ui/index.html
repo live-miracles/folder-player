@@ -262,12 +262,17 @@ Generated:   C:\custom\path\content\video.mp4</code></pre>
               <button id="clear-base-file-btn" class="btn btn-error btn-xs">Clear</button>
             </label>
 
-            <label class="input w-full mt-1">
-              Content Folder:
-              <input type="text" class="grow" id="play-folder-input" readonly />
-              <button id="select-play-folder-btn" class="btn btn-primary btn-xs">Select</button>
-              <button id="clear-play-folder-btn" class="btn btn-error btn-xs">Clear</button>
-            </label>
+            <div class="mt-1 flex w-full items-start gap-2 rounded-field border border-base-content/20 bg-base-100 px-3 py-2">
+              <span class="shrink-0 pt-1 text-sm">Content Folder:</span>
+              <textarea
+                id="play-folder-input"
+                class="textarea textarea-ghost min-h-9 flex-1 resize-none overflow-hidden border-0 p-0 leading-snug whitespace-pre-wrap break-all focus:outline-none"
+                readonly
+                rows="1"
+                style="resize: none"></textarea>
+              <button id="select-play-folder-btn" class="btn btn-primary btn-xs mt-1">Select</button>
+              <button id="clear-play-folder-btn" class="btn btn-error btn-xs mt-1">Clear</button>
+            </div>
 
             <div class="overflow-x-auto max-h-80 mt-1">
               <table class="table table-xs">

@@ -52,7 +52,7 @@ updateBtn.onclick = () => (window as any).api.installUpdate();
 
 // ===== UI Elements =====
 const baseFileInput = document.getElementById('base-file-input') as HTMLInputElement;
-const playFolderInput = document.getElementById('play-folder-input') as HTMLInputElement;
+const playFolderInput = document.getElementById('play-folder-input') as HTMLTextAreaElement;
 const vmixApiUrlInput = document.getElementById('vmix-api-url-input') as HTMLInputElement;
 const customParentFolderInput = document.getElementById(
     'custom-parent-folder-input',
@@ -191,6 +191,19 @@ function addRecentFolder(folder: string) {
     localStorage.setItem(STORAGE_KEYS.RECENT_FOLDERS, JSON.stringify(updated));
     renderRecentFolders();
 }
+
+function setPlayFolder(folder: string) {
+    playFolderInput.value = folder;
+    resizePlayFolderInput();
+}
+
+function resizePlayFolderInput() {
+    playFolderInput.style.height = 'auto';
+    playFolderInput.style.height = `${playFolderInput.scrollHeight}px`;
+}
+
+playFolderInput.addEventListener('input', resizePlayFolderInput);
+window.addEventListener('resize', resizePlayFolderInput);
 enableBusInput.addEventListener('input', () => {
     localStorage.setItem(STORAGE_KEYS.ENABLE_BUS, enableBusInput.value);
 });
@@ -243,7 +256,7 @@ function init() {
     customParentFolderInput.value = localStorage.getItem(STORAGE_KEYS.CUSTOM_PARENT_FOLDER) ?? '';
 
     baseFileInput.value = localStorage.getItem(STORAGE_KEYS.BASE_FILE) ?? '';
-    playFolderInput.value = getRecentFolders()[0] ?? '';
+    setPlayFolder(getRecentFolders()[0] ?? '');
     updateHomeMode();
     renderRecentFolders();
 }
@@ -356,7 +369,7 @@ function renderRecentFolders() {
 
         // Click to reuse folder
         td.addEventListener('click', () => {
-            playFolderInput.value = folder;
+            setPlayFolder(folder);
         });
 
         tr.appendChild(td);
@@ -428,14 +441,14 @@ document.getElementById('select-play-folder-btn')!.addEventListener('click', asy
     const folder = await (window as any).api.selectPlayFolder();
 
     if (folder) {
-        playFolderInput.value = folder;
+        setPlayFolder(folder);
         addRecentFolder(folder);
     }
 });
 
 document
     .getElementById('clear-play-folder-btn')!
-    .addEventListener('click', () => (playFolderInput.value = ''));
+    .addEventListener('click', () => setPlayFolder(''));
 
 function sleep(ms: number) {
     return new Promise((res) => setTimeout(res, ms));

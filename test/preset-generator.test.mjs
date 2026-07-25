@@ -30,6 +30,36 @@ test('getRewrittenFilePath handles custom parent paths with or without trailing 
     );
 });
 
+test('getRewrittenFilePath maps UNC network paths with a local custom parent', () => {
+    const sourceParent = String.raw`\\192.168.99.125\Share\Live Stream\July 24-28 \EU English v001`;
+    const mediaFile = path.join(sourceParent, 'Day 1', '01 Video.mp4');
+    const customParent = String.raw`D:\Livestream`;
+
+    assert.equal(
+        getRewrittenFilePath(mediaFile, sourceParent, customParent),
+        path.join(customParent, 'Day 1', '01 Video.mp4'),
+    );
+});
+
+test('getRewrittenFilePath maps UNC network paths with a UNC custom parent', () => {
+    const sourceParent = String.raw`\\192.168.99.123\Share\Live Stream\July 24-28`;
+    const mediaFile = path.join(sourceParent, 'EU English v001', 'Day 1', '01 Video.mp4');
+    const customParent = String.raw`\\192.168.99.126\Live_Output`;
+
+    assert.equal(
+        getRewrittenFilePath(mediaFile, sourceParent, customParent),
+        path.join(customParent, 'EU English v001', 'Day 1', '01 Video.mp4'),
+    );
+});
+
+test('getRewrittenFilePath does not rewrite files outside the UNC source parent', () => {
+    const sourceParent = String.raw`\\192.168.99.123\Share\Live Stream\July 24-28\EU English v001`;
+    const mediaFile = String.raw`\\192.168.99.126\Other_Share\Day 1\01 Video.mp4`;
+    const customParent = String.raw`D:\Livestream`;
+
+    assert.equal(getRewrittenFilePath(mediaFile, sourceParent, customParent), mediaFile);
+});
+
 test('createPresetFileRecursively preserves nearby base preset parent folder in custom parent paths', () => {
     const parentPath = fs.mkdtempSync(path.join(os.tmpdir(), 'folder-player-parent-'));
     const contentPath = path.join(parentPath, 'content');
