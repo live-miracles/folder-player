@@ -114,6 +114,7 @@ function goToHomePage() {
     configPage.classList.add('hidden');
     vmixPage.classList.add('hidden');
     homePage.classList.remove('hidden');
+    requestAnimationFrame(resizePlayFolderInput);
 }
 
 function goToConfigPage() {
@@ -198,6 +199,8 @@ function setPlayFolder(folder: string) {
 }
 
 function resizePlayFolderInput() {
+    if (playFolderInput.offsetParent === null) return;
+
     playFolderInput.style.height = 'auto';
     playFolderInput.style.height = `${playFolderInput.scrollHeight}px`;
 }

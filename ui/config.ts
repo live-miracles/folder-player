@@ -8,14 +8,37 @@ export const FILE_TYPES = {
 };
 const TYPE_MAP = { Video: 1, AudioFile: 2, Image: 3, Photos: 4, PowerPoint: 5 };
 const ALERT = { ERROR: 'error', WARNING: 'warning' };
+const VIDEO_PREVIEW_FALLBACK_SECONDS = 5;
+const BLACK_FRAME_LUMA_THRESHOLD = 18;
+const BLACK_FRAME_RATIO_THRESHOLD = 0.96;
 const OPTION_META: Record<string, { icon: string; label: string }> = {
     cam: { icon: 'video', label: 'Camera' },
     mic: { icon: 'mic', label: 'Microphone' },
     loop: { icon: 'repeat', label: 'Loop' },
 };
 
+type ConfigFile = { path: string; type: string };
+type ConfigEntry = [string, ConfigFile[]];
+type ConfigState = {
+    folder: string;
+    files: ConfigEntry[];
+    config: [string, string[]][] | null;
+    alerts: { key: string; type: string; msg: string }[];
+};
+type ConfigViewMode = 'list' | 'preview';
+const CONFIG_VIEW_STORAGE_KEY = 'configViewMode';
+
 const camsOption = document.getElementById('cams-option') as HTMLInputElement;
+const configListView = document.getElementById('config-list-view')!;
+const configPreviewView = document.getElementById('config-preview-view')!;
+const configListViewBtn = document.getElementById('config-list-view-btn') as HTMLButtonElement;
+const configPreviewViewBtn = document.getElementById(
+    'config-preview-view-btn',
+) as HTMLButtonElement;
 const configTable = document.getElementById('config-table') as HTMLTableSectionElement;
+
+let currentConfigState: ConfigState | null = null;
+let configViewMode: ConfigViewMode = getStoredConfigViewMode();
 
 function getLeadingNumbers(text: string) {
     const match = text.match(/^(\d+)(?:_(\d+))?/);
@@ -38,68 +61,52 @@ function compareFiles(a: string, b: string) {
     return a.localeCompare(b);
 }
 
-export function renderConfigPage(state: {
-    folder: string;
-    files: [string, { path: string; type: string }[]][];
-    config: [string, string[]][] | null;
-    alerts: { key: string; type: string; msg: string }[];
-}) {
-    document.getElementById('config-title')!.innerHTML = state.folder;
+function getStoredConfigViewMode(): ConfigViewMode {
+    return localStorage.getItem(CONFIG_VIEW_STORAGE_KEY) === 'preview' ? 'preview' : 'list';
+}
+
+export function renderConfigPage(state: ConfigState) {
+    currentConfigState = state;
+    renderConfigTitle(state.folder);
 
     renderFolderAlerts(state.alerts);
 
-    configTable.innerHTML = '';
+    renderConfigContent();
+}
 
-    state.files.sort((a, b) => compareFiles(a[0], b[0]));
-    const configMap = new Map(state.config);
+function renderConfigContent() {
+    if (!currentConfigState) return;
+
+    configTable.innerHTML = '';
+    configPreviewView.innerHTML = '';
+
+    currentConfigState.files.sort((a, b) => compareFiles(a[0], b[0]));
+    const configMap = new Map(currentConfigState.config);
 
     const options = configMap.get('__options__') ?? [];
     camsOption.checked = options.includes('cams');
 
+    updateConfigViewButtons();
+    configListView.classList.toggle('hidden', configViewMode !== 'list');
+    configPreviewView.classList.toggle('hidden', configViewMode !== 'preview');
+
+    if (configViewMode === 'preview') renderPreviewConfig(configMap);
+    else renderListConfig(configMap);
+
+    setupCamMicLogic();
+    updateSkipOptions();
+    setupVideoPreviewFrames();
+    renderDynamicIcons();
+}
+
+function renderListConfig(configMap: Map<string, string[]>) {
     let html = '';
 
     let i = 0;
-    for (const [key, files] of state.files) {
+    for (const [key, files] of currentConfigState!.files) {
         files.sort((a: any, b: any) => (TYPE_MAP as any)[a.type] - (TYPE_MAP as any)[b.type]);
         const types = files.map((f) => f.type);
-        const selectedOptions = configMap.get(key) ?? [];
-
-        let optionsHtml = '';
-
-        const isSkip = selectedOptions.includes('skip') ? 'true' : 'false';
-        optionsHtml += getSkipOptionHtml(isSkip, key);
-
-        const isCam = selectedOptions.includes('cam') ? 'true' : 'false';
-        optionsHtml += getBoolOptionHtml('cam', isCam, key);
-
-        const isMic = selectedOptions.includes('mic') ? 'true' : 'false';
-        optionsHtml += getBoolOptionHtml('mic', isMic, key);
-
-        if (types.includes(FILE_TYPES.AUDIO) || types.includes(FILE_TYPES.VIDEO)) {
-            const isLoop = selectedOptions.includes('loop') ? 'true' : 'false';
-            optionsHtml += getBoolOptionHtml('loop', isLoop, key);
-
-            const opt = selectedOptions.find((opt) => opt.endsWith('%')) ?? '100';
-            const parsed = parseInt(opt);
-            optionsHtml += getNumberOptionHtml(
-                '%',
-                isNaN(parsed) ? '100' : String(parsed),
-                key,
-                0,
-                1000,
-            );
-        }
-        if (types.includes(FILE_TYPES.FOLDER) || types.includes(FILE_TYPES.POWERPOINT)) {
-            const opt = selectedOptions.find((opt) => opt.endsWith('s')) ?? '10';
-            const parsed = parseInt(opt);
-            optionsHtml += getNumberOptionHtml(
-                's',
-                isNaN(parsed) ? '10' : String(parsed),
-                key,
-                1,
-                1000,
-            );
-        }
+        const optionsHtml = getOptionsHtml(key, types, configMap.get(key) ?? []);
 
         let rowColor = i++ % 2 === 0 ? 'bg-base-300/30' : '';
 
@@ -122,9 +129,68 @@ export function renderConfigPage(state: {
     }
 
     configTable.innerHTML = html;
-    setupCamMicLogic();
-    updateSkipOptions();
-    renderDynamicIcons();
+}
+
+function renderPreviewConfig(configMap: Map<string, string[]>) {
+    configPreviewView.innerHTML = currentConfigState!.files
+        .map(([key, files]) => {
+            files.sort((a: any, b: any) => (TYPE_MAP as any)[a.type] - (TYPE_MAP as any)[b.type]);
+            const types = files.map((f) => f.type);
+            const optionsHtml = getOptionsHtml(key, types, configMap.get(key) ?? []);
+            const previewFiles = getPreviewFiles(files);
+
+            return `<section class="flex flex-col overflow-hidden rounded-lg border border-base-content/15 bg-base-100/80 shadow-sm">
+                <div class="space-y-1 border-b border-base-content/10 p-2">
+                    <div class="flex min-h-8 flex-wrap items-center justify-end gap-1">${optionsHtml}</div>
+                    ${files.map((file) => getPreviewFileHeaderHtml(file, key)).join('')}
+                </div>
+                <div class="grid ${previewFiles.length > 1 ? 'grid-cols-2' : 'grid-cols-1'} bg-base-300/30">
+                    ${previewFiles.map((file) => getPreviewPaneHtml(file)).join('')}
+                </div>
+            </section>`;
+        })
+        .join('');
+}
+
+function getOptionsHtml(key: string, types: string[], selectedOptions: string[]) {
+    let optionsHtml = '';
+
+    const isSkip = selectedOptions.includes('skip') ? 'true' : 'false';
+    optionsHtml += getSkipOptionHtml(isSkip, key);
+
+    const isCam = selectedOptions.includes('cam') ? 'true' : 'false';
+    optionsHtml += getBoolOptionHtml('cam', isCam, key);
+
+    const isMic = selectedOptions.includes('mic') ? 'true' : 'false';
+    optionsHtml += getBoolOptionHtml('mic', isMic, key);
+
+    if (types.includes(FILE_TYPES.AUDIO) || types.includes(FILE_TYPES.VIDEO)) {
+        const isLoop = selectedOptions.includes('loop') ? 'true' : 'false';
+        optionsHtml += getBoolOptionHtml('loop', isLoop, key);
+
+        const opt = selectedOptions.find((opt) => opt.endsWith('%')) ?? '100';
+        const parsed = parseInt(opt);
+        optionsHtml += getNumberOptionHtml(
+            '%',
+            isNaN(parsed) ? '100' : String(parsed),
+            key,
+            0,
+            1000,
+        );
+    }
+    if (types.includes(FILE_TYPES.FOLDER) || types.includes(FILE_TYPES.POWERPOINT)) {
+        const opt = selectedOptions.find((opt) => opt.endsWith('s')) ?? '10';
+        const parsed = parseInt(opt);
+        optionsHtml += getNumberOptionHtml(
+            's',
+            isNaN(parsed) ? '10' : String(parsed),
+            key,
+            1,
+            1000,
+        );
+    }
+
+    return optionsHtml;
 }
 
 function renderFolderAlerts(alerts: { key: string; type: string; msg: string }[]) {
@@ -161,6 +227,180 @@ function renderFolderAlerts(alerts: { key: string; type: string; msg: string }[]
 function getFileName(path: string) {
     const parts = path.replace(/\\/g, '/').split('/').filter(Boolean);
     return parts.slice(-1)[0];
+}
+
+function escapeHtml(text: string) {
+    return text
+        .replace(/&/g, '&amp;')
+        .replace(/</g, '&lt;')
+        .replace(/>/g, '&gt;')
+        .replace(/"/g, '&quot;')
+        .replace(/'/g, '&#039;');
+}
+
+function renderConfigTitle(folder: string) {
+    const title = document.getElementById('config-title')!;
+    const normalized = folder.replace(/\\/g, '/');
+    const lastSlashIndex = normalized.lastIndexOf('/');
+    const start = lastSlashIndex >= 0 ? folder.slice(0, lastSlashIndex + 1) : '';
+    const end = lastSlashIndex >= 0 ? folder.slice(lastSlashIndex + 1) : folder;
+
+    title.title = folder;
+    title.innerHTML = `<span class="flex min-w-0 max-w-full items-baseline" title="${escapeHtml(folder)}">
+        <span class="min-w-0 overflow-hidden text-ellipsis whitespace-nowrap">${escapeHtml(start)}</span>
+        <span class="shrink-0 whitespace-nowrap">${escapeHtml(end)}</span>
+    </span>`;
+}
+
+function getFileUrl(path: string) {
+    const encodedPath = path
+        .replace(/\\/g, '/')
+        .split('/')
+        .map(encodeURIComponent)
+        .join('/')
+        .replace(/^([A-Za-z])%3A/, '$1:');
+
+    return `file:///${encodedPath}`;
+}
+
+function getPreviewFileHeaderHtml(file: ConfigFile, key: string) {
+    const name = getFileName(file.path);
+
+    return `<div class="flex min-w-0 items-center gap-2 text-sm">
+        ${getFileTypeIconHtml(file.type, key)}
+        <span class="truncate" title="${escapeHtml(name)}">${escapeHtml(name)}</span>
+    </div>`;
+}
+
+function getFileTypeIconHtml(type: string, key: string) {
+    let color = '';
+    if (type === FILE_TYPES.AUDIO) color = 'badge-primary';
+    if (type === FILE_TYPES.VIDEO) color = 'badge-secondary';
+    if (type === FILE_TYPES.IMAGE) color = 'badge-accent';
+    if (type === FILE_TYPES.FOLDER) color = 'badge-warning';
+    if (type === FILE_TYPES.POWERPOINT) color = 'badge-info';
+
+    return `<span class="${key ? 'config-type' : ''} badge badge-soft h-6 w-6 shrink-0 p-0 ${color}" data-key="${key}" data-type="${type}" title="${type}" aria-label="${type}">
+        <i data-lucide="${getPreviewIcon(type)}" class="h-3.5 w-3.5"></i>
+    </span>`;
+}
+
+function getPreviewPaneHtml(file: ConfigFile) {
+    const src = escapeHtml(getFileUrl(file.path));
+    const name = escapeHtml(getFileName(file.path));
+
+    if (file.type === FILE_TYPES.IMAGE) {
+        return `<div class="aspect-video flex items-center justify-center overflow-hidden border-base-content/10 bg-black">
+            <img src="${src}" alt="${name}" class="max-h-full max-w-full object-contain" loading="lazy" />
+        </div>`;
+    }
+
+    if (file.type === FILE_TYPES.VIDEO) {
+        return `<div class="aspect-video flex items-center justify-center overflow-hidden border-base-content/10 bg-black">
+            <video src="${src}" class="config-preview-video max-h-full max-w-full object-contain" muted preload="metadata" playsinline></video>
+        </div>`;
+    }
+
+    return `<div class="aspect-video flex flex-col items-center justify-center gap-2 border-base-content/10 p-3 text-base-content/70">
+        <i data-lucide="${getPreviewIcon(file.type)}" class="h-12 w-12"></i>
+        <span class="max-w-full truncate text-sm">${name}</span>
+    </div>`;
+}
+
+function getPreviewFiles(files: ConfigFile[]) {
+    const hasVisual = files.some(
+        (file) =>
+            file.type === FILE_TYPES.IMAGE ||
+            file.type === FILE_TYPES.FOLDER ||
+            file.type === FILE_TYPES.POWERPOINT,
+    );
+
+    if (!hasVisual) return files;
+    return files.filter((file) => file.type !== FILE_TYPES.AUDIO);
+}
+
+function setupVideoPreviewFrames() {
+    const videos = configPreviewView.querySelectorAll<HTMLVideoElement>('.config-preview-video');
+
+    videos.forEach((video) => {
+        video.addEventListener('loadeddata', () => updateVideoPreviewFrame(video), { once: true });
+    });
+}
+
+async function updateVideoPreviewFrame(video: HTMLVideoElement) {
+    try {
+        video.pause();
+        if (!isVideoFrameBlack(video)) return;
+
+        if (!Number.isFinite(video.duration) || video.duration <= VIDEO_PREVIEW_FALLBACK_SECONDS) {
+            return;
+        }
+
+        const firstFrameTime = video.currentTime;
+        const fallbackTime = Math.min(
+            VIDEO_PREVIEW_FALLBACK_SECONDS,
+            Math.max(video.duration - 0.1, 0),
+        );
+
+        await seekVideo(video, fallbackTime);
+        if (!isVideoFrameBlack(video)) return;
+
+        await seekVideo(video, firstFrameTime);
+    } catch {
+        // Keep the browser-selected first frame if frame inspection is unavailable.
+    }
+}
+
+function seekVideo(video: HTMLVideoElement, time: number) {
+    return new Promise<void>((resolve, reject) => {
+        const onSeeked = () => {
+            cleanup();
+            resolve();
+        };
+        const onError = () => {
+            cleanup();
+            reject();
+        };
+        const cleanup = () => {
+            video.removeEventListener('seeked', onSeeked);
+            video.removeEventListener('error', onError);
+        };
+
+        video.addEventListener('seeked', onSeeked, { once: true });
+        video.addEventListener('error', onError, { once: true });
+        video.currentTime = time;
+    });
+}
+
+function isVideoFrameBlack(video: HTMLVideoElement) {
+    if (video.videoWidth === 0 || video.videoHeight === 0) return false;
+
+    const canvas = document.createElement('canvas');
+    const width = 32;
+    const height = Math.max(1, Math.round((video.videoHeight / video.videoWidth) * width));
+    canvas.width = width;
+    canvas.height = height;
+
+    const ctx = canvas.getContext('2d', { willReadFrequently: true });
+    if (!ctx) return false;
+
+    ctx.drawImage(video, 0, 0, width, height);
+    const { data } = ctx.getImageData(0, 0, width, height);
+    let blackPixels = 0;
+
+    for (let i = 0; i < data.length; i += 4) {
+        const luma = 0.2126 * data[i] + 0.7152 * data[i + 1] + 0.0722 * data[i + 2];
+        if (luma <= BLACK_FRAME_LUMA_THRESHOLD) blackPixels++;
+    }
+
+    return blackPixels / (data.length / 4) >= BLACK_FRAME_RATIO_THRESHOLD;
+}
+
+function getPreviewIcon(type: string) {
+    if (type === FILE_TYPES.AUDIO) return 'music';
+    if (type === FILE_TYPES.FOLDER) return 'images';
+    if (type === FILE_TYPES.POWERPOINT) return 'presentation';
+    return 'file';
 }
 
 function getBoolOptionHtml(name: string, value: string, key: string) {
@@ -216,7 +456,7 @@ export function getTableConfig() {
         if (!key) {
             throw new Error('Type key is not defined. ' + JSON.stringify(elem.dataset));
         }
-        const type = elem.innerText;
+        const type = elem.dataset.type ?? elem.innerText;
         if (!typeMap.get(key)) typeMap.set(key, []);
         typeMap.get(key)!.push(type);
     });
@@ -297,9 +537,7 @@ export function getTableConfig() {
 function setupCamMicLogic() {
     const groups = new Map<string, HTMLElement[]>();
 
-    const inputs = configTable.querySelectorAll<HTMLInputElement>(
-        '.config-option[type="checkbox"]',
-    );
+    const inputs = document.querySelectorAll<HTMLInputElement>('.config-option[type="checkbox"]');
 
     inputs.forEach((input) => {
         const key = input.dataset.key;
@@ -338,12 +576,51 @@ function setupCamMicLogic() {
     });
 }
 
+configListViewBtn.addEventListener('click', () => setConfigViewMode('list'));
+configPreviewViewBtn.addEventListener('click', () => setConfigViewMode('preview'));
 camsOption.addEventListener('change', updateSkipOptions);
 
+function setConfigViewMode(mode: ConfigViewMode) {
+    if (configViewMode === mode) return;
+
+    syncCurrentConfigFromDom();
+    configViewMode = mode;
+    localStorage.setItem(CONFIG_VIEW_STORAGE_KEY, mode);
+    renderConfigContent();
+}
+
+function syncCurrentConfigFromDom() {
+    if (!currentConfigState) return;
+
+    const options = document.querySelectorAll('.config-option') as NodeListOf<HTMLInputElement>;
+    const configMap = new Map<string, string[]>();
+
+    options.forEach((opt) => {
+        const key = opt.dataset.key;
+        const name = opt.dataset.name;
+        if (!key || !name) return;
+
+        if (opt.type === 'checkbox') {
+            if (!opt.checked) return;
+        } else if (!opt.value.trim()) {
+            return;
+        }
+
+        if (!configMap.get(key)) configMap.set(key, []);
+        configMap.get(key)!.push(opt.type === 'checkbox' ? name : opt.value + name);
+    });
+
+    if (camsOption.checked) configMap.set('__options__', ['cams']);
+    currentConfigState.config = Array.from(configMap);
+}
+
+function updateConfigViewButtons() {
+    configListViewBtn.classList.toggle('btn-primary', configViewMode === 'list');
+    configPreviewViewBtn.classList.toggle('btn-primary', configViewMode === 'preview');
+}
+
 function updateSkipOptions() {
-    const inputs = configTable.querySelectorAll<HTMLInputElement>(
-        '.config-option[type="checkbox"]',
-    );
+    const inputs = document.querySelectorAll<HTMLInputElement>('.config-option[type="checkbox"]');
 
     inputs.forEach((input) => {
         const name = input.dataset.name;
