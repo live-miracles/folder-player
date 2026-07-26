@@ -89,6 +89,7 @@ function renderConfigContent() {
     updateConfigViewButtons();
     configListView.classList.toggle('hidden', configViewMode !== 'list');
     configPreviewView.classList.toggle('hidden', configViewMode !== 'preview');
+    configPreviewView.classList.toggle('grid', configViewMode === 'preview');
 
     if (configViewMode === 'preview') renderPreviewConfig(configMap);
     else renderListConfig(configMap);
