@@ -8,6 +8,11 @@ export const FILE_TYPES = {
 };
 const TYPE_MAP = { Video: 1, AudioFile: 2, Image: 3, Photos: 4, PowerPoint: 5 };
 const ALERT = { ERROR: 'error', WARNING: 'warning' };
+const OPTION_META: Record<string, { icon: string; label: string }> = {
+    cam: { icon: 'video', label: 'Camera' },
+    mic: { icon: 'mic', label: 'Microphone' },
+    loop: { icon: 'repeat', label: 'Loop' },
+};
 
 const camsOption = document.getElementById('cams-option') as HTMLInputElement;
 const configTable = document.getElementById('config-table') as HTMLTableSectionElement;
@@ -119,6 +124,7 @@ export function renderConfigPage(state: {
     configTable.innerHTML = html;
     setupCamMicLogic();
     updateSkipOptions();
+    renderDynamicIcons();
 }
 
 function renderFolderAlerts(alerts: { key: string; type: string; msg: string }[]) {
@@ -160,10 +166,16 @@ function getFileName(path: string) {
 function getBoolOptionHtml(name: string, value: string, key: string) {
     if (key === '') return '';
 
+    const meta = OPTION_META[name] ?? { icon: 'circle', label: name };
+
     return `<label class="swap ml-2">
             <input data-key="${key}" data-name="${name}" class="config-option" type="checkbox" ${value === 'true' ? 'checked="checked"' : ''} />
-            <div class="swap-on"><span class="badge badge-primary">${name}</span></div>
-            <div class="swap-off"><span class="badge">${name}</span></div>
+            <div class="swap-on" title="${meta.label}" aria-label="${meta.label}">
+                <span class="badge badge-primary h-7 w-7 p-0"><i data-lucide="${meta.icon}" class="h-4 w-4"></i></span>
+            </div>
+            <div class="swap-off" title="${meta.label}" aria-label="${meta.label}">
+                <span class="badge h-7 w-7 p-0"><i data-lucide="${meta.icon}" class="h-4 w-4"></i></span>
+            </div>
         </label>`;
 }
 
@@ -341,16 +353,19 @@ function updateSkipOptions() {
 
         if (name !== 'skip') return;
 
+        const label = input.closest('label');
         if (!camsOption.checked) {
             input.checked = false;
             input.disabled = true;
 
-            input.closest('label')?.classList.add('opacity-50');
-            input.closest('label')?.classList.add('pointer-events-none');
+            label?.classList.add('hidden');
         } else {
             input.disabled = false;
-            input.closest('label')?.classList.remove('opacity-50');
-            input.closest('label')?.classList.remove('pointer-events-none');
+            label?.classList.remove('hidden');
         }
     });
+}
+
+function renderDynamicIcons() {
+    (window as any).lucide?.createIcons();
 }

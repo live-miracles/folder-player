@@ -300,17 +300,28 @@ Generated:   C:\custom\path\content\video.mp4</code></pre>
         <div class="mx-3">
           <div>&nbsp;</div>
           <div class="mx-auto max-w-300 pt-5 bg-base-200/75 rounded-box mt-10 p-3">
-            <div class="flex items-center text-xl font-semibold">
-              <span id="config-title"></span>
+            <div class="flex items-center justify-between gap-3">
+              <div class="flex min-w-0 items-center text-xl font-semibold">
+                <span id="config-title" class="truncate"></span>
 
-              <label class="swap ml-4">
-                <input data-key="0" id="cams-option" type="checkbox" />
-                <div class="swap-on"><span class="badge badge-primary badge-lg">cameras in between</span></div>
-                <div class="swap-off"><span class="badge badge-lg">cameras in between</span></div>
-              </label>
+                <label class="swap ml-4 shrink-0">
+                  <input data-key="0" id="cams-option" type="checkbox" />
+                  <div class="swap-on"><span class="badge badge-primary badge-lg">auto next</span></div>
+                  <div class="swap-off"><span class="badge badge-lg">auto next</span></div>
+                </label>
+              </div>
+
+              <div class="flex shrink-0 items-center gap-2">
+                <button id="cancel-config-btn" class="btn btn-accent btn-sm btn-square" title="Back" aria-label="Back">
+                  <i data-lucide="undo-2" class="h-5 w-5"></i>
+                </button>
+                <button id="save-config-btn" class="btn btn-primary btn-sm btn-square" title="Save" aria-label="Save">
+                  <i data-lucide="save" class="h-5 w-5"></i>
+                </button>
+              </div>
             </div>
 
-            <div class="max-h-[calc(100vh-250px)] overflow-y-auto">
+            <div class="max-h-[calc(100vh-155px)] overflow-y-auto">
               <div id="config-alerts" class="mt-5 p-3 bg-base-200/50 rounded-box shadow-lg">
                 <div class="flex justify-between items-center mb-3">
                   <h2 class="text-lg font-bold">Report</h2>
@@ -334,11 +345,6 @@ Generated:   C:\custom\path\content\video.mp4</code></pre>
               </div>
             </div>
 
-            <div class="divider"></div>
-            <div class="text-center mt-3 mb-1">
-              <button id="cancel-config-btn" class="btn btn-accent">Back</button>
-              <button id="save-config-btn" class="btn btn-primary ml-2">Save</button>
-            </div>
           </div>
         </div>
       </div>
