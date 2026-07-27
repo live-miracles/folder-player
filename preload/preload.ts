@@ -8,7 +8,8 @@ contextBridge.exposeInMainWorld('api', {
     downloadUpdate: () => ipcRenderer.send('download-update'),
     installUpdate: () => ipcRenderer.send('install-update'),
 
-    selectPlayFolder: () => ipcRenderer.invoke('select-play-folder'),
+    selectPlayFolder: (currentFolder?: string) =>
+        ipcRenderer.invoke('select-play-folder', currentFolder),
     selectBaseFile: () => ipcRenderer.invoke('select-base-file'),
     createPreset: (
         folderPath: string,

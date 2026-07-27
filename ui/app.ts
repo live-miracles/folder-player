@@ -51,7 +51,7 @@ updateDismissBtn.onclick = () => updateToast.classList.add('hidden');
 updateBtn.onclick = () => (window as any).api.installUpdate();
 
 // ===== UI Elements =====
-const baseFileInput = document.getElementById('base-file-input') as HTMLInputElement;
+const baseFileInput = document.getElementById('base-file-input') as HTMLTextAreaElement;
 const playFolderInput = document.getElementById('play-folder-input') as HTMLTextAreaElement;
 const vmixApiUrlInput = document.getElementById('vmix-api-url-input') as HTMLInputElement;
 const customParentFolderInput = document.getElementById(
@@ -75,6 +75,8 @@ const editConfigBtn = document.getElementById('edit-config-btn') as HTMLButtonEl
 const createPresetBtn = document.getElementById('create-preset-btn') as HTMLButtonElement;
 const playFolderBtn = document.getElementById('play-folder-btn') as HTMLButtonElement;
 const openVmixBtn = document.getElementById('open-vmix-btn') as HTMLButtonElement;
+const selectBaseFileBtn = document.getElementById('select-base-file-btn') as HTMLButtonElement;
+const selectPlayFolderBtn = document.getElementById('select-play-folder-btn') as HTMLButtonElement;
 
 // ===== Navigation =====
 
@@ -114,7 +116,7 @@ function goToHomePage() {
     configPage.classList.add('hidden');
     vmixPage.classList.add('hidden');
     homePage.classList.remove('hidden');
-    requestAnimationFrame(resizePlayFolderInput);
+    requestAnimationFrame(resizePathInputs);
 }
 
 function goToConfigPage() {
@@ -195,18 +197,29 @@ function addRecentFolder(folder: string) {
 
 function setPlayFolder(folder: string) {
     playFolderInput.value = folder;
-    resizePlayFolderInput();
+    resizeTextArea(playFolderInput);
 }
 
-function resizePlayFolderInput() {
-    if (playFolderInput.offsetParent === null) return;
-
-    playFolderInput.style.height = 'auto';
-    playFolderInput.style.height = `${playFolderInput.scrollHeight}px`;
+function setBaseFile(file: string) {
+    baseFileInput.value = file;
+    resizeTextArea(baseFileInput);
 }
 
-playFolderInput.addEventListener('input', resizePlayFolderInput);
-window.addEventListener('resize', resizePlayFolderInput);
+function resizeTextArea(textArea: HTMLTextAreaElement) {
+    if (textArea.offsetParent === null) return;
+
+    textArea.style.height = 'auto';
+    textArea.style.height = `${textArea.scrollHeight}px`;
+}
+
+function resizePathInputs() {
+    resizeTextArea(baseFileInput);
+    resizeTextArea(playFolderInput);
+}
+
+baseFileInput.addEventListener('input', () => resizeTextArea(baseFileInput));
+playFolderInput.addEventListener('input', () => resizeTextArea(playFolderInput));
+window.addEventListener('resize', resizePathInputs);
 enableBusInput.addEventListener('input', () => {
     localStorage.setItem(STORAGE_KEYS.ENABLE_BUS, enableBusInput.value);
 });
@@ -258,7 +271,7 @@ function init() {
     vmixApiUrlInput.value = localStorage.getItem(STORAGE_KEYS.VMIX_API_URL) ?? '';
     customParentFolderInput.value = localStorage.getItem(STORAGE_KEYS.CUSTOM_PARENT_FOLDER) ?? '';
 
-    baseFileInput.value = localStorage.getItem(STORAGE_KEYS.BASE_FILE) ?? '';
+    setBaseFile(localStorage.getItem(STORAGE_KEYS.BASE_FILE) ?? '');
     setPlayFolder(getRecentFolders()[0] ?? '');
     updateHomeMode();
     renderRecentFolders();
@@ -426,26 +439,42 @@ editConfigBtn.addEventListener('click', async () => {
     editConfigBtn.disabled = false;
 });
 
-document.getElementById('select-base-file-btn')!.addEventListener('click', async () => {
-    const file = await (window as any).api.selectBaseFile();
+selectBaseFileBtn.addEventListener('click', async () => {
+    selectBaseFileBtn.disabled = true;
 
-    if (file) {
-        baseFileInput.value = file;
-        localStorage.setItem(STORAGE_KEYS.BASE_FILE, file);
+    try {
+        const file = await (window as any).api.selectBaseFile();
+
+        if (file) {
+            setBaseFile(file);
+            localStorage.setItem(STORAGE_KEYS.BASE_FILE, file);
+        }
+    } catch (err) {
+        showErrorAlert(err);
+    } finally {
+        selectBaseFileBtn.disabled = false;
     }
 });
 
 document.getElementById('clear-base-file-btn')!.addEventListener('click', () => {
-    baseFileInput.value = '';
+    setBaseFile('');
     localStorage.setItem(STORAGE_KEYS.BASE_FILE, '');
 });
 
-document.getElementById('select-play-folder-btn')!.addEventListener('click', async () => {
-    const folder = await (window as any).api.selectPlayFolder();
+selectPlayFolderBtn.addEventListener('click', async () => {
+    selectPlayFolderBtn.disabled = true;
 
-    if (folder) {
-        setPlayFolder(folder);
-        addRecentFolder(folder);
+    try {
+        const folder = await (window as any).api.selectPlayFolder(playFolderInput.value.trim());
+
+        if (folder) {
+            setPlayFolder(folder);
+            addRecentFolder(folder);
+        }
+    } catch (err) {
+        showErrorAlert(err);
+    } finally {
+        selectPlayFolderBtn.disabled = false;
     }
 });
 

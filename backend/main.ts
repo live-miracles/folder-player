@@ -79,18 +79,30 @@ app.on('window-all-closed', () => {
 // ===== Frontend API =====
 
 ipcMain.handle('select-base-file', async () => {
-    const result = await dialog.showOpenDialog({
+    const result = dialog.showOpenDialogSync(mainWindow, {
         properties: ['openFile'],
         filters: [{ name: 'vMix preset', extensions: ['vmix'] }],
     });
-    if (result.canceled) return null;
-    return result.filePaths[0];
+    return result?.[0] ?? null;
 });
 
-ipcMain.handle('select-play-folder', async () => {
-    const result = await dialog.showOpenDialog({ properties: ['openDirectory'] });
-    if (result.canceled) return null;
-    return result.filePaths[0];
+ipcMain.handle('select-play-folder', async (_, currentFolder?: string) => {
+    const options: Electron.OpenDialogOptions = { properties: ['openDirectory'] };
+
+    try {
+        if (
+            currentFolder &&
+            fs.existsSync(currentFolder) &&
+            fs.statSync(currentFolder).isDirectory()
+        ) {
+            options.defaultPath = currentFolder;
+        }
+    } catch {
+        // If a network path is unavailable, fall back to the system default folder.
+    }
+
+    const result = dialog.showOpenDialogSync(mainWindow, options);
+    return result?.[0] ?? null;
 });
 
 ipcMain.handle(
