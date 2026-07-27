@@ -137,8 +137,10 @@ function renderPreviewConfig(configMap: Map<string, string[]>) {
         .map(([key, files]) => {
             files.sort((a: any, b: any) => (TYPE_MAP as any)[a.type] - (TYPE_MAP as any)[b.type]);
             const types = files.map((f) => f.type);
-            const optionsHtml = getOptionsHtml(key, types, configMap.get(key) ?? []);
+            const selectedOptions = configMap.get(key) ?? [];
+            const optionsHtml = getOptionsHtml(key, types, selectedOptions);
             const previewFiles = getPreviewFiles(files);
+            const hasCameraBackground = selectedOptions.includes('cam');
 
             return `<section class="flex flex-col overflow-hidden rounded-lg border border-base-content/15 bg-base-100/80 shadow-sm">
                 <div class="space-y-1 border-b border-base-content/10 p-2">
@@ -146,7 +148,7 @@ function renderPreviewConfig(configMap: Map<string, string[]>) {
                     ${files.map((file) => getPreviewFileHeaderHtml(file, key)).join('')}
                 </div>
                 <div class="grid ${previewFiles.length > 1 ? 'grid-cols-2' : 'grid-cols-1'} bg-base-300/30">
-                    ${previewFiles.map((file) => getPreviewPaneHtml(file)).join('')}
+                    ${previewFiles.map((file) => getPreviewPaneHtml(file, hasCameraBackground)).join('')}
                 </div>
             </section>`;
         })
@@ -286,18 +288,19 @@ function getFileTypeIconHtml(type: string, key: string) {
     </span>`;
 }
 
-function getPreviewPaneHtml(file: ConfigFile) {
+function getPreviewPaneHtml(file: ConfigFile, hasCameraBackground: boolean) {
     const src = escapeHtml(getFileUrl(file.path));
     const name = escapeHtml(getFileName(file.path));
+    const previewBackgroundClass = hasCameraBackground ? 'config-camera-preview-bg' : 'bg-black';
 
     if (file.type === FILE_TYPES.IMAGE) {
-        return `<div class="aspect-video flex items-center justify-center overflow-hidden border-base-content/10 bg-black">
+        return `<div class="config-preview-media-pane aspect-video flex items-center justify-center overflow-hidden border-base-content/10 ${previewBackgroundClass}">
             <img src="${src}" alt="${name}" class="max-h-full max-w-full object-contain" loading="lazy" />
         </div>`;
     }
 
     if (file.type === FILE_TYPES.VIDEO) {
-        return `<div class="aspect-video flex items-center justify-center overflow-hidden border-base-content/10 bg-black">
+        return `<div class="config-preview-media-pane aspect-video flex items-center justify-center overflow-hidden border-base-content/10 ${previewBackgroundClass}">
             <video src="${src}" class="config-preview-video max-h-full max-w-full object-contain" muted preload="metadata" playsinline></video>
         </div>`;
     }
@@ -398,6 +401,8 @@ function isVideoFrameBlack(video: HTMLVideoElement) {
 }
 
 function getPreviewIcon(type: string) {
+    if (type === FILE_TYPES.IMAGE) return 'image';
+    if (type === FILE_TYPES.VIDEO) return 'film';
     if (type === FILE_TYPES.AUDIO) return 'music';
     if (type === FILE_TYPES.FOLDER) return 'images';
     if (type === FILE_TYPES.POWERPOINT) return 'presentation';
@@ -568,12 +573,24 @@ function setupCamMicLogic() {
                 mic.closest('label')?.classList.remove('opacity-50');
                 mic.closest('label')?.classList.remove('pointer-events-none');
             }
+
+            updatePreviewCameraBackground(cam);
         };
 
         cam.addEventListener('change', update);
 
         // run once on init
         update();
+    });
+}
+
+function updatePreviewCameraBackground(cam: HTMLInputElement) {
+    const section = cam.closest('section');
+    if (!section) return;
+
+    section.querySelectorAll<HTMLElement>('.config-preview-media-pane').forEach((pane) => {
+        pane.classList.toggle('config-camera-preview-bg', cam.checked);
+        pane.classList.toggle('bg-black', !cam.checked);
     });
 }
 

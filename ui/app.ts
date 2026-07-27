@@ -467,6 +467,7 @@ createPresetBtn.addEventListener('click', async () => {
     }
 
     addRecentFolder(folderPath);
+    createPresetBtn.disabled = true;
 
     const enableBus = enableBusInput.value;
     const collapse = collapseInputsInput.value === '1';
@@ -539,6 +540,8 @@ createPresetBtn.addEventListener('click', async () => {
         (document.getElementById('create-preset-alerts') as any).showModal();
     } catch (err) {
         showErrorAlert(err);
+    } finally {
+        createPresetBtn.disabled = false;
     }
 });
 

@@ -3,6 +3,13 @@
     themes: dim --default;
 }
 
+.config-camera-preview-bg {
+    background-color: #101010;
+    background-image: url('../camera-background.avif');
+    background-position: center;
+    background-size: cover;
+}
+
 /* Expanded preview: fill the window (no browser/Electron Fullscreen API). */
 #preview-container.preview-expanded {
     position: fixed;
