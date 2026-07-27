@@ -102,19 +102,17 @@ npm run dev
 
 ## Publish
 
-Create a `.env` file in the project root with a GitHub token:
+Publishing uses Electron Builder's GitHub publisher configuration from
+`package.json`. Releases are published automatically when a version tag is
+pushed to GitHub.
 
 ```sh
-GH_TOKEN=ghp_***
+npm version x.x.x
+git push origin master --tags
 ```
 
-Then run:
-
-```sh
-npm run publish
-```
-
-This builds the app and publishes the Electron release to GitHub.
+The tag push starts the release workflow, builds the Windows installer, and
+publishes a GitHub release for that tag.
 
 ## Format
 
