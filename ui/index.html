@@ -262,7 +262,6 @@ Generated:   C:\custom\path\content\video.mp4</code></pre>
               <textarea
                 id="base-file-input"
                 class="textarea textarea-ghost min-h-6 flex-1 resize-none overflow-hidden border-0 p-0 leading-6 whitespace-pre-wrap break-all focus:outline-none"
-                readonly
                 rows="1"
                 style="resize: none"></textarea>
               <button id="select-base-file-btn" class="btn btn-primary btn-xs">Select</button>
@@ -274,7 +273,6 @@ Generated:   C:\custom\path\content\video.mp4</code></pre>
               <textarea
                 id="play-folder-input"
                 class="textarea textarea-ghost min-h-6 flex-1 resize-none overflow-hidden border-0 p-0 leading-6 whitespace-pre-wrap break-all focus:outline-none"
-                readonly
                 rows="1"
                 style="resize: none"></textarea>
               <button id="select-play-folder-btn" class="btn btn-primary btn-xs">Select</button>
@@ -303,77 +301,75 @@ Generated:   C:\custom\path\content\video.mp4</code></pre>
       </div>
 
       <!-- CONFIG PAGE -->
-      <div id="config-page" class="absolute inset-0 overflow-y-auto bg-cover bg-center hidden" style="background-image: url('./mountains.jpg')">
-        <div class="mx-3">
-          <div>&nbsp;</div>
-          <div class="mx-auto mt-10 w-full pt-5">
-            <div class="mx-auto max-w-300 rounded-box bg-base-200/75 p-3">
-              <div class="flex items-center justify-between gap-3">
-                <div class="flex min-w-0 flex-1 items-center gap-4 text-xl font-semibold">
-                  <button id="cancel-config-btn" class="btn btn-accent btn-sm btn-square shrink-0" title="Back" aria-label="Back">
-                    <i data-lucide="undo-2" class="h-5 w-5"></i>
-                  </button>
-                  <span id="config-title" class="min-w-0 flex-1"></span>
+      <div id="config-page" class="absolute inset-0 overflow-hidden bg-cover bg-center hidden" style="background-image: url('./mountains.jpg')">
+        <div class="flex h-full flex-col p-4">
+          <div id="config-card" class="mx-auto flex min-h-0 w-full max-w-300 flex-1 flex-col rounded-box bg-base-200/75 p-3">
+            <div class="mb-2 flex items-center justify-between gap-3">
+              <div class="flex min-w-0 flex-1 items-center gap-4 text-xl font-semibold">
+                <button id="cancel-config-btn" class="btn btn-accent btn-sm btn-square shrink-0" title="Back" aria-label="Back">
+                  <i data-lucide="undo-2" class="h-5 w-5"></i>
+                </button>
+                <span id="config-title" class="min-w-0 flex-1"></span>
 
-                  <label class="swap ml-4 shrink-0">
-                    <input data-key="0" id="cams-option" type="checkbox" />
-                    <div class="swap-on"><span class="badge badge-primary badge-lg">auto next</span></div>
-                    <div class="swap-off"><span class="badge badge-lg">auto next</span></div>
-                  </label>
-                </div>
-
-                <div class="flex shrink-0 items-center gap-2">
-                  <div class="join" aria-label="Config view">
-                    <button
-                      id="config-list-view-btn"
-                      type="button"
-                      class="btn btn-primary btn-sm btn-square join-item"
-                      title="List view"
-                      aria-label="List view">
-                      <i data-lucide="list" class="h-5 w-5"></i>
-                    </button>
-                    <button
-                      id="config-preview-view-btn"
-                      type="button"
-                      class="btn btn-sm btn-square join-item"
-                      title="Preview view"
-                      aria-label="Preview view">
-                      <i data-lucide="layout-grid" class="h-5 w-5"></i>
-                    </button>
-                  </div>
-                  <button id="save-config-btn" class="btn btn-primary btn-sm btn-square" title="Save" aria-label="Save">
-                    <i data-lucide="save" class="h-5 w-5"></i>
-                  </button>
-                </div>
+                <label class="swap ml-4 shrink-0">
+                  <input data-key="0" id="cams-option" type="checkbox" />
+                  <div class="swap-on"><span class="badge badge-primary badge-lg">auto next</span></div>
+                  <div class="swap-off"><span class="badge badge-lg">auto next</span></div>
+                </label>
               </div>
 
-              <div class="max-h-[calc(100vh-155px)] overflow-y-auto">
-                <div id="config-alerts" class="mt-5 p-3 bg-base-200/50 rounded-box shadow-lg">
-                  <div class="flex justify-between items-center mb-3">
-                    <h2 class="text-lg font-bold">Report</h2>
-                    <div id="config-report-summary"></div>
-                  </div>
-                  <ul id="config-alerts-list" class="space-y-2"></ul>
+              <div class="flex shrink-0 items-center gap-2">
+                <div class="join" aria-label="Config view">
+                  <button
+                    id="config-list-view-btn"
+                    type="button"
+                    class="btn btn-primary btn-sm btn-square join-item"
+                    title="List view"
+                    aria-label="List view">
+                    <i data-lucide="list" class="h-5 w-5"></i>
+                  </button>
+                  <button
+                    id="config-preview-view-btn"
+                    type="button"
+                    class="btn btn-sm btn-square join-item"
+                    title="Preview view"
+                    aria-label="Preview view">
+                    <i data-lucide="layout-grid" class="h-5 w-5"></i>
+                  </button>
                 </div>
-
-                <div id="config-list-view" class="overflow-x-auto mt-3">
-                  <table class="table">
-                    <thead>
-                      <tr>
-                        <th></th>
-                        <th>File</th>
-                        <th>Type</th>
-                        <th>Options</th>
-                      </tr>
-                    </thead>
-                    <tbody id="config-table"></tbody>
-                  </table>
-                </div>
+                <button id="save-config-btn" class="btn btn-primary btn-sm btn-square" title="Save" aria-label="Save">
+                  <i data-lucide="save" class="h-5 w-5"></i>
+                </button>
               </div>
             </div>
-            <div
-              id="config-preview-view"
-              class="mt-3 hidden w-full grid-cols-[repeat(auto-fill,minmax(16rem,20rem))] justify-center gap-3 pb-3"></div>
+
+            <div id="config-card-body" class="min-h-0 flex-1 overflow-y-auto">
+              <div id="config-alerts" class="p-3 bg-base-200/50 rounded-box shadow-lg">
+                <div class="flex justify-between items-center mb-3">
+                  <h2 class="text-lg font-bold">Report</h2>
+                  <div id="config-report-summary"></div>
+                </div>
+                <ul id="config-alerts-list" class="max-h-50 space-y-2 overflow-y-auto pr-1"></ul>
+              </div>
+
+              <div id="config-list-view" class="overflow-x-auto">
+                <table class="table">
+                  <thead>
+                    <tr>
+                      <th></th>
+                      <th>File</th>
+                      <th>Type</th>
+                      <th>Options</th>
+                    </tr>
+                  </thead>
+                  <tbody id="config-table"></tbody>
+                </table>
+              </div>
+            </div>
+          </div>
+
+          <div id="config-preview-scroll" class="mt-3 hidden min-h-0 w-full flex-1 overflow-y-auto">
+            <div id="config-preview-view" class="hidden w-full grid-cols-[repeat(auto-fill,minmax(16rem,1fr))] gap-3 pb-3"></div>
           </div>
         </div>
       </div>

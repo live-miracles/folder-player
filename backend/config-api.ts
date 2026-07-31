@@ -14,10 +14,23 @@ export const CONFIG_FILE_NAME = 'folder-player.txt';
 
 export function getFolderState(folderPath: string) {
     const configMap = getFolderConfig(folderPath);
-    const fileMap = getFolderFiles(folderPath);
+    let fileMap: Map<string, { path: string; type: string; id: string }[]>;
+    try {
+        fileMap = getFolderFiles(folderPath);
+    } catch (err) {
+        if (isFolderReadError(err)) {
+            throw new Error(`Content folder is not found or cannot be opened: ${folderPath}`);
+        }
+        throw err;
+    }
     const alerts = getAlerts(configMap ?? new Map(), fileMap);
 
     return { folder: folderPath, config: configMap, files: fileMap, alerts: alerts };
+}
+
+function isFolderReadError(error: unknown) {
+    const code = (error as NodeJS.ErrnoException)?.code;
+    return ['ENOENT', 'ENOTDIR', 'EACCES', 'EPERM', 'UNKNOWN'].includes(code ?? '');
 }
 
 function getFolderConfig(folderPath: string) {

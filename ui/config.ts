@@ -29,7 +29,10 @@ type ConfigViewMode = 'list' | 'preview';
 const CONFIG_VIEW_STORAGE_KEY = 'configViewMode';
 
 const camsOption = document.getElementById('cams-option') as HTMLInputElement;
+const configCard = document.getElementById('config-card')!;
+const configCardBody = document.getElementById('config-card-body')!;
 const configListView = document.getElementById('config-list-view')!;
+const configPreviewScroll = document.getElementById('config-preview-scroll')!;
 const configPreviewView = document.getElementById('config-preview-view')!;
 const configListViewBtn = document.getElementById('config-list-view-btn') as HTMLButtonElement;
 const configPreviewViewBtn = document.getElementById(
@@ -87,7 +90,10 @@ function renderConfigContent() {
     camsOption.checked = options.includes('cams');
 
     updateConfigViewButtons();
+    updateConfigPageLayout();
     configListView.classList.toggle('hidden', configViewMode !== 'list');
+    configPreviewScroll.classList.toggle('hidden', configViewMode !== 'preview');
+    configPreviewScroll.classList.toggle('block', configViewMode === 'preview');
     configPreviewView.classList.toggle('hidden', configViewMode !== 'preview');
     configPreviewView.classList.toggle('grid', configViewMode === 'preview');
 
@@ -202,11 +208,17 @@ function renderFolderAlerts(alerts: { key: string; type: string; msg: string }[]
 
     const configReportSummary = document.getElementById('config-report-summary')!;
     const alertsListElement = document.getElementById('config-alerts-list')!;
+    const configAlertsElement = document.getElementById('config-alerts')!;
+    const configListViewElement = document.getElementById('config-list-view')!;
 
     if (errorNum === 0 && warningNum === 0) {
-        configReportSummary.innerHTML = '<p class="text-success">No issues found.</p>';
+        configAlertsElement.classList.add('hidden');
+        configListViewElement.classList.remove('mt-3');
+        configReportSummary.innerHTML = '';
         alertsListElement.innerHTML = ''; // Clear any previous alerts
     } else {
+        configAlertsElement.classList.remove('hidden');
+        configListViewElement.classList.add('mt-3');
         configReportSummary.innerHTML = `
             <div class="flex justify-start items-center space-x-4">
                 <p class="text-error font-semibold">Errors: <span id="config-error-cnt">${errorNum}</span></p>
@@ -635,6 +647,14 @@ function syncCurrentConfigFromDom() {
 function updateConfigViewButtons() {
     configListViewBtn.classList.toggle('btn-primary', configViewMode === 'list');
     configPreviewViewBtn.classList.toggle('btn-primary', configViewMode === 'preview');
+}
+
+function updateConfigPageLayout() {
+    const isPreview = configViewMode === 'preview';
+
+    configCard.classList.toggle('flex-1', !isPreview);
+    configCard.classList.toggle('shrink-0', isPreview);
+    configCardBody.classList.toggle('flex-1', !isPreview);
 }
 
 function updateSkipOptions() {

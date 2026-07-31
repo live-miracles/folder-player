@@ -176,6 +176,7 @@ const STORAGE_KEYS = {
     PROGRAM_CAM: 'programCam',
     PREVIEW_CAM: 'previewCam',
     BASE_FILE: 'baseFile',
+    PLAY_FOLDER: 'playFolder',
     CUSTOM_PARENT_FOLDER: 'customParentFolder',
     VMIX_API_URL: 'vmixApiUrl',
     RECENT_FOLDERS: 'recentFolders',
@@ -197,11 +198,13 @@ function addRecentFolder(folder: string) {
 
 function setPlayFolder(folder: string) {
     playFolderInput.value = folder;
+    localStorage.setItem(STORAGE_KEYS.PLAY_FOLDER, folder);
     resizeTextArea(playFolderInput);
 }
 
 function setBaseFile(file: string) {
     baseFileInput.value = file;
+    localStorage.setItem(STORAGE_KEYS.BASE_FILE, file);
     resizeTextArea(baseFileInput);
 }
 
@@ -217,8 +220,14 @@ function resizePathInputs() {
     resizeTextArea(playFolderInput);
 }
 
-baseFileInput.addEventListener('input', () => resizeTextArea(baseFileInput));
-playFolderInput.addEventListener('input', () => resizeTextArea(playFolderInput));
+baseFileInput.addEventListener('input', () => {
+    localStorage.setItem(STORAGE_KEYS.BASE_FILE, baseFileInput.value);
+    resizeTextArea(baseFileInput);
+});
+playFolderInput.addEventListener('input', () => {
+    localStorage.setItem(STORAGE_KEYS.PLAY_FOLDER, playFolderInput.value);
+    resizeTextArea(playFolderInput);
+});
 window.addEventListener('resize', resizePathInputs);
 enableBusInput.addEventListener('input', () => {
     localStorage.setItem(STORAGE_KEYS.ENABLE_BUS, enableBusInput.value);
@@ -272,7 +281,7 @@ function init() {
     customParentFolderInput.value = localStorage.getItem(STORAGE_KEYS.CUSTOM_PARENT_FOLDER) ?? '';
 
     setBaseFile(localStorage.getItem(STORAGE_KEYS.BASE_FILE) ?? '');
-    setPlayFolder(getRecentFolders()[0] ?? '');
+    setPlayFolder(localStorage.getItem(STORAGE_KEYS.PLAY_FOLDER) ?? getRecentFolders()[0] ?? '');
     updateHomeMode();
     renderRecentFolders();
 }
@@ -434,9 +443,17 @@ editConfigBtn.addEventListener('click', async () => {
         addRecentFolder(folderPath);
         goToConfigPage();
     } catch (err) {
-        console.error(err);
+        const message =
+            err instanceof Error
+                ? err.message.replace(
+                      /^Error invoking remote method 'get-folder-state': Error: /,
+                      '',
+                  )
+                : String(err);
+        showErrorAlert(`Could not open config for this folder.\n\n${message}`);
+    } finally {
+        editConfigBtn.disabled = false;
     }
-    editConfigBtn.disabled = false;
 });
 
 selectBaseFileBtn.addEventListener('click', async () => {
@@ -447,7 +464,6 @@ selectBaseFileBtn.addEventListener('click', async () => {
 
         if (file) {
             setBaseFile(file);
-            localStorage.setItem(STORAGE_KEYS.BASE_FILE, file);
         }
     } catch (err) {
         showErrorAlert(err);
@@ -458,7 +474,6 @@ selectBaseFileBtn.addEventListener('click', async () => {
 
 document.getElementById('clear-base-file-btn')!.addEventListener('click', () => {
     setBaseFile('');
-    localStorage.setItem(STORAGE_KEYS.BASE_FILE, '');
 });
 
 selectPlayFolderBtn.addEventListener('click', async () => {
