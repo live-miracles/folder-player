@@ -4,6 +4,7 @@ import { showErrorAlert, showSuccessAlert, capitalize } from './utils.js';
 import { getRandomQuote } from './quotes.js';
 
 const RECENT_FOLDERS_LIMIT = 50;
+type ReportAlert = { key?: string; type: string; msg: string; files?: string[] };
 
 // ===== Updates =====
 const updateText = document.getElementById('update-text')!;
@@ -64,9 +65,10 @@ const programCamInput = document.getElementById('program-cam-input') as HTMLInpu
 const previewCamInput = document.getElementById('preview-cam-input') as HTMLInputElement;
 const transitionTypeInput = document.getElementById('transition-type-input') as HTMLInputElement;
 const closeVmixWebBtn = document.getElementById('close-vmix-web-btn')!;
-const documentationModal = document.getElementById('documentation-modal') as HTMLDialogElement;
-const homeConfigModeInput = document.getElementById('home-config-mode-input') as HTMLInputElement;
-const homeVmixModeInput = document.getElementById('home-vmix-mode-input') as HTMLInputElement;
+const closeDocsBtn = document.getElementById('close-docs-btn')!;
+const homeConfigModeInput = document.getElementById('home-config-mode-input') as HTMLButtonElement;
+const homeVmixModeInput = document.getElementById('home-vmix-mode-input') as HTMLButtonElement;
+const homeDocsModeInput = document.getElementById('home-docs-mode-input') as HTMLButtonElement;
 const configModeFields = document.getElementById('config-mode-fields')!;
 const vmixModeFields = document.getElementById('vmix-mode-fields')!;
 const customParentFolderRow = document.getElementById('custom-parent-folder-row')!;
@@ -89,11 +91,14 @@ const loadingPage = document.getElementById('loading-page')!;
 const homePage = document.getElementById('home-page')!;
 const configPage = document.getElementById('config-page')!;
 const vmixPage = document.getElementById('vmix-page')!;
+const docsPage = document.getElementById('docs-page')!;
+let homeMode: 'config' | 'vmix' | 'docs' = 'config';
 
 function goToLoadingPage(seconds: number) {
     configPage.classList.add('hidden');
     vmixPage.classList.add('hidden');
     homePage.classList.add('hidden');
+    docsPage.classList.add('hidden');
     loadingPage.classList.remove('hidden');
 
     const quoteEl = document.getElementById('loading-quote')!;
@@ -115,6 +120,7 @@ function goToHomePage() {
     loadingPage.classList.add('hidden');
     configPage.classList.add('hidden');
     vmixPage.classList.add('hidden');
+    docsPage.classList.add('hidden');
     homePage.classList.remove('hidden');
     requestAnimationFrame(resizePathInputs);
 }
@@ -123,7 +129,16 @@ function goToConfigPage() {
     loadingPage.classList.add('hidden');
     homePage.classList.add('hidden');
     vmixPage.classList.add('hidden');
+    docsPage.classList.add('hidden');
     configPage.classList.remove('hidden');
+}
+
+function goToDocsPage() {
+    loadingPage.classList.add('hidden');
+    homePage.classList.add('hidden');
+    configPage.classList.add('hidden');
+    vmixPage.classList.add('hidden');
+    docsPage.classList.remove('hidden');
 }
 
 async function goToVmixPage() {
@@ -165,6 +180,7 @@ async function goToVmixPage() {
 
     homePage.classList.add('hidden');
     configPage.classList.add('hidden');
+    docsPage.classList.add('hidden');
     vmixPage.classList.remove('hidden');
 }
 
@@ -252,7 +268,19 @@ customParentFolderInput.addEventListener('input', () => {
 });
 
 function updateHomeMode() {
-    const isVmixMode = homeVmixModeInput.checked;
+    homeConfigModeInput.classList.toggle('tab-active', homeMode === 'config');
+    homeVmixModeInput.classList.toggle('tab-active', homeMode === 'vmix');
+    homeDocsModeInput.classList.toggle('tab-active', homeMode === 'docs');
+    homeConfigModeInput.setAttribute('aria-selected', String(homeMode === 'config'));
+    homeVmixModeInput.setAttribute('aria-selected', String(homeMode === 'vmix'));
+    homeDocsModeInput.setAttribute('aria-selected', String(homeMode === 'docs'));
+
+    if (homeMode === 'docs') {
+        goToDocsPage();
+        return;
+    }
+
+    const isVmixMode = homeMode === 'vmix';
 
     configModeFields.classList.toggle('hidden', isVmixMode);
     configModeFields.classList.toggle('flex', !isVmixMode);
@@ -266,12 +294,21 @@ function updateHomeMode() {
     openVmixBtn.classList.toggle('hidden', !isVmixMode);
 }
 
-homeConfigModeInput.addEventListener('change', updateHomeMode);
-homeVmixModeInput.addEventListener('change', updateHomeMode);
+homeConfigModeInput.addEventListener('click', () => {
+    homeMode = 'config';
+    updateHomeMode();
+});
+homeVmixModeInput.addEventListener('click', () => {
+    homeMode = 'vmix';
+    updateHomeMode();
+});
+homeDocsModeInput.addEventListener('click', () => {
+    homeMode = 'docs';
+    updateHomeMode();
+});
 
 function init() {
-    homeConfigModeInput.checked = true;
-    homeVmixModeInput.checked = false;
+    homeMode = 'config';
     enableBusInput.value = localStorage.getItem(STORAGE_KEYS.ENABLE_BUS) ?? 'A';
     collapseInputsInput.value = localStorage.getItem(STORAGE_KEYS.COLLAPSE_INPUTS) ?? '0';
     transitionTypeInput.value = localStorage.getItem(STORAGE_KEYS.TRANSITION_TYPE) ?? 'Stinger1';
@@ -424,9 +461,11 @@ function removeRecentFolder(folderPath: string) {
     renderRecentFolders(); // Re-render the list after deletion
 }
 
-document
-    .getElementById('documentation-btn')!
-    .addEventListener('click', () => documentationModal.showModal());
+closeDocsBtn.addEventListener('click', () => {
+    homeMode = 'config';
+    updateHomeMode();
+    goToHomePage();
+});
 
 editConfigBtn.addEventListener('click', async () => {
     const folderPath = playFolderInput.value;
@@ -501,6 +540,25 @@ function sleep(ms: number) {
     return new Promise((res) => setTimeout(res, ms));
 }
 
+function escapeHtml(text: string) {
+    return text
+        .replace(/&/g, '&amp;')
+        .replace(/</g, '&lt;')
+        .replace(/>/g, '&gt;')
+        .replace(/"/g, '&quot;')
+        .replace(/'/g, '&#039;');
+}
+
+function getAlertFilesHtml(alert: ReportAlert) {
+    if (!alert.files || alert.files.length === 0) return '';
+
+    const files = alert.files
+        .map((file) => `<span class="badge badge-soft">${escapeHtml(file)}</span>`)
+        .join('');
+
+    return `<div class="mt-1 flex flex-wrap gap-1">${files}</div>`;
+}
+
 createPresetBtn.addEventListener('click', async () => {
     const baseFile = baseFileInput.value;
     const folderPath = playFolderInput.value;
@@ -517,13 +575,9 @@ createPresetBtn.addEventListener('click', async () => {
     const collapse = collapseInputsInput.value === '1';
     const customParentFolder = customParentFolderInput.value.trim();
     try {
-        const reports: { folder: string; alerts: any[] }[] = await (window as any).api.createPreset(
-            folderPath,
-            baseFile,
-            enableBus,
-            collapse,
-            customParentFolder,
-        );
+        const reports: { folder: string; alerts: ReportAlert[] }[] = await (
+            window as any
+        ).api.createPreset(folderPath, baseFile, enableBus, collapse, customParentFolder);
 
         const alertsList = document.getElementById('home-alerts-list')!;
         alertsList.innerHTML = ''; // Clear previous alerts
@@ -570,7 +624,10 @@ createPresetBtn.addEventListener('click', async () => {
                         (alert) => `
                         <li class="flex items-start">
                             <span class="${alert.type === 'error' ? 'text-error' : 'text-warning'} mr-2">${alert.type === 'error' ? '❌' : '⚠️'}</span>
-                            <p><strong>${capitalize(alert.type)}</strong>${alert.key ? ` in <strong>${alert.key}</strong>` : ''}: ${alert.msg}</p>
+                            <div>
+                                <p><strong>${capitalize(alert.type)}</strong>${alert.key ? ` in <strong>${alert.key}</strong>` : ''}: ${escapeHtml(alert.msg)}</p>
+                                ${getAlertFilesHtml(alert)}
+                            </div>
                         </li>`,
                     )
                     .join('');

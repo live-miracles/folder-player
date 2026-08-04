@@ -19,11 +19,12 @@ const OPTION_META: Record<string, { icon: string; label: string }> = {
 
 type ConfigFile = { path: string; type: string };
 type ConfigEntry = [string, ConfigFile[]];
+type ConfigAlert = { key: string; type: string; msg: string; files?: string[] };
 type ConfigState = {
     folder: string;
     files: ConfigEntry[];
     config: [string, string[]][] | null;
-    alerts: { key: string; type: string; msg: string }[];
+    alerts: ConfigAlert[];
 };
 type ConfigViewMode = 'list' | 'preview';
 const CONFIG_VIEW_STORAGE_KEY = 'configViewMode';
@@ -202,7 +203,7 @@ function getOptionsHtml(key: string, types: string[], selectedOptions: string[])
     return optionsHtml;
 }
 
-function renderFolderAlerts(alerts: { key: string; type: string; msg: string }[]) {
+function renderFolderAlerts(alerts: ConfigAlert[]) {
     const errorNum = alerts.filter((a) => a.type === ALERT.ERROR).length;
     const warningNum = alerts.filter((a) => a.type === ALERT.WARNING).length;
 
@@ -231,7 +232,8 @@ function renderFolderAlerts(alerts: { key: string; type: string; msg: string }[]
                     <li class="flex items-start">
                         <span class="text-error mr-2">${alert.type === ALERT.ERROR ? '❌' : '⚠️'}</span>
                         <div>
-                            <p><strong>${capitalize(alert.type)}</strong>${alert.key ? ` in <strong>${alert.key}</strong>` : ''}: ${alert.msg}</p>
+                            <p><strong>${capitalize(alert.type)}</strong>${alert.key ? ` in <strong>${alert.key}</strong>` : ''}: ${escapeHtml(alert.msg)}</p>
+                            ${getAlertFilesHtml(alert)}
                         </div>
                     </li>`,
             )
@@ -251,6 +253,16 @@ function escapeHtml(text: string) {
         .replace(/>/g, '&gt;')
         .replace(/"/g, '&quot;')
         .replace(/'/g, '&#039;');
+}
+
+function getAlertFilesHtml(alert: ConfigAlert) {
+    if (!alert.files || alert.files.length === 0) return '';
+
+    const files = alert.files
+        .map((file) => `<span class="badge badge-soft">${escapeHtml(file)}</span>`)
+        .join('');
+
+    return `<div class="mt-1 flex flex-wrap gap-1">${files}</div>`;
 }
 
 function renderConfigTitle(folder: string) {

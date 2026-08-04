@@ -64,14 +64,22 @@
       </div>
     </dialog>
 
-    <dialog id="documentation-modal" class="modal py-6">
-      <div class="modal-box max-w-200 max-h-[calc(100vh-3rem)]">
-        <h2 class="text-xl font-semibold">Base vMix Preset</h2>
-        <p class="mt-1">
-          Choose a default preset. A nearby <code>`base.vmix`</code> overrides it. For overlays, title base inputs <code>`Cam`</code> and
-          <code>`Mic`</code>.
-        </p>
-        <pre class="bg-base-300/50 rounded-lg p-3 mt-2 overflow-x-auto text-sm"><code>Selected default base preset
+    <div id="docs-page" class="fixed inset-0 z-10 hidden overflow-hidden bg-cover bg-center p-4" style="background-image: url('./mountains.jpg')">
+      <div class="mx-auto flex h-full w-full max-w-200 flex-col rounded-box bg-base-200/90 p-4">
+        <div class="mb-4 flex shrink-0 items-center gap-3">
+          <button id="close-docs-btn" class="btn btn-accent btn-sm btn-square shrink-0" title="Back" aria-label="Back">
+            <i data-lucide="undo-2" class="h-5 w-5"></i>
+          </button>
+          <h1 class="text-xl font-bold">Docs</h1>
+        </div>
+
+        <div class="min-h-0 flex-1 overflow-y-auto pr-1">
+          <h2 class="text-xl font-semibold">Base vMix Preset</h2>
+          <p class="mt-1">
+            Choose a default preset. A nearby <code>`base.vmix`</code> overrides it. For overlays, title base inputs <code>`Cam`</code> and
+            <code>`Mic`</code>.
+          </p>
+          <pre class="bg-base-300/50 rounded-lg p-3 mt-2 overflow-x-auto text-sm"><code>Selected default base preset
         |
         v
 Content folder
@@ -88,12 +96,12 @@ Required input titles:
 Cam  - camera input
 Mic  - microphone input</code></pre>
 
-        <h2 class="text-xl font-semibold mt-3">Content Folder</h2>
-        <p class="mt-1">
-          Number files to set order. Same number means overlay, <code>`+`</code> reuses an overlay, and unnumbered items are ignored. Configured
-          subfolders with <code>`folder-player.txt`</code> get their own presets.
-        </p>
-        <pre class="bg-base-300/50 rounded-lg p-3 mt-2 overflow-x-auto text-sm"><code>Content folder
+          <h2 class="text-xl font-semibold mt-3">Content Folder</h2>
+          <p class="mt-1">
+            Number files to set order. Same number means overlay, <code>`+`</code> reuses an overlay, and unnumbered items are ignored. Configured
+            subfolders with <code>`folder-player.txt`</code> get their own presets.
+          </p>
+          <pre class="bg-base-300/50 rounded-lg p-3 mt-2 overflow-x-auto text-sm"><code>Content folder
   |-- 01 Welcome.mp4
   |-- 02 Teaching.mkv
   |-- 03 Meditation.mp3
@@ -121,13 +129,13 @@ Reusable overlay:
 03+08 Photos
 => Photos overlays both 03 and 08</code></pre>
 
-        <h2 class="text-xl font-semibold mt-3">Custom Parent Folder</h2>
-        <p class="mt-1">
-          When Custom Parent Folder is filled, generated preset input paths replace only the folder path before the playlist source folder. If a
-          nearby base preset is found, the base preset parent folder name is kept. If the default base preset is used instead, the content folder
-          parent is replaced.
-        </p>
-        <pre class="bg-base-300/50 rounded-lg p-3 mt-2 overflow-x-auto text-sm"><code>Nearby base preset:
+          <h2 class="text-xl font-semibold mt-3">Custom Parent Folder</h2>
+          <p class="mt-1">
+            When Custom Parent Folder is filled, generated preset input paths replace only the folder path before the playlist source folder. If a
+            nearby base preset is found, the base preset parent folder name is kept. If the default base preset is used instead, the content folder
+            parent is replaced.
+          </p>
+          <pre class="bg-base-300/50 rounded-lg p-3 mt-2 overflow-x-auto text-sm"><code>Nearby base preset:
 Base preset: C:\a\b\base file.vmix
 Media file:  C:\a\b\content\video.mp4
 Custom:      C:\custom\path
@@ -138,22 +146,17 @@ Media file:  C:\a\b\content\video.mp4
 Custom:      C:\custom\path
 Generated:   C:\custom\path\content\video.mp4</code></pre>
 
-        <h2 class="text-xl font-semibold mt-3">vMix Script: Preview Next</h2>
-        <p class="mt-1">
-          If you prefer to use vMix directly instead of the web UI, you can use the <code>`PreviewNext`</code> script. It automatically moves the next
-          input into preview after each transition. The script is available on
-          <a class="link" href="https://github.com/live-miracles/vmix-master/blob/master/vmix-scripts/preview-next.vb" target="_blank"
-            >preview-next.vb</a
-          >.
-        </p>
-
-        <div class="modal-action">
-          <form method="dialog">
-            <button class="btn">Close</button>
-          </form>
+          <h2 class="text-xl font-semibold mt-3">vMix Script: Preview Next</h2>
+          <p class="mt-1">
+            If you prefer to use vMix directly instead of the web UI, you can use the <code>`PreviewNext`</code> script. It automatically moves the
+            next input into preview after each transition. The script is available on
+            <a class="link" href="https://github.com/live-miracles/vmix-master/blob/master/vmix-scripts/preview-next.vb" target="_blank"
+              >preview-next.vb</a
+            >.
+          </p>
         </div>
       </div>
-    </dialog>
+    </div>
 
     <div class="relative w-full h-full">
       <!-- LOADING PAGE -->
@@ -170,14 +173,11 @@ Generated:   C:\custom\path\content\video.mp4</code></pre>
       <div id="home-page" class="absolute inset-0 overflow-y-auto bg-cover bg-center" style="background-image: url('./mountains.jpg')">
         <div class="w-full flex items-center justify-center p-3" style="min-height: 100%">
           <div class="relative mx-auto w-full max-w-200 bg-base-200/75 rounded-box p-3">
-            <button id="documentation-btn" type="button" class="btn btn-primary absolute top-3 left-3" title="Documentation">
-              <i data-lucide="book-open" class="w-5 h-5"></i>
-            </button>
-
             <div class="mb-2 flex justify-center">
-              <div class="join">
-                <input id="home-config-mode-input" class="join-item btn" type="radio" name="home-mode" aria-label="Config" checked />
-                <input id="home-vmix-mode-input" class="join-item btn" type="radio" name="home-mode" aria-label="vMix Web" />
+              <div role="tablist" class="tabs tabs-box">
+                <button id="home-config-mode-input" role="tab" type="button" class="tab tab-active">Config</button>
+                <button id="home-vmix-mode-input" role="tab" type="button" class="tab">vMix Web</button>
+                <button id="home-docs-mode-input" role="tab" type="button" class="tab">Docs</button>
               </div>
             </div>
 

@@ -12,6 +12,9 @@ export const ALERT = { ERROR: 'error', WARNING: 'warning' };
 
 export const CONFIG_FILE_NAME = 'folder-player.txt';
 
+type FolderFile = { path: string; type: string; id: string };
+type Alert = { key: string; type: string; msg: string; files?: string[] };
+
 export function getFolderState(folderPath: string) {
     const configMap = getFolderConfig(folderPath);
     let fileMap: Map<string, { path: string; type: string; id: string }[]>;
@@ -71,11 +74,8 @@ export function saveFolderConfig(folderPath: string, text: string) {
     fs.writeFileSync(filePath, text, 'utf-8');
 }
 
-function getAlerts(
-    configMap: Map<string, string[]>,
-    fileMap: Map<string, { path: string; type: string; id: string }[]>,
-) {
-    const alerts: { key: string; type: string; msg: string }[] = [];
+function getAlerts(configMap: Map<string, string[]>, fileMap: Map<string, FolderFile[]>) {
+    const alerts: Alert[] = [];
 
     // Check for config keys that don't have corresponding files
     for (const [key, options] of configMap.entries()) {
@@ -138,6 +138,7 @@ function getAlerts(
                 key,
                 type: ALERT.ERROR,
                 msg: `${files.length} files with the same number.`,
+                files: getFileNames(files),
             });
             continue;
         }
@@ -149,6 +150,7 @@ function getAlerts(
                     key,
                     type: ALERT.ERROR,
                     msg: `Two files of type '${type}'.`,
+                    files: getFileNames(files.filter((file) => file.type === type)),
                 });
             }
             continue;
@@ -162,6 +164,7 @@ function getAlerts(
                 key,
                 type: ALERT.ERROR,
                 msg: `Audio and video files have the same number.`,
+                files: getFileNames(files),
             });
             continue;
         }
@@ -171,12 +174,14 @@ function getAlerts(
                 key,
                 type: ALERT.WARNING,
                 msg: `Audio file without an image or slideshow.`,
+                files: getFileNames(files),
             });
         } else if (hasVideo && files.length === 2) {
             alerts.push({
                 key,
                 type: ALERT.WARNING,
                 msg: `Video file overlaid by an image or slideshow.`,
+                files: getFileNames(files),
             });
         }
 
@@ -197,9 +202,14 @@ function getAlerts(
                 key,
                 type: ALERT.ERROR,
                 msg: `Config type "${configTypes}" do not match the actual type "${folderTypes}".`,
+                files: getFileNames(files),
             });
         }
     }
 
     return alerts.sort((a, b) => compareFiles(a.key, b.key));
+}
+
+function getFileNames(files: FolderFile[]) {
+    return files.map((file) => path.basename(file.path));
 }
