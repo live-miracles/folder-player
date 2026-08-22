@@ -76,7 +76,7 @@ Result:
 
 Supported inputs include images, video files, audio files, photo folders, and PowerPoint `.pptx` files.
 
-# Overview
+## Overview
 
 1. Create a folder and order all the files with leading numbers.
    <img width="733" height="201" alt="image" src="https://github.com/user-attachments/assets/afef7944-2613-40db-9f27-616060984ef6" />
