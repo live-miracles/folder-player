@@ -76,7 +76,7 @@
         <div class="min-h-0 flex-1 overflow-y-auto pr-1">
           <h2 class="text-xl font-semibold">Base vMix Preset</h2>
           <p class="mt-1">
-            Choose a default preset. A nearby <code>`base.vmix`</code> overrides it. For overlays, title base inputs <code>`Cam`</code> and
+            Choose a default preset. A nearby <code>`base.vmix`</code> overrides it. For overlays, title base inputs <code>`Cam`</code>,
             <code>`Mic`</code>.
           </p>
           <pre class="bg-base-300/50 rounded-lg p-3 mt-2 overflow-x-auto text-sm"><code>Selected default base preset
@@ -95,6 +95,18 @@ Parent folder
 Required input titles:
 Cam  - camera input
 Mic  - microphone input</code></pre>
+
+          <p class="mt-2">
+            The
+            <span class="badge badge-primary h-7 w-7 p-0" title="Camera" aria-label="Camera"><i data-lucide="video" class="h-4 w-4"></i></span>
+            and
+            <span class="badge badge-primary h-7 w-7 p-0" title="Microphone" aria-label="Microphone"><i data-lucide="mic" class="h-4 w-4"></i></span>
+            options can be selected independently. Selected layers are ordered <code>`Mic`</code> (when selected), then <code>`Cam`</code> (when
+            selected), then any visual overlay. For images with the
+            <span class="badge badge-primary h-7 w-7 p-0" title="Camera" aria-label="Camera"><i data-lucide="video" class="h-4 w-4"></i></span>
+            option, a generated colour input places the camera below the image. Audio, video, photo-folder slideshows, and PowerPoint slides receive
+            the camera directly as a layer.
+          </p>
 
           <h2 class="text-xl font-semibold mt-3">Content Folder</h2>
           <p class="mt-1">

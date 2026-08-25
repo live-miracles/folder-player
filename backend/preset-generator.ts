@@ -3,6 +3,7 @@ import path from 'path';
 
 import { getFolderState } from './config-api.js';
 import { getBaseFile, getFolderFiles, FILE_TYPES, compareFiles } from './file-manager.js';
+import type { Alert } from './types.js';
 
 type PresetFile = { path: string; type: string; id: string };
 
@@ -33,12 +34,12 @@ export function createPresetFileRecursively(
     collapse: boolean,
     customParentFolder = '',
 ) {
-    const report: { folder: string; alerts: any[] }[] = [];
+    const report: { folder: string; alerts: Alert[] }[] = [];
 
     function traverseDirectory(currentPath: string, depth: number) {
         const state = getFolderState(currentPath);
         if (state.config !== null) {
-            createPresetFile(
+            const generationAlerts = createPresetFile(
                 currentPath,
                 baseFilePath,
                 enableBus,
@@ -46,7 +47,7 @@ export function createPresetFileRecursively(
                 state.config,
                 customParentFolder,
             );
-            report.push({ folder: currentPath, alerts: state.alerts });
+            report.push({ folder: currentPath, alerts: [...state.alerts, ...generationAlerts] });
         }
 
         // Use native fs.readdirSync to get directory entries
@@ -102,6 +103,7 @@ function createPresetFile(
     const inputsXML: string[] = [];
     const otherInputsXML: string[] = [];
     const helperInputsXML: string[] = [];
+    const generationAlerts: Alert[] = [];
 
     const otherFiles = fileMap.get('') ?? [];
     otherFiles.forEach((f) =>
@@ -110,19 +112,6 @@ function createPresetFile(
     fileMap.delete('');
 
     const addCamerasInBetween = config.get('__options__')?.includes('cams');
-
-    if (!micId) {
-        config.forEach((list, _) => {
-            const index = list.indexOf('mic');
-            if (index !== -1) list.splice(index, 1);
-        });
-    }
-    if (!camId) {
-        config.forEach((list, _) => {
-            const index = list.indexOf('cam');
-            if (index !== -1) list.splice(index, 1);
-        });
-    }
 
     const sortedKeys = Array.from(fileMap.keys()).sort(compareFiles);
 
@@ -134,8 +123,31 @@ function createPresetFile(
         if (collapse) options.push('collapsed');
 
         const layers: string[] = [];
-        if (camId && options.includes('cam')) layers.push(camId);
-        if (micId && !options.includes('cam') && options.includes('mic')) layers.push(micId);
+        const hasCam = options.includes('cam');
+        const hasMic = options.includes('mic');
+
+        if (hasMic) {
+            if (micId) {
+                layers.push(micId);
+            } else {
+                generationAlerts.push({
+                    key,
+                    type: 'error',
+                    msg: `Microphone is selected, but the base preset is missing the 'Mic' input.`,
+                });
+            }
+        }
+        if (hasCam) {
+            if (camId) {
+                layers.push(camId);
+            } else {
+                generationAlerts.push({
+                    key,
+                    type: 'error',
+                    msg: `Camera is selected, but the base preset is missing the 'Cam' input.`,
+                });
+            }
+        }
 
         const audios = files.filter((f) => f.type === FILE_TYPES.AUDIO);
         const videos = files.filter((f) => f.type === FILE_TYPES.VIDEO);
@@ -145,10 +157,11 @@ function createPresetFile(
                 f.type === FILE_TYPES.FOLDER ||
                 f.type === FILE_TYPES.POWERPOINT,
         );
+        const images = files.filter((f) => f.type === FILE_TYPES.IMAGE);
 
         console.assert(files.length > 0, `No files found for key ${key}.`);
 
-        if (audios.length + videos.length > 1) {
+        if (audios.length + videos.length > 1 || visuals.length > 1) {
             // Ignore any strange cases
             files.forEach((f) =>
                 inputsXML.push(getFileXML(rewriteFilePath(f), layers, options, enableBus)),
@@ -157,15 +170,17 @@ function createPresetFile(
             const base = rewriteFilePath(audios[0] ?? videos[0]);
             const top = visuals[0] ? rewriteFilePath(visuals[0]) : undefined;
             if (top) {
+                // Keep the camera as the first overlay, followed by the content visual.
                 layers.push(top.id);
                 helperInputsXML.push(getFileXML(top, [], [...options, 'collapsed'], enableBus));
             }
             inputsXML.push(getFileXML(base, layers, options, enableBus));
         } else {
-            // Special case when it is camera overlaid by a visual input.
-            if (visuals.length > 0 && options.includes('cam')) {
-                layers.push(visuals[0].id);
-                const visual = rewriteFilePath(visuals[0]);
+            // Images need a colour input so the camera can be the visible base layer.
+            // Slideshow folders and PowerPoint inputs receive the camera layer directly.
+            if (images.length > 0 && options.includes('cam')) {
+                layers.push(images[0].id);
+                const visual = rewriteFilePath(images[0]);
                 const filename = path.parse(visual.path).name;
                 inputsXML.push(getColorXML(filename, layers, options));
                 helperInputsXML.push(getFileXML(visual, [], [...options, 'collapsed'], enableBus));
@@ -189,7 +204,7 @@ function createPresetFile(
     const newXML = getFullXML(baseXML, [...inputsXML, ...otherInputsXML, ...helperInputsXML]);
     fs.writeFileSync(outputPath, newXML, 'utf-8');
 
-    return outputPath;
+    return generationAlerts;
 }
 
 export function getRewrittenFilePath(

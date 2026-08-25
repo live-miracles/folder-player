@@ -8,13 +8,12 @@ import {
     compareFiles,
     getLeadingNumbers,
 } from './file-manager.js';
+import type { Alert } from './types.js';
 export const ALERT = { ERROR: 'error', WARNING: 'warning' };
 
 export const CONFIG_FILE_NAME = 'folder-player.txt';
 
 type FolderFile = { path: string; type: string; id: string };
-type Alert = { key: string; type: string; msg: string; files?: string[] };
-
 export function getFolderState(folderPath: string) {
     const configMap = getFolderConfig(folderPath);
     let fileMap: Map<string, { path: string; type: string; id: string }[]>;
@@ -79,6 +78,8 @@ function getAlerts(configMap: Map<string, string[]>, fileMap: Map<string, Folder
 
     // Check for config keys that don't have corresponding files
     for (const [key, options] of configMap.entries()) {
+        if (key === '__options__') continue;
+
         if (!fileMap.has(key)) {
             alerts.push({
                 key,
@@ -158,6 +159,9 @@ function getAlerts(configMap: Map<string, string[]>, fileMap: Map<string, Folder
 
         const hasAudio = types.includes(FILE_TYPES.AUDIO);
         const hasVideo = types.includes(FILE_TYPES.VIDEO);
+        const visualTypes = [FILE_TYPES.IMAGE, FILE_TYPES.FOLDER, FILE_TYPES.POWERPOINT];
+        const visualFiles = files.filter((file) => visualTypes.includes(file.type));
+        const options = configMap.get(key) ?? [];
 
         if (hasAudio && hasVideo) {
             alerts.push({
@@ -169,14 +173,24 @@ function getAlerts(configMap: Map<string, string[]>, fileMap: Map<string, Folder
             continue;
         }
 
-        if (hasAudio && files.length === 1) {
+        const hasDuplicateVisualType = visualFiles.some((file) => typeCounts[file.type] > 1);
+        if (visualFiles.length > 1 && !hasDuplicateVisualType) {
+            alerts.push({
+                key,
+                type: ALERT.ERROR,
+                msg: `Multiple visual files have the same number.`,
+                files: getFileNames(visualFiles),
+            });
+        }
+
+        if (hasAudio && files.length === 1 && !options.includes('cam')) {
             alerts.push({
                 key,
                 type: ALERT.WARNING,
                 msg: `Audio file without an image or slideshow.`,
                 files: getFileNames(files),
             });
-        } else if (hasVideo && files.length === 2) {
+        } else if (hasVideo && files.length === 2 && typeCounts[FILE_TYPES.VIDEO] === 1) {
             alerts.push({
                 key,
                 type: ALERT.WARNING,
@@ -184,8 +198,6 @@ function getAlerts(configMap: Map<string, string[]>, fileMap: Map<string, Folder
                 files: getFileNames(files),
             });
         }
-
-        const options = configMap.get(key) ?? [];
 
         const allTypes = [
             FILE_TYPES.AUDIO,

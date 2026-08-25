@@ -1,4 +1,5 @@
 import { capitalize } from './utils.js';
+import type { Alert } from './types.js';
 export const FILE_TYPES = {
     IMAGE: 'Image',
     VIDEO: 'Video',
@@ -19,7 +20,7 @@ const OPTION_META: Record<string, { icon: string; label: string }> = {
 
 type ConfigFile = { path: string; type: string };
 type ConfigEntry = [string, ConfigFile[]];
-type ConfigAlert = { key: string; type: string; msg: string; files?: string[] };
+type ConfigAlert = Alert & { key: string };
 type ConfigState = {
     folder: string;
     files: ConfigEntry[];
@@ -565,47 +566,12 @@ export function getTableConfig() {
 }
 
 function setupCamMicLogic() {
-    const groups = new Map<string, HTMLElement[]>();
-
-    const inputs = document.querySelectorAll<HTMLInputElement>('.config-option[type="checkbox"]');
-
-    inputs.forEach((input) => {
-        const key = input.dataset.key;
-        if (!key) {
-            throw new Error('Option key is not defined. ' + input.dataset);
-        }
-
-        if (!groups.has(key)) groups.set(key, []);
-        groups.get(key)!.push(input);
-    });
-
-    groups.forEach((group) => {
-        const cam = group.find((el) => el.dataset.name === 'cam') as HTMLInputElement | undefined;
-        const mic = group.find((el) => el.dataset.name === 'mic') as HTMLInputElement | undefined;
-
-        if (!cam || !mic) return;
-
-        const update = () => {
-            if (cam.checked) {
-                mic.checked = true;
-                mic.disabled = true;
-
-                mic.closest('label')?.classList.add('opacity-50');
-                mic.closest('label')?.classList.add('pointer-events-none');
-            } else {
-                mic.disabled = false;
-                mic.closest('label')?.classList.remove('opacity-50');
-                mic.closest('label')?.classList.remove('pointer-events-none');
-            }
-
+    document
+        .querySelectorAll<HTMLInputElement>('.config-option[data-name="cam"]')
+        .forEach((cam) => {
             updatePreviewCameraBackground(cam);
-        };
-
-        cam.addEventListener('change', update);
-
-        // run once on init
-        update();
-    });
+            cam.addEventListener('change', () => updatePreviewCameraBackground(cam));
+        });
 }
 
 function updatePreviewCameraBackground(cam: HTMLInputElement) {

@@ -127,6 +127,134 @@ test('createPresetFileRecursively uses content folder parent for custom paths wi
     }
 });
 
+test('createPresetFileRecursively puts Mic before Cam when both are selected', () => {
+    const folderPath = fs.mkdtempSync(path.join(os.tmpdir(), 'folder-player-camera-mic-'));
+    const basePath = path.join(folderPath, 'base.vmix');
+
+    try {
+        fs.writeFileSync(
+            basePath,
+            '<Preset>\r\n' +
+                '<Input Title="Cam" Key="cam-key" />\r\n' +
+                '<Input Title="Mic" Key="mic-key" />\r\n' +
+                '<State />\r\n</Preset>',
+        );
+        fs.writeFileSync(path.join(folderPath, 'folder-player.txt'), '1 cam mic');
+        fs.writeFileSync(path.join(folderPath, '01 Image.jpg'), '');
+
+        const report = createPresetFileRecursively(folderPath, '', '', false);
+        const output = fs.readFileSync(
+            path.join(folderPath, `${path.basename(folderPath)}.vmix`),
+            'utf-8',
+        );
+
+        assert.equal(report[0].alerts.length, 0);
+        assert.match(output, /Overlay0="mic-key" Overlay1="cam-key"/);
+    } finally {
+        fs.rmSync(folderPath, { recursive: true, force: true });
+    }
+});
+
+test('createPresetFileRecursively uses only Cam for a camera-only image', () => {
+    const folderPath = fs.mkdtempSync(path.join(os.tmpdir(), 'folder-player-image-camera-'));
+    const basePath = path.join(folderPath, 'base.vmix');
+
+    try {
+        fs.writeFileSync(
+            basePath,
+            '<Preset>\r\n<Input Title="Cam" Key="cam-key" />\r\n<Input Title="Mic" Key="mic-key" />\r\n<State />\r\n</Preset>',
+        );
+        fs.writeFileSync(path.join(folderPath, 'folder-player.txt'), '1 cam');
+        fs.writeFileSync(path.join(folderPath, '01 Image.jpg'), '');
+
+        createPresetFileRecursively(folderPath, '', '', false);
+        const output = fs.readFileSync(
+            path.join(folderPath, `${path.basename(folderPath)}.vmix`),
+            'utf-8',
+        );
+
+        assert.match(output, /Overlay0="cam-key" Overlay1="[^"]+"/);
+        assert.doesNotMatch(output, /Overlay0="mic-key"/);
+    } finally {
+        fs.rmSync(folderPath, { recursive: true, force: true });
+    }
+});
+
+test('createPresetFileRecursively emits multiple visuals individually', () => {
+    const folderPath = fs.mkdtempSync(path.join(os.tmpdir(), 'folder-player-multiple-visuals-'));
+    const basePath = path.join(folderPath, 'base.vmix');
+
+    try {
+        fs.writeFileSync(basePath, '<Preset>\r\n<State />\r\n</Preset>');
+        fs.writeFileSync(path.join(folderPath, 'folder-player.txt'), '1');
+        fs.writeFileSync(path.join(folderPath, '01 Image.png'), '');
+        fs.mkdirSync(path.join(folderPath, '01 Photos'));
+
+        createPresetFileRecursively(folderPath, '', '', false);
+        const output = fs.readFileSync(
+            path.join(folderPath, `${path.basename(folderPath)}.vmix`),
+            'utf-8',
+        );
+
+        assert.equal((output.match(/<Input/g) ?? []).length, 2);
+    } finally {
+        fs.rmSync(folderPath, { recursive: true, force: true });
+    }
+});
+
+test('createPresetFileRecursively reports missing camera base inputs', () => {
+    const folderPath = fs.mkdtempSync(path.join(os.tmpdir(), 'folder-player-camera-errors-'));
+    const basePath = path.join(folderPath, 'base.vmix');
+
+    try {
+        fs.writeFileSync(basePath, '<Preset>\r\n<State />\r\n</Preset>');
+        fs.writeFileSync(path.join(folderPath, 'folder-player.txt'), '1 mic\r\n2 cam');
+        fs.writeFileSync(path.join(folderPath, '01 Image.jpg'), '');
+        fs.writeFileSync(path.join(folderPath, '02 Image.jpg'), '');
+
+        const report = createPresetFileRecursively(folderPath, '', '', false);
+        const alerts = report[0].alerts;
+
+        assert.equal(alerts.length, 2);
+        assert.deepEqual(
+            alerts.map((alert) => [alert.key, alert.type]),
+            [
+                ['1', 'error'],
+                ['2', 'error'],
+            ],
+        );
+        assert.match(alerts[0].msg, /missing the 'Mic' input/);
+        assert.match(alerts[1].msg, /missing the 'Cam' input/);
+    } finally {
+        fs.rmSync(folderPath, { recursive: true, force: true });
+    }
+});
+
+test('createPresetFileRecursively puts camera directly on PowerPoint inputs', () => {
+    const folderPath = fs.mkdtempSync(path.join(os.tmpdir(), 'folder-player-pptx-camera-'));
+    const basePath = path.join(folderPath, 'base.vmix');
+
+    try {
+        fs.writeFileSync(
+            basePath,
+            '<Preset>\r\n<Input Title="Cam" Key="cam-key" />\r\n<State />\r\n</Preset>',
+        );
+        fs.writeFileSync(path.join(folderPath, 'folder-player.txt'), '1 cam');
+        fs.writeFileSync(path.join(folderPath, '01 Deck.pptx'), '');
+
+        createPresetFileRecursively(folderPath, '', '', false);
+        const output = fs.readFileSync(
+            path.join(folderPath, `${path.basename(folderPath)}.vmix`),
+            'utf-8',
+        );
+
+        assert.match(output, /Type="3"[^>]*Overlay0="cam-key"/s);
+        assert.doesNotMatch(output, /Type="12"/);
+    } finally {
+        fs.rmSync(folderPath, { recursive: true, force: true });
+    }
+});
+
 function escapeRegExp(text) {
     return text.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
 }

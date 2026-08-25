@@ -2,9 +2,10 @@ import { getTableConfig, renderConfigPage } from './config.js';
 import { renderVmixWeb } from './vmix-web.js';
 import { showErrorAlert, showSuccessAlert, capitalize } from './utils.js';
 import { getRandomQuote } from './quotes.js';
+import type { Alert } from './types.js';
 
 const RECENT_FOLDERS_LIMIT = 50;
-type ReportAlert = { key?: string; type: string; msg: string; files?: string[] };
+type ReportAlert = Alert;
 
 // ===== Updates =====
 const updateText = document.getElementById('update-text')!;

@@ -28,6 +28,8 @@ Cam  -> camera input
 Mic  -> microphone input
 ```
 
+In the folder configuration, the `cam` and `mic` options are independent. Selected layers are ordered `Mic` (when selected), then `Cam` (when selected), then any visual overlay. If an image has the `cam` option enabled, the generator creates a colour input so the camera and image can be layered. Audio, video, photo-folder slideshows, and PowerPoint slides receive the selected camera input directly as a layer.
+
 ## Content Folder
 
 Number files to set playlist order. Unnumbered items are ignored.
@@ -84,7 +86,7 @@ Supported inputs include images, video files, audio files, photo folders, and Po
 2. Open the folder in the app and click "Open Config".
    <img width="1576" height="526" alt="image" src="https://github.com/user-attachments/assets/3ebd12c7-bfa5-4463-85c6-ea1f9b1a13b6" />
 
-3. Review the playlist config. If needed, enable or disable the mic, adjust volume, or change the slideshow rotation time.
+3. Review the playlist config. If needed, enable or disable the `mic`, adjust volume, or change the slideshow rotation time.
    <img width="1557" height="585" alt="image" src="https://github.com/user-attachments/assets/98aa6354-f919-4bc2-bf57-812133bef00c" />
 
 4. Save the config, go back, and click "Setup Folder in vMix". The app will create a `.vmix` preset file and open it in vMix.
