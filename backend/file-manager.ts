@@ -126,3 +126,15 @@ export function getFolderFiles(folderPath: string) {
 
     return fileMap;
 }
+
+export function getFolderPreviewImages(folderPath: string) {
+    const fileNames = fs.readdirSync(folderPath, 'utf8').sort(compareFiles);
+    const imagePaths = fileNames
+        .map((name) => path.join(folderPath, name))
+        .filter((filePath) => getFileType(filePath) === FILE_TYPES.IMAGE);
+
+    return {
+        paths: imagePaths.slice(0, 4),
+        total: imagePaths.length,
+    };
+}

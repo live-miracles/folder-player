@@ -33,6 +33,8 @@ contextBridge.exposeInMainWorld('api', {
     vMixCall: (func: string, params: any = {}, vmixApiUrl: string) =>
         ipcRenderer.invoke('vmix-call', { func, params, vmixApiUrl }),
     getFolderFiles: (folderPath: string) => ipcRenderer.invoke('get-folder-files', folderPath),
+    getFolderPreviewImages: (folderPath: string) =>
+        ipcRenderer.invoke('get-folder-preview-images', folderPath),
     getFolderState: (folderPath: string) => ipcRenderer.invoke('get-folder-state', folderPath),
     saveFolderConfig: (data: { folderPath: string; text: string }) =>
         ipcRenderer.invoke('save-folder-config', data),

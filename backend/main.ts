@@ -5,7 +5,7 @@ import { fileURLToPath } from 'url';
 
 import { createPresetFileRecursively } from './preset-generator.js';
 import { vMixCall, getVmixState } from './vmix-api.js';
-import { getFolderFiles } from './file-manager.js';
+import { getFolderFiles, getFolderPreviewImages } from './file-manager.js';
 import { ALERT, getFolderState, saveFolderConfig } from './config-api.js';
 
 import updater from 'electron-updater';
@@ -110,6 +110,9 @@ ipcMain.handle('vmix-call', async (_, { func, params, vmixApiUrl }) =>
 );
 
 ipcMain.handle('get-folder-files', async (_, folderPath) => Array.from(getFolderFiles(folderPath)));
+ipcMain.handle('get-folder-preview-images', async (_, folderPath) =>
+    getFolderPreviewImages(folderPath),
+);
 ipcMain.handle('get-folder-state', async (_, folderPath) => {
     const state = getFolderState(folderPath);
     if (state === null) {

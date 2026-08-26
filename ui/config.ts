@@ -21,6 +21,7 @@ const OPTION_META: Record<string, { icon: string; label: string }> = {
 
 type ConfigFile = { path: string; type: string };
 type ConfigEntry = [string, ConfigFile[]];
+type FolderPreview = { paths: string[]; total: number };
 type ConfigAlert = Alert & { key: string };
 type ConfigState = {
     folder: string;
@@ -135,9 +136,9 @@ function renderListConfig(configMap: Map<string, string[]>) {
     configTable.innerHTML = html;
 }
 
-function renderPreviewConfig(configMap: Map<string, string[]>) {
-    configPreviewView.innerHTML = currentConfigState!.files
-        .map(([key, files]) => {
+async function renderPreviewConfig(configMap: Map<string, string[]>) {
+    const sections = await Promise.all(
+        currentConfigState!.files.map(async ([key, files]) => {
             files.sort((a: any, b: any) => (TYPE_MAP as any)[a.type] - (TYPE_MAP as any)[b.type]);
             const types = files.map((f) => f.type);
             const selectedOptions = configMap.get(key) ?? [];
@@ -157,6 +158,19 @@ function renderPreviewConfig(configMap: Map<string, string[]>) {
                 !(files.length === 1 && files[0].type === FILE_TYPES.IMAGE) &&
                 !(hasBaseMedia && hasVisualOverlay);
 
+            const folderPreviews = await Promise.all(
+                files.map(async (file) => {
+                    if (file.type !== FILE_TYPES.FOLDER) return null;
+                    try {
+                        return (await (window as any).api.getFolderPreviewImages(
+                            file.path,
+                        )) as FolderPreview;
+                    } catch {
+                        return null;
+                    }
+                }),
+            );
+
             return `<section data-camera-on-top="${cameraOnTop}" class="mb-3 mr-3 inline-block w-full max-w-72 align-top text-left overflow-hidden rounded-lg border border-base-content/15 bg-base-100/80 shadow-sm">
                 <div class="space-y-1 border-b border-base-content/10 p-2">
                     <div class="flex min-h-8 flex-nowrap items-center justify-end gap-1 overflow-x-auto">${optionsHtml}</div>
@@ -164,12 +178,24 @@ function renderPreviewConfig(configMap: Map<string, string[]>) {
                 </div>
                 <div class="grid ${previewFiles.length > 1 ? 'grid-cols-2' : 'grid-cols-1'} bg-base-300/30">
                     ${previewFiles
-                        .map((file) => getPreviewPaneHtml(file, hasCameraBackground, cameraOnTop))
+                        .map((file) =>
+                            getPreviewPaneHtml(
+                                file,
+                                hasCameraBackground,
+                                cameraOnTop,
+                                folderPreviews[files.indexOf(file)],
+                            ),
+                        )
                         .join('')}
                 </div>
             </section>`;
-        })
-        .join('');
+        }),
+    );
+
+    configPreviewView.innerHTML = sections.join('');
+    setupCamMicLogic();
+    setupVideoPreviewFrames();
+    renderDynamicIcons();
 }
 
 function getOptionsHtml(key: string, types: string[], selectedOptions: string[]) {
@@ -319,7 +345,12 @@ function getFileTypeIconHtml(type: string, key: string) {
     </span>`;
 }
 
-function getPreviewPaneHtml(file: ConfigFile, hasCameraBackground: boolean, cameraOnTop: boolean) {
+function getPreviewPaneHtml(
+    file: ConfigFile,
+    hasCameraBackground: boolean,
+    cameraOnTop: boolean,
+    folderPreview?: FolderPreview | null,
+) {
     const src = escapeHtml(getFileUrl(file.path));
     const name = escapeHtml(getFileName(file.path));
     const previewBackgroundClass = hasCameraBackground
@@ -337,6 +368,21 @@ function getPreviewPaneHtml(file: ConfigFile, hasCameraBackground: boolean, came
     if (file.type === FILE_TYPES.VIDEO) {
         return `<div class="config-preview-media-pane aspect-video flex items-center justify-center overflow-hidden border-base-content/10 ${previewBackgroundClass}">
             <video src="${src}" class="config-preview-video max-h-full max-w-full object-contain" muted preload="metadata" playsinline></video>
+        </div>`;
+    }
+
+    if (file.type === FILE_TYPES.FOLDER && folderPreview?.paths.length) {
+        const remaining = folderPreview.total - folderPreview.paths.length;
+        return `<div class="grid aspect-video grid-cols-2 grid-rows-2 bg-black">
+            ${Array.from({ length: 4 }, (_, index) => {
+                const imagePath = folderPreview.paths[index];
+                if (!imagePath) return '<div></div>';
+
+                return `<div class="relative min-h-0 overflow-hidden">
+                    <img src="${escapeHtml(getFileUrl(imagePath))}" alt="" class="h-full w-full object-cover" loading="lazy" />
+                    ${index === 3 && remaining > 0 ? `<div class="absolute inset-0 flex items-center justify-center bg-black/60 text-2xl font-semibold text-white">+${remaining}</div>` : ''}
+                </div>`;
+            }).join('')}
         </div>`;
     }
 
