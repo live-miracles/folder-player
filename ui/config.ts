@@ -9,7 +9,8 @@ export const FILE_TYPES = {
 };
 const TYPE_MAP = { Video: 1, AudioFile: 2, Image: 3, Photos: 4, PowerPoint: 5 };
 const ALERT = { ERROR: 'error', WARNING: 'warning' };
-const VIDEO_PREVIEW_FALLBACK_SECONDS = 5;
+const VIDEO_PREVIEW_FIRST_FALLBACK_SECONDS = 2;
+const VIDEO_PREVIEW_SECOND_FALLBACK_SECONDS = 5;
 const BLACK_FRAME_LUMA_THRESHOLD = 18;
 const BLACK_FRAME_RATIO_THRESHOLD = 0.96;
 const OPTION_META: Record<string, { icon: string; label: string }> = {
@@ -144,14 +145,28 @@ function renderPreviewConfig(configMap: Map<string, string[]>) {
             const optionsHtml = getOptionsHtml(key, types, selectedOptions);
             const previewFiles = getPreviewFiles(files);
             const hasCameraBackground = selectedOptions.includes('cam');
+            const hasBaseMedia = types.some(
+                (type) => type === FILE_TYPES.AUDIO || type === FILE_TYPES.VIDEO,
+            );
+            const hasVisualOverlay = types.some(
+                (type) =>
+                    type === FILE_TYPES.IMAGE ||
+                    type === FILE_TYPES.FOLDER ||
+                    type === FILE_TYPES.POWERPOINT,
+            );
+            const cameraOnTop =
+                !(files.length === 1 && files[0].type === FILE_TYPES.IMAGE) &&
+                !(hasBaseMedia && hasVisualOverlay);
 
-            return `<section class="flex flex-col overflow-hidden rounded-lg border border-base-content/15 bg-base-100/80 shadow-sm">
+            return `<section data-camera-on-top="${cameraOnTop}" class="flex flex-col overflow-hidden rounded-lg border border-base-content/15 bg-base-100/80 shadow-sm">
                 <div class="space-y-1 border-b border-base-content/10 p-2">
                     <div class="flex min-h-8 flex-wrap items-center justify-end gap-1">${optionsHtml}</div>
                     ${files.map((file) => getPreviewFileHeaderHtml(file, key)).join('')}
                 </div>
                 <div class="grid ${previewFiles.length > 1 ? 'grid-cols-2' : 'grid-cols-1'} bg-base-300/30">
-                    ${previewFiles.map((file) => getPreviewPaneHtml(file, hasCameraBackground)).join('')}
+                    ${previewFiles
+                        .map((file) => getPreviewPaneHtml(file, hasCameraBackground, cameraOnTop))
+                        .join('')}
                 </div>
             </section>`;
         })
@@ -305,10 +320,14 @@ function getFileTypeIconHtml(type: string, key: string) {
     </span>`;
 }
 
-function getPreviewPaneHtml(file: ConfigFile, hasCameraBackground: boolean) {
+function getPreviewPaneHtml(file: ConfigFile, hasCameraBackground: boolean, cameraOnTop: boolean) {
     const src = escapeHtml(getFileUrl(file.path));
     const name = escapeHtml(getFileName(file.path));
-    const previewBackgroundClass = hasCameraBackground ? 'config-camera-preview-bg' : 'bg-black';
+    const previewBackgroundClass = hasCameraBackground
+        ? cameraOnTop
+            ? 'config-camera-preview-overlay'
+            : 'config-camera-preview-bg'
+        : 'bg-black';
 
     if (file.type === FILE_TYPES.IMAGE) {
         return `<div class="config-preview-media-pane aspect-video flex items-center justify-center overflow-hidden border-base-content/10 ${previewBackgroundClass}">
@@ -353,17 +372,32 @@ async function updateVideoPreviewFrame(video: HTMLVideoElement) {
         video.pause();
         if (!isVideoFrameBlack(video)) return;
 
-        if (!Number.isFinite(video.duration) || video.duration <= VIDEO_PREVIEW_FALLBACK_SECONDS) {
+        if (
+            !Number.isFinite(video.duration) ||
+            video.duration <= VIDEO_PREVIEW_FIRST_FALLBACK_SECONDS
+        ) {
             return;
         }
 
         const firstFrameTime = video.currentTime;
-        const fallbackTime = Math.min(
-            VIDEO_PREVIEW_FALLBACK_SECONDS,
+        const firstFallbackTime = Math.min(
+            VIDEO_PREVIEW_FIRST_FALLBACK_SECONDS,
             Math.max(video.duration - 0.1, 0),
         );
 
-        await seekVideo(video, fallbackTime);
+        await seekVideo(video, firstFallbackTime);
+        if (!isVideoFrameBlack(video)) return;
+
+        if (video.duration <= VIDEO_PREVIEW_SECOND_FALLBACK_SECONDS) {
+            await seekVideo(video, firstFrameTime);
+            return;
+        }
+
+        const secondFallbackTime = Math.min(
+            VIDEO_PREVIEW_SECOND_FALLBACK_SECONDS,
+            Math.max(video.duration - 0.1, 0),
+        );
+        await seekVideo(video, secondFallbackTime);
         if (!isVideoFrameBlack(video)) return;
 
         await seekVideo(video, firstFrameTime);
@@ -558,9 +592,11 @@ function setupCamMicLogic() {
 function updatePreviewCameraBackground(cam: HTMLInputElement) {
     const section = cam.closest('section');
     if (!section) return;
+    const cameraOnTop = section.dataset.cameraOnTop === 'true';
 
     section.querySelectorAll<HTMLElement>('.config-preview-media-pane').forEach((pane) => {
-        pane.classList.toggle('config-camera-preview-bg', cam.checked);
+        pane.classList.toggle('config-camera-preview-bg', cam.checked && !cameraOnTop);
+        pane.classList.toggle('config-camera-preview-overlay', cam.checked && cameraOnTop);
         pane.classList.toggle('bg-black', !cam.checked);
     });
 }

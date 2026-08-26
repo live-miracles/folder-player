@@ -10,6 +10,23 @@
     background-size: cover;
 }
 
+.config-camera-preview-overlay {
+    position: relative;
+    isolation: isolate;
+}
+
+.config-camera-preview-overlay::after {
+    content: '';
+    position: absolute;
+    inset: 0;
+    z-index: 1;
+    background-color: #101010;
+    background-image: url('../camera-background.avif');
+    background-position: center;
+    background-size: cover;
+    pointer-events: none;
+}
+
 /* Expanded preview: fill the window (no browser/Electron Fullscreen API). */
 #preview-container.preview-expanded {
     position: fixed;
