@@ -94,7 +94,6 @@ function renderConfigContent() {
     configPreviewScroll.classList.toggle('hidden', configViewMode !== 'preview');
     configPreviewScroll.classList.toggle('block', configViewMode === 'preview');
     configPreviewView.classList.toggle('hidden', configViewMode !== 'preview');
-    configPreviewView.classList.toggle('grid', configViewMode === 'preview');
 
     if (configViewMode === 'preview') renderPreviewConfig(configMap);
     else renderListConfig(configMap);
@@ -158,9 +157,9 @@ function renderPreviewConfig(configMap: Map<string, string[]>) {
                 !(files.length === 1 && files[0].type === FILE_TYPES.IMAGE) &&
                 !(hasBaseMedia && hasVisualOverlay);
 
-            return `<section data-camera-on-top="${cameraOnTop}" class="flex flex-col overflow-hidden rounded-lg border border-base-content/15 bg-base-100/80 shadow-sm">
+            return `<section data-camera-on-top="${cameraOnTop}" class="mb-3 mr-3 inline-block w-full max-w-72 align-top text-left overflow-hidden rounded-lg border border-base-content/15 bg-base-100/80 shadow-sm">
                 <div class="space-y-1 border-b border-base-content/10 p-2">
-                    <div class="flex min-h-8 flex-wrap items-center justify-end gap-1">${optionsHtml}</div>
+                    <div class="flex min-h-8 flex-nowrap items-center justify-end gap-1 overflow-x-auto">${optionsHtml}</div>
                     ${files.map((file) => getPreviewFileHeaderHtml(file, key)).join('')}
                 </div>
                 <div class="grid ${previewFiles.length > 1 ? 'grid-cols-2' : 'grid-cols-1'} bg-base-300/30">
@@ -465,7 +464,7 @@ function getBoolOptionHtml(name: string, value: string, key: string) {
 
     const meta = OPTION_META[name] ?? { icon: 'circle', label: name };
 
-    return `<label class="swap ml-2">
+    return `<label class="swap ml-2 shrink-0">
             <input data-key="${key}" data-name="${name}" class="config-option" type="checkbox" ${value === 'true' ? 'checked="checked"' : ''} />
             <div class="swap-on" title="${meta.label}" aria-label="${meta.label}">
                 <span class="badge badge-primary h-7 w-7 p-0"><i data-lucide="${meta.icon}" class="h-4 w-4"></i></span>
@@ -479,8 +478,11 @@ function getBoolOptionHtml(name: string, value: string, key: string) {
 function getNumberOptionHtml(name: string, value: string, key: string, min: number, max: number) {
     if (key === '') return '';
 
-    return `<input data-key="${key}" data-name="${name}" type="number" min="${min}" max="${max}"
-         class="config-option input input-sm w-14 ml-2" value="${value}" />&nbsp;${name}`;
+    return `<label class="ml-2 flex shrink-0 items-center gap-1 whitespace-nowrap">
+        <input data-key="${key}" data-name="${name}" type="number" min="${min}" max="${max}"
+         class="config-option input input-sm w-14" value="${value}" />
+        <span>${name}</span>
+    </label>`;
 }
 
 function getFileTypeHtml(type: string, key: string) {
