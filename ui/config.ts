@@ -373,7 +373,7 @@ function getPreviewPaneHtml(
 
     if (file.type === FILE_TYPES.FOLDER && folderPreview?.paths.length) {
         const remaining = folderPreview.total - folderPreview.paths.length;
-        return `<div class="grid aspect-video grid-cols-2 grid-rows-2 bg-black">
+        return `<div class="grid aspect-video grid-cols-2 grid-rows-2 ${previewBackgroundClass}">
             ${Array.from({ length: 4 }, (_, index) => {
                 const imagePath = folderPreview.paths[index];
                 if (!imagePath) return '<div></div>';
