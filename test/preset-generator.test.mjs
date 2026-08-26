@@ -95,6 +95,35 @@ test('createPresetFileRecursively preserves nearby base preset parent folder in 
     }
 });
 
+test('createPresetFileRecursively reports missing bases per folder and continues recursively', () => {
+    const rootPath = fs.mkdtempSync(path.join(os.tmpdir(), 'folder-player-recursive-'));
+    const successPath = path.join(rootPath, 'success');
+    const failurePath = path.join(rootPath, 'branch', 'failure');
+
+    try {
+        fs.mkdirSync(successPath);
+        fs.mkdirSync(failurePath, { recursive: true });
+
+        fs.writeFileSync(path.join(successPath, 'base.vmix'), '<Preset>\r\n<State />\r\n</Preset>');
+        fs.writeFileSync(path.join(successPath, 'folder-player.txt'), '1');
+        fs.writeFileSync(path.join(successPath, '01 Video.mp4'), '');
+        fs.writeFileSync(path.join(failurePath, 'folder-player.txt'), '1');
+        fs.writeFileSync(path.join(failurePath, '01 Video.mp4'), '');
+
+        const report = createPresetFileRecursively(rootPath, '', false);
+        const successReport = report.find(({ folder }) => folder === successPath);
+        const failureReport = report.find(({ folder }) => folder === failurePath);
+
+        assert.equal(report.length, 2);
+        assert.equal(successReport?.alerts.length, 0);
+        assert.equal(fs.existsSync(path.join(successPath, 'success.vmix')), true);
+        assert.match(failureReport?.alerts[0]?.msg ?? '', /Not able to find the base preset/);
+        assert.equal(fs.existsSync(path.join(failurePath, 'failure.vmix')), false);
+    } finally {
+        fs.rmSync(rootPath, { recursive: true, force: true });
+    }
+});
+
 test('createPresetFileRecursively puts Mic before Cam when both are selected', () => {
     const folderPath = fs.mkdtempSync(path.join(os.tmpdir(), 'folder-player-camera-mic-'));
     const basePath = path.join(folderPath, 'base.vmix');

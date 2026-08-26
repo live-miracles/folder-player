@@ -50,20 +50,18 @@ export function getBaseFile(folderPath: string) {
 
     if (!fs.existsSync(folderPath)) return null;
 
-    const files = fs.readdirSync(folderPath);
-
-    for (const file of files) {
-        if (regex.test(file)) return path.join(folderPath, file);
-    }
-
-    const parent = path.dirname(folderPath);
-    if (parent && parent !== folderPath) {
-        const files = fs.readdirSync(parent);
-
+    let currentPath = folderPath;
+    for (let level = 0; level <= 3; level++) {
+        const files = fs.readdirSync(currentPath);
         for (const file of files) {
-            if (regex.test(file)) return path.join(parent, file);
+            if (regex.test(file)) return path.join(currentPath, file);
         }
+
+        const parentPath = path.dirname(currentPath);
+        if (parentPath === currentPath) break;
+        currentPath = parentPath;
     }
+
     return null;
 }
 

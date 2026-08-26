@@ -4,7 +4,7 @@ Number the files in a folder and this app will automatically generate a vMix pla
 
 ## Base vMix Preset
 
-Create a `base.vmix` preset in the content folder or one of its parent folders.
+Create a `base.vmix` preset in the content folder or within its first three parent folders. The closest matching preset is used.
 
 ```text
 Content folder

@@ -7,10 +7,27 @@ import test from 'node:test';
 import {
     compareFiles,
     FILE_TYPES,
+    getBaseFile,
     getFolderFiles,
     getLeadingKeys,
     getLeadingNumbers,
 } from '../dist/file-manager.js';
+
+test('getBaseFile searches up to three parent levels without crossing the filesystem root', () => {
+    const rootPath = fs.mkdtempSync(path.join(os.tmpdir(), 'folder-player-base-search-'));
+    const folderPath = path.join(rootPath, 'one', 'two', 'three');
+
+    try {
+        fs.mkdirSync(folderPath, { recursive: true });
+        const basePath = path.join(rootPath, 'base.vmix');
+        fs.writeFileSync(basePath, '');
+
+        assert.equal(getBaseFile(folderPath), basePath);
+        assert.equal(getBaseFile(path.parse(rootPath).root), null);
+    } finally {
+        fs.rmSync(rootPath, { recursive: true, force: true });
+    }
+});
 
 test('getLeadingNumbers parses primary and secondary numeric prefixes', () => {
     assert.deepEqual(getLeadingNumbers('04_Sadhguru_IECO and Possiblities.mp4'), [4, -1]);

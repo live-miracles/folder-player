@@ -35,17 +35,36 @@ export function createPresetFileRecursively(
 ) {
     const report: { folder: string; alerts: Alert[] }[] = [];
 
-    function traverseDirectory(currentPath: string, depth: number) {
+    function traverseDirectory(currentPath: string) {
         const state = getFolderState(currentPath);
         if (state.config !== null) {
-            const generationAlerts = createPresetFile(
-                currentPath,
-                enableBus,
-                collapse,
-                state.config,
-                customParentFolder,
-            );
-            report.push({ folder: currentPath, alerts: [...state.alerts, ...generationAlerts] });
+            const baseFile = getBaseFile(currentPath);
+            if (!baseFile) {
+                report.push({
+                    folder: currentPath,
+                    alerts: [
+                        ...state.alerts,
+                        {
+                            key: '',
+                            type: 'error',
+                            msg: `Not able to find the base preset for folder '${currentPath}'. Please create a 'base.vmix' file in the folder or within its first three parent folders.`,
+                        },
+                    ],
+                });
+            } else {
+                const generationAlerts = createPresetFile(
+                    currentPath,
+                    baseFile,
+                    enableBus,
+                    collapse,
+                    state.config,
+                    customParentFolder,
+                );
+                report.push({
+                    folder: currentPath,
+                    alerts: [...state.alerts, ...generationAlerts],
+                });
+            }
         }
 
         // Use native fs.readdirSync to get directory entries
@@ -54,36 +73,26 @@ export function createPresetFileRecursively(
         // Iterate through entries to find subdirectories and recurse
         for (const entry of entries) {
             if (entry.isDirectory()) {
-                if (depth <= 1) return;
-
                 const subfolderPath = path.join(currentPath, entry.name);
-                traverseDirectory(subfolderPath, depth - 1);
+                traverseDirectory(subfolderPath);
             }
         }
     }
 
     // Start the traversal from the initial folderPath provided
-    traverseDirectory(folderPath, 3);
+    traverseDirectory(folderPath);
 
     return report;
 }
 
 function createPresetFile(
     folderPath: string,
+    base: string,
     enableBus: string,
     collapse: boolean,
     config: Map<string, string[]>,
     customParentFolder: string,
 ) {
-    const nearbyBase = getBaseFile(folderPath);
-    const base = nearbyBase;
-
-    if (!base) {
-        throw new Error(
-            `Not able to find the base preset for folder '${folderPath}'. Please create a 'base.vmix' file in the folder or its parent folder.`,
-        );
-    }
-
     console.log('Reading base file: ' + base);
     const baseXML = fs.readFileSync(base, 'utf-8');
 
@@ -92,9 +101,7 @@ function createPresetFile(
     console.log('Identified micId: ' + micId + ' and camId: ' + camId);
 
     const fileMap = getFolderFiles(folderPath);
-    const rewriteSourceParent = nearbyBase
-        ? path.dirname(path.dirname(nearbyBase))
-        : path.dirname(folderPath);
+    const rewriteSourceParent = path.dirname(path.dirname(base));
     const rewriteFilePath = getFilePathRewriter(rewriteSourceParent, customParentFolder);
 
     const inputsXML: string[] = [];
