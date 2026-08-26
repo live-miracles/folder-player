@@ -78,14 +78,6 @@ app.on('window-all-closed', () => {
 
 // ===== Frontend API =====
 
-ipcMain.handle('select-base-file', async () => {
-    const result = dialog.showOpenDialogSync(mainWindow, {
-        properties: ['openFile'],
-        filters: [{ name: 'vMix preset', extensions: ['vmix'] }],
-    });
-    return result?.[0] ?? null;
-});
-
 ipcMain.handle('select-play-folder', async (_, currentFolder?: string) => {
     const options: Electron.OpenDialogOptions = { properties: ['openDirectory'] };
 
@@ -105,24 +97,12 @@ ipcMain.handle('select-play-folder', async (_, currentFolder?: string) => {
     return result?.[0] ?? null;
 });
 
-ipcMain.handle(
-    'create-preset',
-    (_, { folderPath, baseFile, enableBus, collapse, customParentFolder }) => {
-        return createPresetFileRecursively(
-            folderPath,
-            baseFile,
-            enableBus,
-            collapse,
-            customParentFolder,
-        );
-    },
-);
-ipcMain.handle(
-    'play-folder',
-    async (_, { folderPath, baseFile, enableBus, collapse, vmixApiUrl }) => {
-        await setupVmix(folderPath, baseFile, enableBus, collapse, vmixApiUrl);
-    },
-);
+ipcMain.handle('create-preset', (_, { folderPath, enableBus, collapse, customParentFolder }) => {
+    return createPresetFileRecursively(folderPath, enableBus, collapse, customParentFolder);
+});
+ipcMain.handle('play-folder', async (_, { folderPath, enableBus, collapse, vmixApiUrl }) => {
+    await setupVmix(folderPath, enableBus, collapse, vmixApiUrl);
+});
 
 ipcMain.handle('get-vmix-state', async (_, vmixApiUrl) => await getVmixState(vmixApiUrl));
 ipcMain.handle('vmix-call', async (_, { func, params, vmixApiUrl }) =>
@@ -158,7 +138,6 @@ ipcMain.handle('save-folder-config', async (_, { folderPath, text }) =>
 
 async function setupVmix(
     folderPath: string,
-    baseFile: string,
     enableBus: string,
     collapse: boolean,
     vmixApiUrl: string,

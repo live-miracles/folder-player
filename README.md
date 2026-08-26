@@ -4,12 +4,9 @@ Number the files in a folder and this app will automatically generate a vMix pla
 
 ## Base vMix Preset
 
-Choose a default `.vmix` preset. A nearby `base.vmix` overrides it.
+Create a `base.vmix` preset in the content folder or one of its parent folders.
 
 ```text
-Selected default base preset
-        |
-        v
 Content folder
   |-- base.vmix        <- used first, when present
   |-- 01 Video.mp4

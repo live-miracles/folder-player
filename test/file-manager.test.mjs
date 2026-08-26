@@ -22,7 +22,6 @@ test('getLeadingKeys expands reusable overlay prefixes', () => {
     assert.deepEqual(getLeadingKeys('03+08 Photos'), ['3', '8']);
     assert.deepEqual(getLeadingKeys('03+08_Photos'), ['3', '8']);
     assert.deepEqual(getLeadingKeys('03_1+08_2 Photos'), ['3_1', '8_2']);
-    assert.deepEqual(getLeadingKeys('__options__ cams'), ['__options__']);
     assert.deepEqual(getLeadingKeys('Unnumbered.mp3'), ['']);
 });
 

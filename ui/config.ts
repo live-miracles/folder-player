@@ -30,7 +30,6 @@ type ConfigState = {
 type ConfigViewMode = 'list' | 'preview';
 const CONFIG_VIEW_STORAGE_KEY = 'configViewMode';
 
-const camsOption = document.getElementById('cams-option') as HTMLInputElement;
 const configCard = document.getElementById('config-card')!;
 const configCardBody = document.getElementById('config-card-body')!;
 const configListView = document.getElementById('config-list-view')!;
@@ -88,9 +87,6 @@ function renderConfigContent() {
     currentConfigState.files.sort((a, b) => compareFiles(a[0], b[0]));
     const configMap = new Map(currentConfigState.config);
 
-    const options = configMap.get('__options__') ?? [];
-    camsOption.checked = options.includes('cams');
-
     updateConfigViewButtons();
     updateConfigPageLayout();
     configListView.classList.toggle('hidden', configViewMode !== 'list');
@@ -103,7 +99,6 @@ function renderConfigContent() {
     else renderListConfig(configMap);
 
     setupCamMicLogic();
-    updateSkipOptions();
     setupVideoPreviewFrames();
     renderDynamicIcons();
 }
@@ -165,9 +160,6 @@ function renderPreviewConfig(configMap: Map<string, string[]>) {
 
 function getOptionsHtml(key: string, types: string[], selectedOptions: string[]) {
     let optionsHtml = '';
-
-    const isSkip = selectedOptions.includes('skip') ? 'true' : 'false';
-    optionsHtml += getSkipOptionHtml(isSkip, key);
 
     const isCam = selectedOptions.includes('cam') ? 'true' : 'false';
     optionsHtml += getBoolOptionHtml('cam', isCam, key);
@@ -457,16 +449,6 @@ function getNumberOptionHtml(name: string, value: string, key: string, min: numb
          class="config-option input input-sm w-14 ml-2" value="${value}" />&nbsp;${name}`;
 }
 
-function getSkipOptionHtml(value: string, key: string) {
-    if (key === '') return '';
-
-    return `<label class="swap ml-2">
-            <input data-key="${key}" data-name="skip" class="config-option" type="checkbox" ${value === 'true' ? 'checked="checked"' : ''}/>
-            <div class="swap-on"><span class="badge badge-primary">skip next cam</span></div>
-            <div class="swap-off"><span class="badge">skip next cam</span></div>
-        </label>`;
-}
-
 function getFileTypeHtml(type: string, key: string) {
     let color = '';
     if (type === FILE_TYPES.AUDIO) color = 'badge-primary';
@@ -561,8 +543,7 @@ export function getTableConfig() {
             );
         })
         .join('\r\n');
-    const configOptions = camsOption.checked ? '\r\n__options__ cams' : '';
-    return text + configOptions;
+    return text;
 }
 
 function setupCamMicLogic() {
@@ -586,8 +567,6 @@ function updatePreviewCameraBackground(cam: HTMLInputElement) {
 
 configListViewBtn.addEventListener('click', () => setConfigViewMode('list'));
 configPreviewViewBtn.addEventListener('click', () => setConfigViewMode('preview'));
-camsOption.addEventListener('change', updateSkipOptions);
-
 function setConfigViewMode(mode: ConfigViewMode) {
     if (configViewMode === mode) return;
 
@@ -618,7 +597,6 @@ function syncCurrentConfigFromDom() {
         configMap.get(key)!.push(opt.type === 'checkbox' ? name : opt.value + name);
     });
 
-    if (camsOption.checked) configMap.set('__options__', ['cams']);
     currentConfigState.config = Array.from(configMap);
 }
 
@@ -633,30 +611,6 @@ function updateConfigPageLayout() {
     configCard.classList.toggle('flex-1', !isPreview);
     configCard.classList.toggle('shrink-0', isPreview);
     configCardBody.classList.toggle('flex-1', !isPreview);
-}
-
-function updateSkipOptions() {
-    const inputs = document.querySelectorAll<HTMLInputElement>('.config-option[type="checkbox"]');
-
-    inputs.forEach((input) => {
-        const name = input.dataset.name;
-        if (!name) {
-            throw new Error('Option name is not defined. ' + input.dataset);
-        }
-
-        if (name !== 'skip') return;
-
-        const label = input.closest('label');
-        if (!camsOption.checked) {
-            input.checked = false;
-            input.disabled = true;
-
-            label?.classList.add('hidden');
-        } else {
-            input.disabled = false;
-            label?.classList.remove('hidden');
-        }
-    });
 }
 
 function renderDynamicIcons() {

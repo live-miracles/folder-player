@@ -76,13 +76,10 @@
         <div class="min-h-0 flex-1 overflow-y-auto pr-1">
           <h2 class="text-xl font-semibold">Base vMix Preset</h2>
           <p class="mt-1">
-            Choose a default preset. A nearby <code>`base.vmix`</code> overrides it. For overlays, title base inputs <code>`Cam`</code>,
-            <code>`Mic`</code>.
+            Create a <code>`base.vmix`</code> file in the content folder or one of its parent folders. For overlays, title base inputs
+            <code>`Cam`</code>, <code>`Mic`</code>.
           </p>
-          <pre class="bg-base-300/50 rounded-lg p-3 mt-2 overflow-x-auto text-sm"><code>Selected default base preset
-        |
-        v
-Content folder
+          <pre class="bg-base-300/50 rounded-lg p-3 mt-2 overflow-x-auto text-sm"><code>Content folder
   |-- base.vmix        &lt;- used first, when present
   |-- 01 Video.mp4
   |-- 02 Audio.mp3
@@ -143,9 +140,8 @@ Reusable overlay:
 
           <h2 class="text-xl font-semibold mt-3">Custom Parent Folder</h2>
           <p class="mt-1">
-            When Custom Parent Folder is filled, generated preset input paths replace only the folder path before the playlist source folder. If a
-            nearby base preset is found, the base preset parent folder name is kept. If the default base preset is used instead, the content folder
-            parent is replaced.
+            When Custom Parent Folder is filled, generated preset input paths replace only the folder path before the playlist source folder. The
+            nearby base preset parent folder name is kept.
           </p>
           <pre class="bg-base-300/50 rounded-lg p-3 mt-2 overflow-x-auto text-sm"><code>Nearby base preset:
 Base preset: C:\a\b\base file.vmix
@@ -153,19 +149,7 @@ Media file:  C:\a\b\content\video.mp4
 Custom:      C:\custom\path
 Generated:   C:\custom\path\b\content\video.mp4
 
-Default base preset fallback:
-Media file:  C:\a\b\content\video.mp4
-Custom:      C:\custom\path
-Generated:   C:\custom\path\content\video.mp4</code></pre>
-
-          <h2 class="text-xl font-semibold mt-3">vMix Script: Preview Next</h2>
-          <p class="mt-1">
-            If you prefer to use vMix directly instead of the web UI, you can use the <code>`PreviewNext`</code> script. It automatically moves the
-            next input into preview after each transition. The script is available on
-            <a class="link" href="https://github.com/live-miracles/vmix-master/blob/master/vmix-scripts/preview-next.vb" target="_blank"
-              >preview-next.vb</a
-            >.
-          </p>
+          </code></pre>
         </div>
       </div>
     </div>
@@ -267,19 +251,6 @@ Generated:   C:\custom\path\content\video.mp4</code></pre>
               </fieldset>
             </div>
 
-            <div
-              id="default-base-preset-row"
-              class="mt-1 flex w-full items-center gap-2 rounded-field border border-base-content/20 bg-base-100 px-3 py-2">
-              <span class="shrink-0 text-sm">Default Base Preset:</span>
-              <textarea
-                id="base-file-input"
-                class="textarea textarea-ghost min-h-6 flex-1 resize-none overflow-hidden border-0 p-0 leading-6 whitespace-pre-wrap break-all focus:outline-none"
-                rows="1"
-                style="resize: none"></textarea>
-              <button id="select-base-file-btn" class="btn btn-primary btn-xs">Select</button>
-              <button id="clear-base-file-btn" class="btn btn-error btn-xs">Clear</button>
-            </div>
-
             <div class="mt-1 flex w-full items-center gap-2 rounded-field border border-base-content/20 bg-base-100 px-3 py-2">
               <span class="shrink-0 text-sm">Content Folder:</span>
               <textarea
@@ -322,12 +293,6 @@ Generated:   C:\custom\path\content\video.mp4</code></pre>
                   <i data-lucide="undo-2" class="h-5 w-5"></i>
                 </button>
                 <span id="config-title" class="min-w-0 flex-1"></span>
-
-                <label class="swap ml-4 shrink-0">
-                  <input data-key="0" id="cams-option" type="checkbox" />
-                  <div class="swap-on"><span class="badge badge-primary badge-lg">auto next</span></div>
-                  <div class="swap-off"><span class="badge badge-lg">auto next</span></div>
-                </label>
               </div>
 
               <div class="flex shrink-0 items-center gap-2">

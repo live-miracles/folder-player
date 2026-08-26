@@ -74,7 +74,7 @@ test('createPresetFileRecursively preserves nearby base preset parent folder in 
         fs.writeFileSync(path.join(contentPath, 'folder-player.txt'), '1');
         fs.writeFileSync(path.join(contentPath, '01 Video.mp4'), '');
 
-        createPresetFileRecursively(contentPath, '', '', false, customParentPath);
+        createPresetFileRecursively(contentPath, '', false, customParentPath);
 
         const outputPath = path.join(contentPath, 'content.vmix');
         const output = fs.readFileSync(outputPath, 'utf-8');
@@ -95,38 +95,6 @@ test('createPresetFileRecursively preserves nearby base preset parent folder in 
     }
 });
 
-test('createPresetFileRecursively uses content folder parent for custom paths with default base preset', () => {
-    const parentPath = fs.mkdtempSync(path.join(os.tmpdir(), 'folder-player-parent-'));
-    const defaultBaseParentPath = fs.mkdtempSync(
-        path.join(os.tmpdir(), 'folder-player-default-base-'),
-    );
-    const contentPath = path.join(parentPath, 'content');
-    const defaultBasePath = path.join(defaultBaseParentPath, 'default base.vmix');
-    const customParentPath = path.join(os.tmpdir(), 'folder-player-custom-parent');
-
-    try {
-        fs.mkdirSync(contentPath);
-        fs.writeFileSync(defaultBasePath, '<Preset>\r\n  <State />\r\n</Preset>');
-        fs.writeFileSync(path.join(contentPath, 'folder-player.txt'), '1');
-        fs.writeFileSync(path.join(contentPath, '01 Video.mp4'), '');
-
-        createPresetFileRecursively(contentPath, defaultBasePath, '', false, customParentPath);
-
-        const outputPath = path.join(contentPath, 'content.vmix');
-        const output = fs.readFileSync(outputPath, 'utf-8');
-        const rewrittenMediaPath = path.join(customParentPath, 'content', '01 Video.mp4');
-
-        assert.match(output, new RegExp(escapeRegExp(rewrittenMediaPath)));
-        assert.doesNotMatch(
-            output,
-            new RegExp(escapeRegExp(path.join(contentPath, '01 Video.mp4'))),
-        );
-    } finally {
-        fs.rmSync(parentPath, { recursive: true, force: true });
-        fs.rmSync(defaultBaseParentPath, { recursive: true, force: true });
-    }
-});
-
 test('createPresetFileRecursively puts Mic before Cam when both are selected', () => {
     const folderPath = fs.mkdtempSync(path.join(os.tmpdir(), 'folder-player-camera-mic-'));
     const basePath = path.join(folderPath, 'base.vmix');
@@ -142,7 +110,7 @@ test('createPresetFileRecursively puts Mic before Cam when both are selected', (
         fs.writeFileSync(path.join(folderPath, 'folder-player.txt'), '1 cam mic');
         fs.writeFileSync(path.join(folderPath, '01 Image.jpg'), '');
 
-        const report = createPresetFileRecursively(folderPath, '', '', false);
+        const report = createPresetFileRecursively(folderPath, '', false);
         const output = fs.readFileSync(
             path.join(folderPath, `${path.basename(folderPath)}.vmix`),
             'utf-8',
@@ -167,7 +135,7 @@ test('createPresetFileRecursively uses only Cam for a camera-only image', () => 
         fs.writeFileSync(path.join(folderPath, 'folder-player.txt'), '1 cam');
         fs.writeFileSync(path.join(folderPath, '01 Image.jpg'), '');
 
-        createPresetFileRecursively(folderPath, '', '', false);
+        createPresetFileRecursively(folderPath, '', false);
         const output = fs.readFileSync(
             path.join(folderPath, `${path.basename(folderPath)}.vmix`),
             'utf-8',
@@ -190,7 +158,7 @@ test('createPresetFileRecursively emits multiple visuals individually', () => {
         fs.writeFileSync(path.join(folderPath, '01 Image.png'), '');
         fs.mkdirSync(path.join(folderPath, '01 Photos'));
 
-        createPresetFileRecursively(folderPath, '', '', false);
+        createPresetFileRecursively(folderPath, '', false);
         const output = fs.readFileSync(
             path.join(folderPath, `${path.basename(folderPath)}.vmix`),
             'utf-8',
@@ -212,7 +180,7 @@ test('createPresetFileRecursively reports missing camera base inputs', () => {
         fs.writeFileSync(path.join(folderPath, '01 Image.jpg'), '');
         fs.writeFileSync(path.join(folderPath, '02 Image.jpg'), '');
 
-        const report = createPresetFileRecursively(folderPath, '', '', false);
+        const report = createPresetFileRecursively(folderPath, '', false);
         const alerts = report[0].alerts;
 
         assert.equal(alerts.length, 2);
@@ -242,7 +210,7 @@ test('createPresetFileRecursively puts camera directly on PowerPoint inputs', ()
         fs.writeFileSync(path.join(folderPath, 'folder-player.txt'), '1 cam');
         fs.writeFileSync(path.join(folderPath, '01 Deck.pptx'), '');
 
-        createPresetFileRecursively(folderPath, '', '', false);
+        createPresetFileRecursively(folderPath, '', false);
         const output = fs.readFileSync(
             path.join(folderPath, `${path.basename(folderPath)}.vmix`),
             'utf-8',

@@ -10,31 +10,21 @@ contextBridge.exposeInMainWorld('api', {
 
     selectPlayFolder: (currentFolder?: string) =>
         ipcRenderer.invoke('select-play-folder', currentFolder),
-    selectBaseFile: () => ipcRenderer.invoke('select-base-file'),
     createPreset: (
         folderPath: string,
-        baseFile: string,
         enableBus: string,
         collapse: boolean,
         customParentFolder: string,
     ) =>
         ipcRenderer.invoke('create-preset', {
             folderPath,
-            baseFile,
             enableBus,
             collapse,
             customParentFolder,
         }),
-    playFolder: (
-        folderPath: string,
-        baseFile: string,
-        enableBus: string,
-        collapse: boolean,
-        vmixApiUrl: string,
-    ) =>
+    playFolder: (folderPath: string, enableBus: string, collapse: boolean, vmixApiUrl: string) =>
         ipcRenderer.invoke('play-folder', {
             folderPath,
-            baseFile,
             enableBus,
             collapse,
             vmixApiUrl,

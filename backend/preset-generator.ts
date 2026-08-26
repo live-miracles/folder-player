@@ -29,7 +29,6 @@ function getFullXML(xml: string, inputs: string[]) {
 
 export function createPresetFileRecursively(
     folderPath: string,
-    baseFilePath: string,
     enableBus: string,
     collapse: boolean,
     customParentFolder = '',
@@ -41,7 +40,6 @@ export function createPresetFileRecursively(
         if (state.config !== null) {
             const generationAlerts = createPresetFile(
                 currentPath,
-                baseFilePath,
                 enableBus,
                 collapse,
                 state.config,
@@ -72,18 +70,17 @@ export function createPresetFileRecursively(
 
 function createPresetFile(
     folderPath: string,
-    baseFilePath: string,
     enableBus: string,
     collapse: boolean,
     config: Map<string, string[]>,
     customParentFolder: string,
 ) {
     const nearbyBase = getBaseFile(folderPath);
-    const base = nearbyBase ?? baseFilePath;
+    const base = nearbyBase;
 
-    if (base === '') {
+    if (!base) {
         throw new Error(
-            `Not able to find the base preset for folder '${folderPath}'. Please create a 'base.vmix' file in the folder or its parent folder or provide a default base preset.`,
+            `Not able to find the base preset for folder '${folderPath}'. Please create a 'base.vmix' file in the folder or its parent folder.`,
         );
     }
 
@@ -110,8 +107,6 @@ function createPresetFile(
         otherInputsXML.push(getFileXML(rewriteFilePath(f), [], ['collapsed'], enableBus)),
     );
     fileMap.delete('');
-
-    const addCamerasInBetween = config.get('__options__')?.includes('cams');
 
     const sortedKeys = Array.from(fileMap.keys()).sort(compareFiles);
 
@@ -189,11 +184,6 @@ function createPresetFile(
                     inputsXML.push(getFileXML(rewriteFilePath(f), layers, options, enableBus)),
                 );
             }
-        }
-
-        const skipCam = options.includes('skip');
-        if (addCamerasInBetween && !skipCam && i < sortedKeys.length - 1 && camId) {
-            inputsXML.push(getColorXML('Cam', [camId], ['collapsed']));
         }
     }
 

@@ -53,7 +53,6 @@ updateDismissBtn.onclick = () => updateToast.classList.add('hidden');
 updateBtn.onclick = () => (window as any).api.installUpdate();
 
 // ===== UI Elements =====
-const baseFileInput = document.getElementById('base-file-input') as HTMLTextAreaElement;
 const playFolderInput = document.getElementById('play-folder-input') as HTMLTextAreaElement;
 const vmixApiUrlInput = document.getElementById('vmix-api-url-input') as HTMLInputElement;
 const customParentFolderInput = document.getElementById(
@@ -73,12 +72,10 @@ const homeDocsModeInput = document.getElementById('home-docs-mode-input') as HTM
 const configModeFields = document.getElementById('config-mode-fields')!;
 const vmixModeFields = document.getElementById('vmix-mode-fields')!;
 const customParentFolderRow = document.getElementById('custom-parent-folder-row')!;
-const defaultBasePresetRow = document.getElementById('default-base-preset-row')!;
 const editConfigBtn = document.getElementById('edit-config-btn') as HTMLButtonElement;
 const createPresetBtn = document.getElementById('create-preset-btn') as HTMLButtonElement;
 const playFolderBtn = document.getElementById('play-folder-btn') as HTMLButtonElement;
 const openVmixBtn = document.getElementById('open-vmix-btn') as HTMLButtonElement;
-const selectBaseFileBtn = document.getElementById('select-base-file-btn') as HTMLButtonElement;
 const selectPlayFolderBtn = document.getElementById('select-play-folder-btn') as HTMLButtonElement;
 
 // ===== Navigation =====
@@ -192,7 +189,6 @@ const STORAGE_KEYS = {
     TRANSITION_TYPE: 'transitionType',
     PROGRAM_CAM: 'programCam',
     PREVIEW_CAM: 'previewCam',
-    BASE_FILE: 'baseFile',
     PLAY_FOLDER: 'playFolder',
     CUSTOM_PARENT_FOLDER: 'customParentFolder',
     VMIX_API_URL: 'vmixApiUrl',
@@ -219,12 +215,6 @@ function setPlayFolder(folder: string) {
     resizeTextArea(playFolderInput);
 }
 
-function setBaseFile(file: string) {
-    baseFileInput.value = file;
-    localStorage.setItem(STORAGE_KEYS.BASE_FILE, file);
-    resizeTextArea(baseFileInput);
-}
-
 function resizeTextArea(textArea: HTMLTextAreaElement) {
     if (textArea.offsetParent === null) return;
 
@@ -233,14 +223,9 @@ function resizeTextArea(textArea: HTMLTextAreaElement) {
 }
 
 function resizePathInputs() {
-    resizeTextArea(baseFileInput);
     resizeTextArea(playFolderInput);
 }
 
-baseFileInput.addEventListener('input', () => {
-    localStorage.setItem(STORAGE_KEYS.BASE_FILE, baseFileInput.value);
-    resizeTextArea(baseFileInput);
-});
 playFolderInput.addEventListener('input', () => {
     localStorage.setItem(STORAGE_KEYS.PLAY_FOLDER, playFolderInput.value);
     resizeTextArea(playFolderInput);
@@ -288,7 +273,6 @@ function updateHomeMode() {
     vmixModeFields.classList.toggle('hidden', !isVmixMode);
     vmixModeFields.classList.toggle('flex', isVmixMode);
     customParentFolderRow.classList.toggle('hidden', isVmixMode);
-    defaultBasePresetRow.classList.toggle('hidden', isVmixMode);
     editConfigBtn.classList.toggle('hidden', isVmixMode);
     createPresetBtn.classList.toggle('hidden', isVmixMode);
     playFolderBtn.classList.toggle('hidden', !isVmixMode);
@@ -318,7 +302,6 @@ function init() {
     vmixApiUrlInput.value = localStorage.getItem(STORAGE_KEYS.VMIX_API_URL) ?? '';
     customParentFolderInput.value = localStorage.getItem(STORAGE_KEYS.CUSTOM_PARENT_FOLDER) ?? '';
 
-    setBaseFile(localStorage.getItem(STORAGE_KEYS.BASE_FILE) ?? '');
     setPlayFolder(localStorage.getItem(STORAGE_KEYS.PLAY_FOLDER) ?? getRecentFolders()[0] ?? '');
     updateHomeMode();
     renderRecentFolders();
@@ -496,26 +479,6 @@ editConfigBtn.addEventListener('click', async () => {
     }
 });
 
-selectBaseFileBtn.addEventListener('click', async () => {
-    selectBaseFileBtn.disabled = true;
-
-    try {
-        const file = await (window as any).api.selectBaseFile();
-
-        if (file) {
-            setBaseFile(file);
-        }
-    } catch (err) {
-        showErrorAlert(err);
-    } finally {
-        selectBaseFileBtn.disabled = false;
-    }
-});
-
-document.getElementById('clear-base-file-btn')!.addEventListener('click', () => {
-    setBaseFile('');
-});
-
 selectPlayFolderBtn.addEventListener('click', async () => {
     selectPlayFolderBtn.disabled = true;
 
@@ -561,7 +524,6 @@ function getAlertFilesHtml(alert: ReportAlert) {
 }
 
 createPresetBtn.addEventListener('click', async () => {
-    const baseFile = baseFileInput.value;
     const folderPath = playFolderInput.value;
 
     if (!folderPath) {
@@ -578,7 +540,7 @@ createPresetBtn.addEventListener('click', async () => {
     try {
         const reports: { folder: string; alerts: ReportAlert[] }[] = await (
             window as any
-        ).api.createPreset(folderPath, baseFile, enableBus, collapse, customParentFolder);
+        ).api.createPreset(folderPath, enableBus, collapse, customParentFolder);
 
         const alertsList = document.getElementById('home-alerts-list')!;
         alertsList.innerHTML = ''; // Clear previous alerts
@@ -648,7 +610,6 @@ createPresetBtn.addEventListener('click', async () => {
 });
 
 playFolderBtn.addEventListener('click', async () => {
-    const baseFile = baseFileInput.value;
     const folderPath = playFolderInput.value;
     const collapse = collapseInputsInput.value === '1';
 
@@ -672,13 +633,7 @@ playFolderBtn.addEventListener('click', async () => {
     const enableBus = enableBusInput.value;
     try {
         goToLoadingPage(10);
-        await (window as any).api.playFolder(
-            folderPath,
-            baseFile,
-            enableBus,
-            collapse,
-            getVmixApiUrl(),
-        );
+        await (window as any).api.playFolder(folderPath, enableBus, collapse, getVmixApiUrl());
         await sleep(5000);
         goToVmixPage();
     } catch (err) {

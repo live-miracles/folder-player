@@ -64,24 +64,3 @@ test('getFolderState does not warn about an audio-only camera entry', () => {
         fs.rmSync(folderPath, { recursive: true, force: true });
     }
 });
-
-test('getFolderState ignores the global cams option when checking file keys', () => {
-    const folderPath = fs.mkdtempSync(path.join(os.tmpdir(), 'folder-player-config-options-'));
-
-    try {
-        fs.writeFileSync(
-            path.join(folderPath, 'folder-player.txt'),
-            '__options__ cams\r\n01 AudioFile',
-        );
-        fs.writeFileSync(path.join(folderPath, '01 Audio.mp3'), '');
-
-        const state = getFolderState(folderPath);
-
-        assert.equal(
-            state.alerts.some((alert) => alert.msg.includes('no file with such number')),
-            false,
-        );
-    } finally {
-        fs.rmSync(folderPath, { recursive: true, force: true });
-    }
-});
