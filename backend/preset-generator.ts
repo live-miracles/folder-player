@@ -6,6 +6,8 @@ import { getBaseFile, getFolderFiles, FILE_TYPES, compareFiles } from './file-ma
 import type { Alert } from './types.js';
 
 type PresetFile = { path: string; type: string; id: string };
+const MAX_TRAVERSED_DIRECTORIES = 1000;
+const MAX_DIRECTORY_ENTRIES = 1000;
 
 function getTitleId(xml: string, title: string) {
     const regex = new RegExp(`<Input[^>]*?Title="${title}"[^>]*?>`);
@@ -33,9 +35,29 @@ export function createPresetFileRecursively(
     collapse: boolean,
     customParentFolder = '',
 ) {
+    const resolvedFolderPath = path.resolve(folderPath);
+    if (path.parse(resolvedFolderPath).root === resolvedFolderPath) {
+        throw new Error('Please select a content folder instead of a filesystem root.');
+    }
+
     const report: { folder: string; alerts: Alert[] }[] = [];
+    let traversedDirectories = 0;
 
     function traverseDirectory(currentPath: string) {
+        traversedDirectories++;
+        if (traversedDirectories > MAX_TRAVERSED_DIRECTORIES) {
+            throw new Error(
+                `The selected folder contains more than ${MAX_TRAVERSED_DIRECTORIES} directories. Please select a more specific content folder.`,
+            );
+        }
+
+        const entries = fs.readdirSync(currentPath, { withFileTypes: true });
+        if (entries.length > MAX_DIRECTORY_ENTRIES) {
+            throw new Error(
+                `The folder '${currentPath}' contains more than ${MAX_DIRECTORY_ENTRIES} entries. Please select a more specific content folder.`,
+            );
+        }
+
         const state = getFolderState(currentPath);
         if (state.config !== null) {
             const baseFile = getBaseFile(currentPath);
@@ -66,9 +88,6 @@ export function createPresetFileRecursively(
                 });
             }
         }
-
-        // Use native fs.readdirSync to get directory entries
-        const entries = fs.readdirSync(currentPath, { withFileTypes: true });
 
         // Iterate through entries to find subdirectories and recurse
         for (const entry of entries) {

@@ -124,6 +124,15 @@ test('createPresetFileRecursively reports missing bases per folder and continues
     }
 });
 
+test('createPresetFileRecursively rejects filesystem roots', () => {
+    const filesystemRoot = path.parse(process.cwd()).root;
+
+    assert.throws(
+        () => createPresetFileRecursively(filesystemRoot, '', false),
+        /Please select a content folder instead of a filesystem root/,
+    );
+});
+
 test('createPresetFileRecursively puts Mic before Cam when both are selected', () => {
     const folderPath = fs.mkdtempSync(path.join(os.tmpdir(), 'folder-player-camera-mic-'));
     const basePath = path.join(folderPath, 'base.vmix');
