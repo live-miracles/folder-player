@@ -3,6 +3,7 @@ import path from 'path';
 
 import {
     getFolderFiles,
+    getBaseFile,
     getLeadingKeys,
     FILE_TYPES,
     compareFiles,
@@ -25,9 +26,10 @@ export function getFolderState(folderPath: string) {
         }
         throw err;
     }
-    const alerts = getAlerts(configMap ?? new Map(), fileMap);
+    const baseFile = getBaseFile(folderPath);
+    const alerts = getAlerts(configMap ?? new Map(), fileMap, baseFile, folderPath);
 
-    return { folder: folderPath, config: configMap, files: fileMap, alerts: alerts };
+    return { folder: folderPath, config: configMap, files: fileMap, alerts, baseFile };
 }
 
 function isFolderReadError(error: unknown) {
@@ -73,8 +75,49 @@ export function saveFolderConfig(folderPath: string, text: string) {
     fs.writeFileSync(filePath, text, 'utf-8');
 }
 
-function getAlerts(configMap: Map<string, string[]>, fileMap: Map<string, FolderFile[]>) {
+function getAlerts(
+    configMap: Map<string, string[]>,
+    fileMap: Map<string, FolderFile[]>,
+    baseFile: string | null,
+    folderPath: string,
+) {
     const alerts: Alert[] = [];
+
+    if (!baseFile) {
+        const baseFileNames = getBaseFileNames(folderPath);
+        if (baseFileNames.length > 1) {
+            alerts.push({
+                key: '',
+                type: ALERT.ERROR,
+                msg: `Multiple base presets found in the same folder (${baseFileNames.join(', ')}). Please keep only one base preset.`,
+            });
+        } else {
+            alerts.push({
+                key: '',
+                type: ALERT.ERROR,
+                msg: `Not able to find the base preset. Please create a 'base.vmix' file in the folder or its parent folder.`,
+            });
+        }
+    } else {
+        const baseXML = fs.readFileSync(baseFile, 'utf-8');
+        const hasMic = /<Input[^>]*?Title="Mic"[^>]*?>/.test(baseXML);
+        const hasCam = /<Input[^>]*?Title="Cam"[^>]*?>/.test(baseXML);
+
+        if (!hasMic && Array.from(configMap.values()).some((options) => options.includes('mic'))) {
+            alerts.push({
+                key: '',
+                type: ALERT.ERROR,
+                msg: `Microphone is selected, but the base preset is missing the 'Mic' input.`,
+            });
+        }
+        if (!hasCam && Array.from(configMap.values()).some((options) => options.includes('cam'))) {
+            alerts.push({
+                key: '',
+                type: ALERT.ERROR,
+                msg: `Camera is selected, but the base preset is missing the 'Cam' input.`,
+            });
+        }
+    }
 
     // Check for config keys that don't have corresponding files
     for (const [key, options] of configMap.entries()) {
@@ -220,6 +263,17 @@ function getAlerts(configMap: Map<string, string[]>, fileMap: Map<string, Folder
     }
 
     return alerts.sort((a, b) => compareFiles(a.key, b.key));
+}
+
+function getBaseFileNames(folderPath: string) {
+    const regex = /^base(\s.*)?\.vmix$/i;
+    const currentFiles = fs.readdirSync(folderPath).filter((file) => regex.test(file));
+    if (currentFiles.length > 0) return currentFiles;
+
+    const parentPath = path.dirname(folderPath);
+    if (parentPath === folderPath) return [];
+
+    return fs.readdirSync(parentPath).filter((file) => regex.test(file));
 }
 
 function getFileNames(files: FolderFile[]) {

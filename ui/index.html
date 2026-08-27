@@ -67,7 +67,7 @@
     <div id="docs-page" class="fixed inset-0 z-10 hidden overflow-hidden bg-cover bg-center p-4" style="background-image: url('./mountains.jpg')">
       <div class="mx-auto flex h-full w-full max-w-200 flex-col rounded-box bg-base-200/90 p-4">
         <div class="mb-4 flex shrink-0 items-center gap-3">
-          <button id="close-docs-btn" class="btn btn-accent btn-sm btn-square shrink-0" title="Back" aria-label="Back">
+          <button id="close-docs-btn" class="btn btn-sm btn-square shrink-0" title="Back" aria-label="Back">
             <i data-lucide="undo-2" class="h-5 w-5"></i>
           </button>
           <h1 class="text-xl font-bold">Docs</h1>
@@ -76,8 +76,8 @@
         <div class="min-h-0 flex-1 overflow-y-auto pr-1">
           <h2 class="text-xl font-semibold">Base vMix Preset</h2>
           <p class="mt-1">
-            Create a <code>`base.vmix`</code> file in the content folder or within its first three parent folders. The closest matching preset is
-            used. For overlays, title base inputs <code>`Cam`</code>, <code>`Mic`</code>.
+            Create a <code>`base.vmix`</code> file in the content folder or its parent folder. The closest matching preset is used. For overlays,
+            title base inputs <code>`Cam`</code>, <code>`Mic`</code>.
           </p>
           <pre class="bg-base-300/50 rounded-lg p-3 mt-2 overflow-x-auto text-sm"><code>Content folder
   |-- base.vmix        &lt;- used first, when present
@@ -289,10 +289,13 @@ Generated:   C:\custom\path\b\content\video.mp4
           <div id="config-card" class="mx-auto flex min-h-0 w-full max-w-300 flex-1 flex-col rounded-box bg-base-200/75 p-3">
             <div class="mb-2 flex items-center justify-between gap-3">
               <div class="flex min-w-0 flex-1 items-center gap-4 text-xl font-semibold">
-                <button id="cancel-config-btn" class="btn btn-accent btn-sm btn-square shrink-0" title="Back" aria-label="Back">
+                <button id="cancel-config-btn" class="btn btn-sm btn-square shrink-0" title="Back" aria-label="Back">
                   <i data-lucide="undo-2" class="h-5 w-5"></i>
                 </button>
-                <span id="config-title" class="min-w-0 flex-1"></span>
+                <div class="min-w-0 flex-1">
+                  <span id="config-title" class="block min-w-0"></span>
+                  <span id="config-base" class="block truncate text-sm font-normal opacity-75"></span>
+                </div>
               </div>
 
               <div class="flex shrink-0 items-center gap-2">
@@ -314,6 +317,9 @@ Generated:   C:\custom\path\b\content\video.mp4
                     <i data-lucide="layout-grid" class="h-5 w-5"></i>
                   </button>
                 </div>
+                <button id="refresh-config-btn" class="btn btn-sm btn-square" title="Refresh" aria-label="Refresh">
+                  <i data-lucide="refresh-cw" class="h-5 w-5"></i>
+                </button>
                 <button id="save-config-btn" class="btn btn-primary btn-sm btn-square" title="Save" aria-label="Save">
                   <i data-lucide="save" class="h-5 w-5"></i>
                 </button>
@@ -357,7 +363,7 @@ Generated:   C:\custom\path\b\content\video.mp4
           <!-- LEFT PANEL -->
           <div class="flex-1 p-4 flex flex-col gap-3 bg-base-200 min-w-100">
             <div class="flex items-center gap-3">
-              <button id="close-vmix-web-btn" class="btn btn-sm btn-soft btn-accent"><i data-lucide="undo-2" class="w-5 h-5"></i></button>
+              <button id="close-vmix-web-btn" class="btn btn-sm btn-soft"><i data-lucide="undo-2" class="w-5 h-5"></i></button>
               <h2 id="preset-name" class="text-lg font-bold"></h2>
             </div>
 

@@ -64,3 +64,110 @@ test('getFolderState does not warn about an audio-only camera entry', () => {
         fs.rmSync(folderPath, { recursive: true, force: true });
     }
 });
+
+test('getFolderState reports missing base preset and skips camera and microphone alerts', () => {
+    const folderPath = fs.mkdtempSync(path.join(os.tmpdir(), 'folder-player-config-no-base-'));
+
+    try {
+        fs.writeFileSync(path.join(folderPath, 'folder-player.txt'), '1 mic\r\n2 cam');
+        fs.writeFileSync(path.join(folderPath, '01 Image.jpg'), '');
+        fs.writeFileSync(path.join(folderPath, '02 Image.jpg'), '');
+
+        const alerts = getFolderState(folderPath).alerts;
+
+        const baseAlerts = alerts.filter((alert) =>
+            alert.msg.includes('Not able to find the base preset'),
+        );
+        assert.equal(baseAlerts.length, 1);
+        assert.equal(baseAlerts[0].type, 'error');
+        assert.equal(
+            alerts.some((alert) => alert.msg.includes("missing the 'Mic' input")),
+            false,
+        );
+        assert.equal(
+            alerts.some((alert) => alert.msg.includes("missing the 'Cam' input")),
+            false,
+        );
+    } finally {
+        fs.rmSync(folderPath, { recursive: true, force: true });
+    }
+});
+
+test('getFolderState reports missing base preset without a config file', () => {
+    const folderPath = fs.mkdtempSync(path.join(os.tmpdir(), 'folder-player-config-no-config-'));
+
+    try {
+        fs.writeFileSync(path.join(folderPath, '01 Image.jpg'), '');
+
+        const alerts = getFolderState(folderPath).alerts;
+
+        assert.equal(
+            alerts.filter((alert) => alert.msg.includes('Not able to find the base preset')).length,
+            1,
+        );
+        assert.equal(
+            alerts.some((alert) => alert.msg.includes('missing the')),
+            false,
+        );
+    } finally {
+        fs.rmSync(folderPath, { recursive: true, force: true });
+    }
+});
+
+test('getFolderState reports ambiguous base presets', () => {
+    const folderPath = fs.mkdtempSync(
+        path.join(os.tmpdir(), 'folder-player-config-ambiguous-base-'),
+    );
+
+    try {
+        fs.writeFileSync(path.join(folderPath, 'base.vmix'), '<Preset><State /></Preset>');
+        fs.writeFileSync(
+            path.join(folderPath, 'base alternate.vmix'),
+            '<Preset><State /></Preset>',
+        );
+        fs.writeFileSync(path.join(folderPath, 'folder-player.txt'), '1 Image');
+        fs.writeFileSync(path.join(folderPath, '01 Image.jpg'), '');
+
+        const alerts = getFolderState(folderPath).alerts;
+
+        assert.equal(
+            alerts.filter((alert) => alert.msg.includes('Multiple base presets')).length,
+            1,
+        );
+        assert.equal(
+            alerts.some((alert) => alert.msg.includes('Not able to find the base preset')),
+            false,
+        );
+    } finally {
+        fs.rmSync(folderPath, { recursive: true, force: true });
+    }
+});
+
+test('getFolderState reports each missing base camera or microphone input once', () => {
+    const folderPath = fs.mkdtempSync(path.join(os.tmpdir(), 'folder-player-config-base-inputs-'));
+
+    try {
+        fs.writeFileSync(path.join(folderPath, 'base.vmix'), '<Preset>\r\n<State />\r\n</Preset>');
+        fs.writeFileSync(path.join(folderPath, 'folder-player.txt'), '1 mic\r\n2 cam\r\n3 mic cam');
+        fs.writeFileSync(path.join(folderPath, '01 Image.jpg'), '');
+        fs.writeFileSync(path.join(folderPath, '02 Image.jpg'), '');
+        fs.writeFileSync(path.join(folderPath, '03 Image.jpg'), '');
+
+        const alerts = getFolderState(folderPath).alerts;
+
+        assert.equal(alerts.filter((alert) => alert.msg.includes("'Mic' input")).length, 1);
+        assert.equal(alerts.filter((alert) => alert.msg.includes("'Cam' input")).length, 1);
+        assert.equal(
+            alerts
+                .filter(
+                    (alert) =>
+                        alert.msg.includes("missing the 'Mic' input") ||
+                        alert.msg.includes("missing the 'Cam' input"),
+                )
+                .every((alert) => alert.key === ''),
+            true,
+        );
+    } finally {
+        fs.rmSync(folderPath, { recursive: true, force: true });
+    }
+});

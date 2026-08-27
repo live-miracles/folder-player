@@ -51,11 +51,11 @@ export function getBaseFile(folderPath: string) {
     if (!fs.existsSync(folderPath)) return null;
 
     let currentPath = folderPath;
-    for (let level = 0; level <= 3; level++) {
+    for (let level = 0; level <= 1; level++) {
         const files = fs.readdirSync(currentPath);
-        for (const file of files) {
-            if (regex.test(file)) return path.join(currentPath, file);
-        }
+        const baseFiles = files.filter((file) => regex.test(file));
+        if (baseFiles.length === 1) return path.join(currentPath, baseFiles[0]);
+        if (baseFiles.length > 1) return null;
 
         const parentPath = path.dirname(currentPath);
         if (parentPath === currentPath) break;

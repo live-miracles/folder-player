@@ -25,6 +25,7 @@ type FolderPreview = { paths: string[]; total: number };
 type ConfigAlert = Alert & { key: string };
 type ConfigState = {
     folder: string;
+    baseFile: string | null;
     files: ConfigEntry[];
     config: [string, string[]][] | null;
     alerts: ConfigAlert[];
@@ -73,7 +74,7 @@ function getStoredConfigViewMode(): ConfigViewMode {
 
 export function renderConfigPage(state: ConfigState) {
     currentConfigState = state;
-    renderConfigTitle(state.folder);
+    renderConfigTitle(state.folder, state.baseFile);
 
     renderFolderAlerts(state.alerts);
 
@@ -298,8 +299,9 @@ function getAlertFilesHtml(alert: ConfigAlert) {
     return `<div class="mt-1 flex flex-wrap gap-1">${files}</div>`;
 }
 
-function renderConfigTitle(folder: string) {
+function renderConfigTitle(folder: string, baseFile: string | null) {
     const title = document.getElementById('config-title')!;
+    const base = document.getElementById('config-base')!;
     const normalized = folder.replace(/\\/g, '/');
     const lastSlashIndex = normalized.lastIndexOf('/');
     const start = lastSlashIndex >= 0 ? folder.slice(0, lastSlashIndex + 1) : '';
@@ -310,6 +312,8 @@ function renderConfigTitle(folder: string) {
         <span class="min-w-0 overflow-hidden text-ellipsis whitespace-nowrap">${escapeHtml(start)}</span>
         <span class="shrink-0 whitespace-nowrap">${escapeHtml(end)}</span>
     </span>`;
+    base.title = baseFile ?? 'Base preset not found';
+    base.textContent = `Base: ${baseFile ?? 'Not found'}`;
 }
 
 function getFileUrl(path: string) {

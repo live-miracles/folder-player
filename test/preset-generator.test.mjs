@@ -116,6 +116,8 @@ test('createPresetFileRecursively reports missing bases per folder and continues
 
         assert.equal(report.length, 2);
         assert.equal(successReport?.alerts.length, 0);
+        assert.equal(successReport?.baseFile, path.join(successPath, 'base.vmix'));
+        assert.equal(failureReport?.baseFile, null);
         assert.equal(fs.existsSync(path.join(successPath, 'success.vmix')), true);
         assert.match(failureReport?.alerts[0]?.msg ?? '', /Not able to find the base preset/);
         assert.equal(fs.existsSync(path.join(failurePath, 'failure.vmix')), false);
@@ -208,15 +210,16 @@ test('createPresetFileRecursively emits multiple visuals individually', () => {
     }
 });
 
-test('createPresetFileRecursively reports missing camera base inputs', () => {
+test('createPresetFileRecursively reports each missing camera base input once', () => {
     const folderPath = fs.mkdtempSync(path.join(os.tmpdir(), 'folder-player-camera-errors-'));
     const basePath = path.join(folderPath, 'base.vmix');
 
     try {
         fs.writeFileSync(basePath, '<Preset>\r\n<State />\r\n</Preset>');
-        fs.writeFileSync(path.join(folderPath, 'folder-player.txt'), '1 mic\r\n2 cam');
+        fs.writeFileSync(path.join(folderPath, 'folder-player.txt'), '1 mic\r\n2 cam\r\n3 mic cam');
         fs.writeFileSync(path.join(folderPath, '01 Image.jpg'), '');
         fs.writeFileSync(path.join(folderPath, '02 Image.jpg'), '');
+        fs.writeFileSync(path.join(folderPath, '03 Image.jpg'), '');
 
         const report = createPresetFileRecursively(folderPath, '', false);
         const alerts = report[0].alerts;
@@ -225,12 +228,12 @@ test('createPresetFileRecursively reports missing camera base inputs', () => {
         assert.deepEqual(
             alerts.map((alert) => [alert.key, alert.type]),
             [
-                ['1', 'error'],
-                ['2', 'error'],
+                ['', 'error'],
+                ['', 'error'],
             ],
         );
-        assert.match(alerts[0].msg, /missing the 'Mic' input/);
-        assert.match(alerts[1].msg, /missing the 'Cam' input/);
+        assert.equal(alerts.filter((alert) => alert.msg.includes("'Mic' input")).length, 1);
+        assert.equal(alerts.filter((alert) => alert.msg.includes("'Cam' input")).length, 1);
     } finally {
         fs.rmSync(folderPath, { recursive: true, force: true });
     }

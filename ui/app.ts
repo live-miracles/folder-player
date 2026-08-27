@@ -538,9 +538,13 @@ createPresetBtn.addEventListener('click', async () => {
     const collapse = collapseInputsInput.value === '1';
     const customParentFolder = customParentFolderInput.value.trim();
     try {
-        const reports: { folder: string; alerts: ReportAlert[] }[] = await (
-            window as any
-        ).api.createPreset(folderPath, enableBus, collapse, customParentFolder);
+        const reports: { folder: string; baseFile: string | null; alerts: ReportAlert[] }[] =
+            await (window as any).api.createPreset(
+                folderPath,
+                enableBus,
+                collapse,
+                customParentFolder,
+            );
 
         const alertsList = document.getElementById('home-alerts-list')!;
         alertsList.innerHTML = ''; // Clear previous alerts
@@ -576,7 +580,10 @@ createPresetBtn.addEventListener('click', async () => {
 
             let html = `
                 <div class="flex justify-between items-center mb-2">
-                    <h3 class="text-md font-bold">Folder: <span class="font-normal">${report.folder}</span></h3>
+                    <div>
+                      <h3 class="text-md font-bold">Folder: <span class="font-normal">${escapeHtml(report.folder)}</span></h3>
+                      <p class="text-sm opacity-75">Base: <span title="${escapeHtml(report.baseFile ?? 'Base preset not found')}">${escapeHtml(report.baseFile ?? 'Not found')}</span></p>
+                    </div>
                     ${report.alerts && report.alerts.length > 0 ? '' : '<p class="text-success">No issues found.</p>'}
                 </div>
             `;
@@ -647,6 +654,26 @@ playFolderBtn.addEventListener('click', async () => {
 document.getElementById('cancel-config-btn')!.addEventListener('click', goToHomePage);
 
 const saveConfigBtn = document.getElementById('save-config-btn') as HTMLButtonElement;
+const refreshConfigBtn = document.getElementById('refresh-config-btn') as HTMLButtonElement;
+refreshConfigBtn.addEventListener('click', async () => {
+    const folderPath = playFolderInput.value;
+
+    if (!folderPath) {
+        showErrorAlert('Content folder is not found.');
+        return;
+    }
+
+    refreshConfigBtn.disabled = true;
+    try {
+        const state = await (window as any).api.getFolderState(folderPath);
+        renderConfigPage(state);
+    } catch (err) {
+        showErrorAlert(err);
+    } finally {
+        refreshConfigBtn.disabled = false;
+    }
+});
+
 saveConfigBtn.addEventListener('click', async () => {
     const folderPath = playFolderInput.value;
 

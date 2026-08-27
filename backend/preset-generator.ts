@@ -2,7 +2,7 @@ import fs from 'fs';
 import path from 'path';
 
 import { getFolderState } from './config-api.js';
-import { getBaseFile, getFolderFiles, FILE_TYPES, compareFiles } from './file-manager.js';
+import { getFolderFiles, FILE_TYPES, compareFiles } from './file-manager.js';
 import type { Alert } from './types.js';
 
 type PresetFile = { path: string; type: string; id: string };
@@ -40,7 +40,7 @@ export function createPresetFileRecursively(
         throw new Error('Please select a content folder instead of a filesystem root.');
     }
 
-    const report: { folder: string; alerts: Alert[] }[] = [];
+    const report: { folder: string; baseFile: string | null; alerts: Alert[] }[] = [];
     let traversedDirectories = 0;
 
     function traverseDirectory(currentPath: string) {
@@ -60,21 +60,15 @@ export function createPresetFileRecursively(
 
         const state = getFolderState(currentPath);
         if (state.config !== null) {
-            const baseFile = getBaseFile(currentPath);
+            const baseFile = state.baseFile;
             if (!baseFile) {
                 report.push({
                     folder: currentPath,
-                    alerts: [
-                        ...state.alerts,
-                        {
-                            key: '',
-                            type: 'error',
-                            msg: `Not able to find the base preset for folder '${currentPath}'. Please create a 'base.vmix' file in the folder or within its first three parent folders.`,
-                        },
-                    ],
+                    baseFile,
+                    alerts: state.alerts,
                 });
             } else {
-                const generationAlerts = createPresetFile(
+                createPresetFile(
                     currentPath,
                     baseFile,
                     enableBus,
@@ -84,7 +78,8 @@ export function createPresetFileRecursively(
                 );
                 report.push({
                     folder: currentPath,
-                    alerts: [...state.alerts, ...generationAlerts],
+                    baseFile,
+                    alerts: state.alerts,
                 });
             }
         }
@@ -115,10 +110,6 @@ function createPresetFile(
     console.log('Reading base file: ' + base);
     const baseXML = fs.readFileSync(base, 'utf-8');
 
-    const micId = getTitleId(baseXML, 'Mic');
-    const camId = getTitleId(baseXML, 'Cam');
-    console.log('Identified micId: ' + micId + ' and camId: ' + camId);
-
     const fileMap = getFolderFiles(folderPath);
     const rewriteSourceParent = path.dirname(path.dirname(base));
     const rewriteFilePath = getFilePathRewriter(rewriteSourceParent, customParentFolder);
@@ -126,7 +117,6 @@ function createPresetFile(
     const inputsXML: string[] = [];
     const otherInputsXML: string[] = [];
     const helperInputsXML: string[] = [];
-    const generationAlerts: Alert[] = [];
 
     const otherFiles = fileMap.get('') ?? [];
     otherFiles.forEach((f) =>
@@ -148,26 +138,12 @@ function createPresetFile(
         const hasMic = options.includes('mic');
 
         if (hasMic) {
-            if (micId) {
-                layers.push(micId);
-            } else {
-                generationAlerts.push({
-                    key,
-                    type: 'error',
-                    msg: `Microphone is selected, but the base preset is missing the 'Mic' input.`,
-                });
-            }
+            const micId = getTitleId(baseXML, 'Mic');
+            if (micId) layers.push(micId);
         }
         if (hasCam) {
-            if (camId) {
-                layers.push(camId);
-            } else {
-                generationAlerts.push({
-                    key,
-                    type: 'error',
-                    msg: `Camera is selected, but the base preset is missing the 'Cam' input.`,
-                });
-            }
+            const camId = getTitleId(baseXML, 'Cam');
+            if (camId) layers.push(camId);
         }
 
         const audios = files.filter((f) => f.type === FILE_TYPES.AUDIO);
@@ -219,8 +195,6 @@ function createPresetFile(
     // Save file
     const newXML = getFullXML(baseXML, [...inputsXML, ...otherInputsXML, ...helperInputsXML]);
     fs.writeFileSync(outputPath, newXML, 'utf-8');
-
-    return generationAlerts;
 }
 
 export function getRewrittenFilePath(
