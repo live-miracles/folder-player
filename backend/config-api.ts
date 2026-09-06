@@ -252,7 +252,7 @@ function getAlerts(
         const configTypes = allTypes.filter((type) => options.includes(type)).join('+');
         const folderTypes = allTypes.filter((type) => types.includes(type)).join('+');
 
-        if (options.length > 0 && configTypes !== folderTypes) {
+        if (configTypes && configTypes !== folderTypes) {
             alerts.push({
                 key,
                 type: ALERT.ERROR,

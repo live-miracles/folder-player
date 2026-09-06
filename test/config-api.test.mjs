@@ -30,8 +30,8 @@ test('getFolderState includes issue file names in file-specific alerts', () => {
         const duplicateAudio = state.alerts.find((alert) =>
             alert.msg.includes("Two files of type 'AudioFile'."),
         );
-        const duplicateVideoAlerts = state.alerts.filter((alert) => alert.key === '04');
-        const multipleVisualAlerts = state.alerts.filter((alert) => alert.key === '05');
+        const duplicateVideoAlerts = state.alerts.filter((alert) => alert.key === '4');
+        const multipleVisualAlerts = state.alerts.filter((alert) => alert.key === '5');
 
         assert.deepEqual(audioOnly?.files, ['01 Audio.mp3']);
         assert.deepEqual(videoOverlay?.files, ['02 Slide.png', '02 Video.mp4']);
