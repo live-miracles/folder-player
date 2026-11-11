@@ -1,3 +1,5 @@
+import type { Alert } from './types.js';
+
 let alertCount = 0;
 export function showErrorAlert(error: any) {
     const alertElem = document.getElementById('error-alert');
@@ -30,56 +32,38 @@ export function capitalize(text: string) {
     return text.charAt(0).toUpperCase() + text.slice(1);
 }
 
-// Draw the segmented dB meter with peak indicator
-function drawDbMeter(
-    canvas: HTMLCanvasElement,
-    ctx: CanvasRenderingContext2D,
-    dB: number,
-    left: boolean,
-    muted: boolean,
-) {
-    // Define dB ranges and colors
-    const dbRanges = [
-        { min: -100, max: -90, frac: 0.07, colorOn: '#008000', colorOff: '#008080' },
-        { min: -90, max: -36, frac: 0.28, colorOn: '#008000', colorOff: '#008080' },
-        { min: -36, max: -18, frac: 0.25, colorOn: '#00c000', colorOff: '#00c0c0' },
-        { min: -18, max: -6, frac: 0.25, colorOn: '#00ff00', colorOff: '#00ffff' },
-        { min: -6, max: -1, frac: 0.12, colorOn: '#ffff00', colorOff: '#faff74' },
-        { min: -1, max: 0, frac: 0.03, colorOn: '#ff0000', colorOff: '#ff0000' },
-    ];
-
-    let accumulatedHeight = 0; // Track filled height
-
-    dbRanges.forEach((range) => {
-        if (dB >= range.min) {
-            const rangeHeight = range.frac * canvas.height;
-
-            // Calculate the portion of this range to be filled
-            const filledFraction = Math.min(dB, range.max) - range.min;
-            const filledHeight = (filledFraction / (range.max - range.min)) * rangeHeight;
-
-            // Draw the segment for this range
-            ctx.fillStyle = muted ? range.colorOff : range.colorOn;
-            ctx.fillRect(
-                left ? 0 : canvas.width * 0.55,
-                canvas.height - accumulatedHeight - filledHeight,
-                canvas.width * 0.45,
-                filledHeight,
-            );
-            accumulatedHeight += rangeHeight;
-        }
-    });
+export function escapeHtml(text: string) {
+    return text
+        .replace(/&/g, '&amp;')
+        .replace(/</g, '&lt;')
+        .replace(/>/g, '&gt;')
+        .replace(/"/g, '&quot;')
+        .replace(/'/g, '&#039;');
 }
 
-export function drawAudioLevels(canvas: HTMLCanvasElement, input: any) {
-    const ctx = canvas.getContext('2d')!;
-    ctx.clearRect(0, 0, canvas.width, canvas.height);
+type ReportAlert = Alert;
 
-    const left = Math.log10(parseFloat(input.meterF1)) * 20;
-    const right = Math.log10(parseFloat(input.meterF2)) * 20;
+/** One row of a folder report: icon, "Error in 03: message", then affected files as chips. */
+export function getAlertItemHtml(alert: ReportAlert) {
+    const isError = alert.type === 'error';
+    const files = alert.files?.length
+        ? `<div class="mt-1.5 flex flex-wrap gap-1">${alert.files
+              .map((file) => `<span class="chip font-mono text-[11px]">${escapeHtml(file)}</span>`)
+              .join('')}</div>`
+        : '';
 
-    const muted = input.muted === 'True';
-    const solo = input.solo === 'True';
-    drawDbMeter(canvas, ctx, !muted || solo ? left : -100, true, muted);
-    drawDbMeter(canvas, ctx, !muted || solo ? right : -100, false, muted);
+    return `<li class="flex items-start gap-2.5 text-[13px]">
+        <i data-lucide="${isError ? 'circle-x' : 'triangle-alert'}" class="mt-0.5 h-4 w-4 shrink-0 ${isError ? 'text-danger' : 'text-warning'}"></i>
+        <div class="min-w-0">
+            <p class="text-ink-muted"><span class="font-medium text-ink">${capitalize(alert.type)}</span>${alert.key ? ` in <span class="font-mono font-medium text-ink">${escapeHtml(alert.key)}</span>` : ''}: ${escapeHtml(alert.msg)}</p>
+            ${files}
+        </div>
+    </li>`;
+}
+
+export function getReportSummaryHtml(errors: number, warnings: number) {
+    return `<div class="flex items-center gap-2">
+        <span class="chip chip-danger">${errors} ${errors === 1 ? 'error' : 'errors'}</span>
+        <span class="chip chip-warning">${warnings} ${warnings === 1 ? 'warning' : 'warnings'}</span>
+    </div>`;
 }

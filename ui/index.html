@@ -1,474 +1,230 @@
 <!doctype html>
-<html data-theme="dim">
+<html>
   <head>
     <meta charset="UTF-8" />
     <link href="./dist/output.css" rel="stylesheet" />
   </head>
 
   <body class="h-screen overflow-hidden">
-    <div role="alert" id="error-alert" class="alert alert-error fixed top-3 left-1/2 z-999 hidden max-w-175 -translate-x-1/2 transform opacity-90">
-      <svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6 shrink-0 stroke-current" fill="none" viewBox="0 0 24 24">
-        <path
-          stroke-linecap="round"
-          stroke-linejoin="round"
-          stroke-width="2"
-          d="M10 14l2-2m0 0l2-2m-2 2l-2-2m2 2l2 2m7-2a9 9 0 11-18 0 9 9 0 0118 0z" />
-      </svg>
+    <!-- NOTIFICATIONS -->
+    <div role="alert" id="error-alert" class="notice fixed top-4 left-1/2 z-999 hidden max-w-160 -translate-x-1/2 border-danger/40">
+      <i data-lucide="circle-x" class="text-danger"></i>
       <span id="error-msg"></span>
     </div>
 
-    <div
-      role="alert"
-      id="success-alert"
-      class="alert alert-success fixed top-3 left-1/2 z-999 hidden max-w-175 -translate-x-1/2 transform opacity-90">
-      <svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6 shrink-0 stroke-current" fill="none" viewBox="0 0 24 24">
-        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
-      </svg>
+    <div role="alert" id="success-alert" class="notice fixed top-4 left-1/2 z-999 hidden max-w-160 -translate-x-1/2 border-success/40">
+      <i data-lucide="circle-check" class="text-success"></i>
       <span id="success-msg"></span>
     </div>
 
-    <div class="toast toast-start toast-bottom z-9999 transition-all duration-200">
-      <div id="update-toast" class="alert shadow-lg hidden flex-col items-start gap-2 w-75 outline">
-        <div class="font-semibold">Update available</div>
-        <div id="update-text" class="text-sm opacity-80">Checking...</div>
-        <progress id="update-progress" class="progress progress-primary w-full hidden" value="0" max="100"></progress>
-        <div class="flex w-full justify-end gap-2">
-          <button id="update-dismiss-btn" class="btn btn-xs hidden">Later</button>
-          <button id="update-download-btn" class="btn btn-xs btn-primary hidden">Download</button>
-          <button id="update-btn" class="btn btn-xs btn-primary hidden">Restart</button>
-        </div>
+    <div id="update-toast" class="panel fixed bottom-4 left-4 z-9999 hidden w-80 flex-col gap-3 p-4 shadow-2xl shadow-black/60">
+      <div class="flex items-center gap-2 font-semibold">
+        <i data-lucide="arrow-down-circle" class="h-4 w-4 text-accent-ink"></i>
+        Update available
+      </div>
+      <div id="update-text" class="text-sm text-ink-subtle">Checking...</div>
+      <progress id="update-progress" class="progress hidden" value="0" max="100"></progress>
+      <div class="flex w-full justify-end gap-2">
+        <button id="update-dismiss-btn" class="btn btn-sm btn-ghost hidden">Later</button>
+        <button id="update-download-btn" class="btn btn-sm btn-primary hidden">Download</button>
+        <button id="update-btn" class="btn btn-sm btn-primary hidden">Restart</button>
       </div>
     </div>
 
-    <div id="zoom-ui" class="fixed top-4 right-4 hidden transition-all duration-200 opacity-0 scale-90 z-999">
-      <div class="card bg-base-200 shadow-lg p-2 flex flex-row items-center gap-2">
-        <button id="zoom-out" class="btn btn-sm">−</button>
-        <span id="zoom-level" class="w-12 text-center text-sm">100%</span>
-        <button id="zoom-in" class="btn btn-sm">+</button>
+    <div id="zoom-ui" class="fixed top-4 right-4 z-999 hidden scale-90 opacity-0 transition-all duration-200">
+      <div class="panel flex items-center gap-1 p-1 shadow-2xl shadow-black/60">
+        <button id="zoom-out" class="btn btn-sm btn-ghost btn-icon" aria-label="Zoom out"><i data-lucide="minus"></i></button>
+        <span id="zoom-level" class="w-12 text-center text-[13px] tabular-nums">100%</span>
+        <button id="zoom-in" class="btn btn-sm btn-ghost btn-icon" aria-label="Zoom in"><i data-lucide="plus"></i></button>
       </div>
     </div>
 
     <dialog id="create-preset-alerts" class="modal">
-      <div class="modal-box max-w-200">
-        <div class="flex justify-between items-center mb-4">
-          <h2 id="preset-creation-summary" class="text-xl font-bold"></h2>
+      <div class="flex max-h-[calc(100vh-64px)] flex-col">
+        <div class="flex items-center justify-between gap-4 border-b border-line px-5 py-4">
+          <h2 id="preset-creation-summary" class="text-base font-semibold tracking-tight"></h2>
           <div id="preset-report-summary"></div>
         </div>
-        <div id="home-alerts-list" class="max-h-[calc(100vh-250px)] overflow-y-auto"></div>
-
-        <div class="modal-action">
+        <div id="home-alerts-list" class="min-h-0 flex-1 space-y-3 overflow-y-auto p-5"></div>
+        <div class="flex justify-end border-t border-line px-5 py-3">
           <form method="dialog">
-            <button class="btn">Close</button>
+            <button class="btn btn-sm">Close</button>
           </form>
         </div>
       </div>
     </dialog>
 
-    <div id="docs-page" class="fixed inset-0 z-10 hidden overflow-hidden bg-cover bg-center p-4" style="background-image: url('./mountains.jpg')">
-      <div class="mx-auto flex h-full w-full max-w-200 flex-col rounded-box bg-base-200/90 p-4">
-        <div class="mb-4 flex shrink-0 items-center gap-3">
-          <button id="close-docs-btn" class="btn btn-sm btn-square shrink-0" title="Back" aria-label="Back">
-            <i data-lucide="undo-2" class="h-5 w-5"></i>
-          </button>
-          <h1 class="text-xl font-bold">Docs</h1>
-        </div>
-
-        <div class="min-h-0 flex-1 overflow-y-auto pr-1">
-          <h2 class="text-xl font-semibold">Base vMix Preset</h2>
-          <p class="mt-1">
-            Create a <code>`base.vmix`</code> file in the content folder or its parent folder. The closest matching preset is used. For overlays,
-            title base inputs <code>`Cam`</code>, <code>`Mic`</code>.
-          </p>
-          <pre class="bg-base-300/50 rounded-lg p-3 mt-2 overflow-x-auto text-sm"><code>Content folder
-  |-- base.vmix        &lt;- used first, when present
-  |-- 01 Video.mp4
-  |-- 02 Audio.mp3
-
-Parent folder
-  |-- base.vmix        &lt;- fallback for child folders
-  |-- Session A
-      |-- 01 Video.mp4
-
-Required input titles:
-Cam  - camera input
-Mic  - microphone input</code></pre>
-
-          <p class="mt-2">
-            The
-            <span class="badge badge-primary h-7 w-7 p-0" title="Camera" aria-label="Camera"><i data-lucide="video" class="h-4 w-4"></i></span>
-            and
-            <span class="badge badge-primary h-7 w-7 p-0" title="Microphone" aria-label="Microphone"><i data-lucide="mic" class="h-4 w-4"></i></span>
-            options can be selected independently. Selected layers are ordered <code>`Mic`</code> (when selected), then <code>`Cam`</code> (when
-            selected), then any visual overlay. For images with the
-            <span class="badge badge-primary h-7 w-7 p-0" title="Camera" aria-label="Camera"><i data-lucide="video" class="h-4 w-4"></i></span>
-            option, a generated colour input places the camera below the image. Audio, video, photo-folder slideshows, and PowerPoint slides receive
-            the camera directly as a layer.
-          </p>
-
-          <h2 class="text-xl font-semibold mt-3">Content Folder</h2>
-          <p class="mt-1">
-            Number files to set order. Same number means overlay, <code>`+`</code> reuses an overlay, and unnumbered items are ignored. Configured
-            subfolders with <code>`folder-player.txt`</code> get their own presets.
-          </p>
-          <pre class="bg-base-300/50 rounded-lg p-3 mt-2 overflow-x-auto text-sm"><code>Content folder
-  |-- 01 Welcome.mp4
-  |-- 02 Teaching.mkv
-  |-- 03 Meditation.mp3
-  |-- 03 Slide.png        &lt;- overlays 03 Meditation.mp3
-  |-- 04 Deck.pptx        &lt;- PowerPoint slideshow
-  |-- 05 Photos           &lt;- folder slideshow
-  |   |-- image-1.jpg
-  |   |-- image-2.jpg
-  |-- Notes.txt           &lt;- ignored
-
-Same-number overlay:
-07 Audio.mp3
-07 Image.png
-=> 07 Audio.mp3 + Image.png overlay
-
-Underscore ordering:
-03_1 Intro.mp4
-03_2 Teaching.mp4
-03_3 Meditation.mp3
-=> plays 03_1, then 03_2, then 03_3
-
-Reusable overlay:
-03 Audio.mp3
-08 Audio.mp3
-03+08 Photos
-=> Photos overlays both 03 and 08</code></pre>
-
-          <h2 class="text-xl font-semibold mt-3">Custom Parent Folder</h2>
-          <p class="mt-1">
-            When Custom Parent Folder is filled, generated preset input paths replace only the folder path before the playlist source folder. The
-            nearby base preset parent folder name is kept.
-          </p>
-          <pre class="bg-base-300/50 rounded-lg p-3 mt-2 overflow-x-auto text-sm"><code>Nearby base preset:
-Base preset: C:\a\b\base file.vmix
-Media file:  C:\a\b\content\video.mp4
-Custom:      C:\custom\path
-Generated:   C:\custom\path\b\content\video.mp4
-
-          </code></pre>
-        </div>
-      </div>
-    </div>
-
-    <div class="relative w-full h-full">
-      <!-- LOADING PAGE -->
-      <div id="loading-page" class="absolute inset-0 overflow-y-auto bg-cover bg-center hidden" style="background-image: url('./mountains.jpg')">
-        <div class="w-full h-full flex items-end justify-center pb-[5%]">
-          <div class="bg-base-100/40 backdrop-blur-md px-10 py-6 rounded-box text-center w-200">
-            <div id="loading-quote" class="text-xl font-semibold leading-relaxed"></div>
-            <progress id="loading-progress" class="progress progress-primary w-full mt-6" value="0" max="100"></progress>
-          </div>
-        </div>
-      </div>
-
+    <div class="relative h-full w-full">
       <!-- HOME PAGE -->
-      <div id="home-page" class="absolute inset-0 overflow-y-auto bg-cover bg-center" style="background-image: url('./mountains.jpg')">
-        <div class="w-full flex items-center justify-center p-3" style="min-height: 100%">
-          <div class="relative mx-auto w-full max-w-200 bg-base-200/75 rounded-box p-3">
-            <div class="mb-2 flex justify-center">
-              <div role="tablist" class="tabs tabs-box">
-                <button id="home-config-mode-input" role="tab" type="button" class="tab tab-active">Config</button>
-                <button id="home-vmix-mode-input" role="tab" type="button" class="tab">vMix Web</button>
-                <button id="home-docs-mode-input" role="tab" type="button" class="tab">Docs</button>
+      <div id="home-page" class="absolute inset-0 overflow-y-auto">
+        <header class="app-header sticky top-0 z-20">
+          <div class="flex min-w-0 flex-1 items-center gap-2.5">
+            <img src="./icon.png" alt="" class="h-6 w-6 rounded-md" />
+            <span class="font-semibold tracking-tight">Folder Player</span>
+            <span class="chip h-5 px-1.5 text-[11px]">vMix</span>
+          </div>
+          <div class="flex flex-1 justify-end">
+            <a
+              href="https://live-miracles.github.io/projects/folder-player/docs/"
+              target="_blank"
+              rel="noopener"
+              class="btn btn-sm btn-ghost"
+              title="Open documentation in your browser">
+              <i data-lucide="book-open"></i>
+              Docs
+              <i data-lucide="arrow-up-right" class="text-ink-faint"></i>
+            </a>
+          </div>
+        </header>
+
+        <main class="mx-auto flex w-full max-w-220 flex-col gap-5 px-6 py-8">
+          <section class="panel overflow-hidden">
+            <!-- Content folder -->
+            <div class="p-5">
+              <label for="play-folder-input" class="field-label">Content folder</label>
+              <div
+                class="flex items-center gap-2 rounded-lg border border-line bg-canvas py-1 pr-1 pl-3 transition-colors focus-within:border-accent focus-within:ring-3 focus-within:ring-accent/25 hover:border-line-strong">
+                <i data-lucide="folder" class="h-4 w-4 shrink-0 text-ink-faint"></i>
+                <textarea
+                  id="play-folder-input"
+                  class="min-h-6 flex-1 resize-none overflow-hidden bg-transparent py-1 leading-6 break-all whitespace-pre-wrap placeholder:text-ink-faint focus:outline-none"
+                  rows="1"
+                  placeholder="Select a folder of numbered media files"
+                  style="resize: none"></textarea>
+                <button id="clear-play-folder-btn" class="btn btn-sm btn-ghost btn-icon" title="Clear" aria-label="Clear">
+                  <i data-lucide="x"></i>
+                </button>
+                <button id="select-play-folder-btn" class="btn btn-sm">Browse…</button>
               </div>
             </div>
 
-            <div id="config-mode-fields" class="flex flex-wrap items-end gap-1">
-              <fieldset class="fieldset w-fit">
-                <legend class="fieldset-legend">
-                  <div class="tooltip" data-tip="This Bus will be enabled for all the inputs in the playlist.">Enable Bus</div>
-                </legend>
-                <select id="enable-bus-input" class="select w-24">
-                  <option value="">None</option>
-                  <option selected>A</option>
-                  <option>B</option>
-                  <option>C</option>
-                  <option>D</option>
-                  <option>E</option>
-                  <option>F</option>
-                </select>
-              </fieldset>
+            <!-- Preset settings -->
+            <div class="border-t border-line-faint px-5 pt-4 pb-5">
+              <div class="grid grid-cols-[repeat(2,minmax(0,8.5rem))_minmax(14rem,1fr)] gap-3">
+                <div>
+                  <label for="enable-bus-input" class="field-label">
+                    <span class="tip" data-tip="This bus will be enabled for all the inputs in the playlist.">Enable bus</span>
+                  </label>
+                  <select id="enable-bus-input" class="select">
+                    <option value="">None</option>
+                    <option selected>A</option>
+                    <option>B</option>
+                    <option>C</option>
+                    <option>D</option>
+                    <option>E</option>
+                    <option>F</option>
+                  </select>
+                </div>
 
-              <fieldset class="fieldset w-fit">
-                <legend class="fieldset-legend">
-                  <div class="tooltip" data-tip="Inputs will appear minimized in vMix.">Collapse Inputs</div>
-                </legend>
-                <select id="collapse-inputs-input" class="select w-24">
-                  <option value="1">Yes</option>
-                  <option selected value="0">No</option>
-                </select>
-              </fieldset>
+                <div>
+                  <label for="collapse-inputs-input" class="field-label">
+                    <span class="tip" data-tip="Inputs will appear minimized in vMix.">Collapse inputs</span>
+                  </label>
+                  <select id="collapse-inputs-input" class="select">
+                    <option value="1">Yes</option>
+                    <option selected value="0">No</option>
+                  </select>
+                </div>
 
-              <fieldset class="fieldset w-fit">
-                <legend class="fieldset-legend">Transition</legend>
-                <select id="transition-type-input" class="select w-28">
-                  <option>Fade</option>
-                  <option>Cut</option>
-                  <option>Stinger1</option>
-                  <option>Stinger2</option>
-                  <option>Stinger3</option>
-                </select>
-              </fieldset>
-
-              <fieldset id="custom-parent-folder-row" class="fieldset min-w-80 flex-1">
-                <legend class="fieldset-legend">Custom Parent Folder</legend>
-                <label class="input w-full">
-                  <input type="text" class="grow" id="custom-parent-folder-input" list="custom-parent-folder-options" placeholder="D:\Livestream" />
+                <div>
+                  <label for="custom-parent-folder-input" class="field-label">
+                    <span
+                      class="tip"
+                      data-tip="Replaces the folder path before the playlist source folder in generated input paths. Leave empty to keep the original paths."
+                      >Custom parent folder</span
+                    >
+                  </label>
+                  <input type="text" class="input" id="custom-parent-folder-input" list="custom-parent-folder-options" placeholder="D:\Livestream" />
                   <datalist id="custom-parent-folder-options">
                     <option value="D:\Livestream"></option>
                   </datalist>
-                </label>
-              </fieldset>
+                </div>
+              </div>
             </div>
 
-            <div id="vmix-mode-fields" class="hidden flex-wrap items-end gap-1">
-              <fieldset class="fieldset w-fit">
-                <legend class="fieldset-legend">Program Output</legend>
-                <select id="program-cam-input" class="select w-48">
-                  <option value="" selected>None</option>
-                </select>
-              </fieldset>
-
-              <fieldset class="fieldset w-fit">
-                <legend class="fieldset-legend">Cam Output</legend>
-                <select id="preview-cam-input" class="select w-48">
-                  <option value="" selected>None</option>
-                </select>
-              </fieldset>
-
-              <fieldset class="fieldset min-w-80 flex-1">
-                <legend class="fieldset-legend">vMix API URL</legend>
-                <label class="input w-full">
-                  <input type="text" class="grow" id="vmix-api-url-input" list="vmix-api-url-options" placeholder="http://localhost:8088" />
-                  <datalist id="vmix-api-url-options">
-                    <option value="http://localhost:8088"></option>
-                  </datalist>
-                </label>
-              </fieldset>
+            <!-- Actions -->
+            <div class="flex items-center justify-end gap-2 border-t border-line bg-surface-2/60 px-5 py-3">
+              <button id="edit-config-btn" class="btn">
+                <i data-lucide="sliders-horizontal"></i>
+                Open Config
+              </button>
+              <button id="create-preset-btn" class="btn btn-primary">
+                <i data-lucide="file-plus-2"></i>
+                Create vMix Preset
+              </button>
             </div>
+          </section>
 
-            <div class="mt-1 flex w-full items-center gap-2 rounded-field border border-base-content/20 bg-base-100 px-3 py-2">
-              <span class="shrink-0 text-sm">Content Folder:</span>
-              <textarea
-                id="play-folder-input"
-                class="textarea textarea-ghost min-h-6 flex-1 resize-none overflow-hidden border-0 p-0 leading-6 whitespace-pre-wrap break-all focus:outline-none"
-                rows="1"
-                style="resize: none"></textarea>
-              <button id="select-play-folder-btn" class="btn btn-primary btn-xs">Select</button>
-              <button id="clear-play-folder-btn" class="btn btn-error btn-xs">Clear</button>
+          <section class="panel overflow-hidden">
+            <div class="flex items-center justify-between px-5 pt-4 pb-2">
+              <h2 class="eyebrow">Recent folders</h2>
+              <span id="recent-folders-count" class="text-xs text-ink-faint tabular-nums"></span>
             </div>
-
-            <div class="overflow-x-auto max-h-80 mt-1">
-              <table class="table table-xs">
-                <thead>
-                  <tr>
-                    <th>Recent Folders</th>
-                  </tr>
-                </thead>
-                <tbody id="recent-folders-table"></tbody>
-              </table>
-            </div>
-
-            <div class="text-center mt-3">
-              <button id="edit-config-btn" class="btn btn-accent">Open Config</button>
-              <button id="create-preset-btn" class="btn btn-accent ml-2">Create vMix Preset</button>
-              <button id="play-folder-btn" class="btn btn-accent ml-2 hidden">Setup Folder in vMix</button>
-              <button id="open-vmix-btn" class="btn btn-accent ml-2 hidden">Open Current vMix</button>
-            </div>
-          </div>
-        </div>
+            <ul id="recent-folders-table" class="max-h-90 overflow-y-auto px-2 pb-2"></ul>
+          </section>
+        </main>
       </div>
 
       <!-- CONFIG PAGE -->
-      <div id="config-page" class="absolute inset-0 overflow-hidden bg-cover bg-center hidden" style="background-image: url('./mountains.jpg')">
-        <div class="flex h-full flex-col p-4">
-          <div id="config-card" class="mx-auto flex min-h-0 w-full max-w-300 flex-1 flex-col rounded-box bg-base-200/75 p-3">
-            <div class="mb-2 flex items-center justify-between gap-3">
-              <div class="flex min-w-0 flex-1 items-center gap-4 text-xl font-semibold">
-                <button id="cancel-config-btn" class="btn btn-sm btn-square shrink-0" title="Back" aria-label="Back">
-                  <i data-lucide="undo-2" class="h-5 w-5"></i>
-                </button>
-                <div class="min-w-0 flex-1">
-                  <span id="config-title" class="block min-w-0"></span>
-                  <span id="config-base" class="block truncate text-sm font-normal opacity-75"></span>
-                </div>
-              </div>
+      <div id="config-page" class="absolute inset-0 hidden overflow-hidden">
+        <div class="flex h-full flex-col">
+          <header class="app-header shrink-0">
+            <button id="cancel-config-btn" class="btn btn-sm btn-ghost btn-icon shrink-0" title="Back" aria-label="Back">
+              <i data-lucide="arrow-left"></i>
+            </button>
+            <div class="min-w-0 flex-1">
+              <span id="config-title" class="block min-w-0 text-[15px] font-semibold tracking-tight"></span>
+              <span id="config-base" class="block truncate text-xs text-ink-subtle"></span>
+            </div>
 
-              <div class="flex shrink-0 items-center gap-2">
-                <div class="join" aria-label="Config view">
-                  <button
-                    id="config-list-view-btn"
-                    type="button"
-                    class="btn btn-primary btn-sm btn-square join-item"
-                    title="List view"
-                    aria-label="List view">
-                    <i data-lucide="list" class="h-5 w-5"></i>
-                  </button>
-                  <button
-                    id="config-preview-view-btn"
-                    type="button"
-                    class="btn btn-sm btn-square join-item"
-                    title="Preview view"
-                    aria-label="Preview view">
-                    <i data-lucide="layout-grid" class="h-5 w-5"></i>
-                  </button>
-                </div>
-                <button id="refresh-config-btn" class="btn btn-sm btn-square" title="Refresh" aria-label="Refresh">
-                  <i data-lucide="refresh-cw" class="h-5 w-5"></i>
+            <div class="flex shrink-0 items-center gap-2">
+              <div class="seg seg-icon" aria-label="Config view">
+                <button id="config-list-view-btn" type="button" title="List view" aria-label="List view">
+                  <i data-lucide="list"></i>
                 </button>
-                <button id="save-config-btn" class="btn btn-primary btn-sm btn-square" title="Save" aria-label="Save">
-                  <i data-lucide="save" class="h-5 w-5"></i>
+                <button id="config-preview-view-btn" type="button" title="Preview view" aria-label="Preview view">
+                  <i data-lucide="layout-grid"></i>
                 </button>
               </div>
+              <button id="refresh-config-btn" class="btn btn-sm btn-icon" title="Refresh" aria-label="Refresh">
+                <i data-lucide="refresh-cw"></i>
+              </button>
+              <button id="save-config-btn" class="btn btn-sm btn-primary" title="Save">
+                <i data-lucide="save"></i>
+                Save
+              </button>
             </div>
+          </header>
 
-            <div id="config-card-body" class="min-h-0 flex-1 overflow-y-auto">
-              <div id="config-alerts" class="p-3 bg-base-200/50 rounded-box shadow-lg">
-                <div class="flex justify-between items-center mb-3">
-                  <h2 class="text-lg font-bold">Report</h2>
-                  <div id="config-report-summary"></div>
-                </div>
-                <ul id="config-alerts-list" class="max-h-50 space-y-2 overflow-y-auto pr-1"></ul>
-              </div>
-
-              <div id="config-list-view" class="overflow-x-auto">
-                <table class="table">
-                  <thead>
-                    <tr>
-                      <th></th>
-                      <th>File</th>
-                      <th>Type</th>
-                      <th>Options</th>
-                    </tr>
-                  </thead>
-                  <tbody id="config-table"></tbody>
-                </table>
-              </div>
-            </div>
-          </div>
-
-          <div id="config-preview-scroll" class="mt-3 hidden min-h-0 w-full flex-1 overflow-y-auto">
-            <div id="config-preview-view" class="hidden w-full text-center pb-3"></div>
-          </div>
-        </div>
-      </div>
-
-      <!-- VMIX PAGE -->
-      <div id="vmix-page" class="absolute inset-0 hidden">
-        <div class="flex h-full">
-          <!-- LEFT PANEL -->
-          <div class="flex-1 p-4 flex flex-col gap-3 bg-base-200 min-w-100">
-            <div class="flex items-center gap-3">
-              <button id="close-vmix-web-btn" class="btn btn-sm btn-soft"><i data-lucide="undo-2" class="w-5 h-5"></i></button>
-              <h2 id="preset-name" class="text-lg font-bold"></h2>
-            </div>
-
-            <div class="flex items-center gap-3 mx-auto"><span class="p-2 text-8xl" id="current-time"></span></div>
-
-            <div class="flex-1 min-h-0 relative">
-              <div id="input-list" class="flex flex-col gap-2 overflow-y-auto overflow-x-hidden h-full"></div>
-
-              <!-- Overlay -->
-              <div
-                id="loading-overlay"
-                class="absolute inset-0 bg-white/10 rounded-box flex items-center justify-center opacity-0 pointer-events-none transition-opacity duration-300 z-50">
-                <div class="text-center w-2/3 bg-base-200/90 rounded-box p-3">
-                  <progress id="progress-bar" class="progress progress-primary w-full" value="0" max="100"></progress>
-                </div>
-              </div>
-            </div>
-          </div>
-
-          <!-- DIVIDER -->
-          <div class="w-1 bg-base-300"></div>
-
-          <!-- RIGHT PANEL -->
-          <div class="w-[70%] flex flex-col p-4 bg-base-100">
-            <!-- Title -->
-            <div class="text-center font-semibold bg-primary text-primary-content text-xl py-1" id="program-input-title"></div>
-
-            <div class="flex gap-1 flex-1 min-h-0">
-              <!-- VIDEO -->
-              <div class="flex-1 min-h-0 flex items-center justify-center overflow-hidden">
-                <video id="program-video" class="max-w-full max-h-full aspect-video rounded-lg"></video>
-              </div>
-              <!-- AUDIO CANVAS -->
-              <canvas id="master-meter" class="w-5 bg-base-300 rounded-sm" width="20" height="500"></canvas>
-            </div>
-
-            <div class="text-center font-semibold text-5xl py-2"><span id="vmix-duration"></span></div>
-            <div class="flex items-center gap-2 invisible">
-              <button id="vmix-play-btn" class="btn btn-sm"><i data-lucide="play" class="w-5 h-5"></i></button>
-              <button id="vmix-restart-btn" class="btn btn-sm"><i data-lucide="square" class="w-5 h-5"></i></button>
-              <button id="vmix-loop-btn" class="btn btn-sm"><i data-lucide="repeat" class="w-5 h-5"></i></button>
-              <input id="vmix-timeline" type="range" min="0" max="1000" value="0" class="range range-xs flex-1" />
-              <span class="opacity-70 w-40 text-center text-lg" id="live-time"></span>
-            </div>
-
-            <!-- Controls -->
-            <div class="flex gap-4 items-start mt-3">
-              <!-- Buttons -->
-              <div class="flex flex-col justify-center gap-3 text-center w-60 h-full">
-                <button id="vmix-next-btn" class="btn btn-xl btn-primary">Next</button>
-                <button id="vmix-ftb-btn" class="btn btn-xl">Fade to Black</button>
-                <button id="vmix-mic-btn" class="btn btn-xl"><i data-lucide="mic-off"></i></button>
-              </div>
-
-              <!-- Preview -->
-              <div id="preview-container" class="relative group aspect-video w-85 bg-black/75 rounded-lg overflow-hidden cursor-pointer">
-                <!-- Video -->
-                <video id="preview-video" class="w-full h-full"></video>
-
-                <!-- Overlay button -->
-                <button
-                  id="fullscreen-btn"
-                  type="button"
-                  class="absolute bottom-2 right-2 z-10 btn btn-ghost btn-circle opacity-0 group-hover:opacity-100 transition">
-                  <i data-lucide="maximize" class="w-4 h-4"></i>
-                </button>
-              </div>
-
-              <div class="flex gap-2">
-                <div id="mixer-1" class="hidden flex-col items-center w-32 rounded-lg bg-base-200" data-index="-1">
-                  <div class="mixer-title text-center badge badge-soft badge-primary font-semibold truncate p-1 m-1 rounded-lg w-28">&nbsp;</div>
-
-                  <div class="flex items-stretch gap-2 p-2 w-full h-40">
-                    <div class="flex flex-col items-center gap-1 flex-1">
-                      <span class="mixer-volume text-lg font-semibold">100%</span>
-
-                      <div class="flex gap-1 flex-wrap justify-center">
-                        <button class="vol-plus btn btn-sm"><i data-lucide="plus" class="w-5 h-5"></i></button>
-                        <button class="vol-minus btn btn-sm"><i data-lucide="minus" class="w-5 h-5"></i></button>
-                        <button class="vol-mute hidden"></button>
-                        <button class="solo btn btn-sm text-lg"><i data-lucide="headphone-off" class="w-5 h-5"></i></button>
-                      </div>
-                    </div>
-                    <canvas class="mixer-meter w-5 bg-base-300 rounded-sm" width="20" height="250"></canvas>
+          <div class="mx-auto flex min-h-0 w-full max-w-300 flex-1 flex-col px-6 py-5">
+            <div id="config-card" class="flex min-h-0 flex-1 flex-col">
+              <div id="config-card-body" class="min-h-0 flex-1 overflow-y-auto">
+                <div id="config-alerts" class="panel p-4">
+                  <div class="mb-3 flex items-center justify-between">
+                    <h2 class="eyebrow">Report</h2>
+                    <div id="config-report-summary"></div>
                   </div>
+                  <ul id="config-alerts-list" class="max-h-50 space-y-2.5 overflow-y-auto pr-1"></ul>
                 </div>
 
-                <div id="mixer-2" class="hidden flex-col items-center w-32 rounded-lg bg-base-200" data-index="-1">
-                  <div class="mixer-title badge badge-soft badge-primary font-semibold truncate p-1 m-1 rounded-lg w-28">&nbsp;</div>
-
-                  <div class="flex items-stretch gap-2 p-2 w-full h-40">
-                    <div class="flex flex-col items-center gap-1 flex-1">
-                      <span class="mixer-volume text-lg font-semibold">100%</span>
-
-                      <div class="flex gap-1 flex-wrap justify-center">
-                        <button class="vol-plus btn btn-sm"><i data-lucide="plus" class="w-5 h-5"></i></button>
-                        <button class="vol-minus btn btn-sm"><i data-lucide="minus" class="w-5 h-5"></i></button>
-                        <button class="vol-mute btn btn-sm btn-primary text-lg"><i data-lucide="volume-2" class="w-5 h-5"></i></button>
-                        <button class="solo hidden"></button>
-                      </div>
-                    </div>
-                    <canvas class="mixer-meter w-5 bg-base-300 rounded-sm" width="100" height="1000"></canvas>
-                  </div>
+                <div id="config-list-view" class="panel overflow-hidden">
+                  <table class="data-table">
+                    <thead>
+                      <tr>
+                        <th class="w-16">#</th>
+                        <th>File</th>
+                        <th class="w-32">Type</th>
+                        <th class="w-104">Options</th>
+                      </tr>
+                    </thead>
+                    <tbody id="config-table"></tbody>
+                  </table>
                 </div>
               </div>
+            </div>
+
+            <div id="config-preview-scroll" class="mt-4 hidden min-h-0 w-full flex-1 overflow-y-auto">
+              <div id="config-preview-view" class="grid grid-cols-[repeat(auto-fill,minmax(260px,1fr))] gap-3 pb-3"></div>
             </div>
           </div>
         </div>

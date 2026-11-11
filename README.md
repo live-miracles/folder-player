@@ -1,6 +1,8 @@
 # vMix Folder Player
 
-Number the files in a folder and this app will automatically generate a vMix playlist, plus a simplified web UI for users who only need the essential controls.
+Number the files in a folder and this app generates a ready-to-open vMix preset (`.vmix`) with the playlist, overlays, camera and mic layers already set up.
+
+Full documentation: https://live-miracles.github.io/projects/folder-player/docs/
 
 ## Base vMix Preset
 
@@ -86,11 +88,8 @@ Supported inputs include images, video files, audio files, photo folders, and Po
 3. Review the playlist config. If needed, enable or disable the `mic`, adjust volume, or change the slideshow rotation time.
    <img width="1557" height="585" alt="image" src="https://github.com/user-attachments/assets/98aa6354-f919-4bc2-bf57-812133bef00c" />
 
-4. Save the config, go back, and click "Setup Folder in vMix". The app will create a `.vmix` preset file and open it in vMix.
+4. Save the config, go back, and click "Create vMix Preset". The app writes a `<folder name>.vmix` preset into the content folder and shows a report of any errors or warnings. Open that preset in vMix.
    <img width="1920" height="1049" alt="image" src="https://github.com/user-attachments/assets/388d5a8e-7926-4ed0-9c16-cb1ba75a84a1" />
-
-5. The app also opens a simple web UI for users who are new to vMix and only need a "Next" button:
-   <img width="1920" height="1044" alt="image" src="https://github.com/user-attachments/assets/a988eecd-7dc0-43b8-bfc5-43d96a6b02e7" />
 
 ## Run Dev
 

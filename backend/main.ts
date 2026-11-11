@@ -1,10 +1,9 @@
-import { app, BrowserWindow, ipcMain, dialog, session, shell } from 'electron';
+import { app, BrowserWindow, ipcMain, dialog, shell } from 'electron';
 import path from 'path';
 import fs from 'fs';
 import { fileURLToPath } from 'url';
 
 import { createPresetFileRecursively } from './preset-generator.js';
-import { vMixCall, getVmixState } from './vmix-api.js';
 import { getFolderFiles, getFolderPreviewImages } from './file-manager.js';
 import { ALERT, getFolderState, saveFolderConfig } from './config-api.js';
 
@@ -23,6 +22,7 @@ function createWindow(): void {
         width: 1200,
         height: 800,
         icon: path.join(__dirname, '../ui/icon-256.ico'),
+        backgroundColor: '#08090a',
         webPreferences: {
             preload: path.join(__dirname, 'preload.js'),
         },
@@ -37,15 +37,6 @@ function createWindow(): void {
     mainWindow.loadFile(path.join(__dirname, '../ui/index.html'));
 
     setupZoom(mainWindow);
-
-    // For Camera / Mic permissions
-    session.defaultSession.setPermissionRequestHandler((webContents, permission, callback) => {
-        if (permission === 'media') {
-            callback(true);
-        } else {
-            callback(false);
-        }
-    });
 }
 
 app.whenReady().then(() => {
@@ -100,14 +91,6 @@ ipcMain.handle('select-play-folder', async (_, currentFolder?: string) => {
 ipcMain.handle('create-preset', (_, { folderPath, enableBus, collapse, customParentFolder }) => {
     return createPresetFileRecursively(folderPath, enableBus, collapse, customParentFolder);
 });
-ipcMain.handle('play-folder', async (_, { folderPath, enableBus, collapse, vmixApiUrl }) => {
-    await setupVmix(folderPath, enableBus, collapse, vmixApiUrl);
-});
-
-ipcMain.handle('get-vmix-state', async (_, vmixApiUrl) => await getVmixState(vmixApiUrl));
-ipcMain.handle('vmix-call', async (_, { func, params, vmixApiUrl }) =>
-    vMixCall(func, params, vmixApiUrl),
-);
 
 ipcMain.handle('get-folder-files', async (_, folderPath) => Array.from(getFolderFiles(folderPath)));
 ipcMain.handle('get-folder-preview-images', async (_, folderPath) =>
@@ -137,42 +120,6 @@ ipcMain.handle('get-folder-state', async (_, folderPath) => {
 ipcMain.handle('save-folder-config', async (_, { folderPath, text }) =>
     saveFolderConfig(folderPath, text),
 );
-
-// ===== vMix =====
-
-async function setupVmix(
-    folderPath: string,
-    enableBus: string,
-    collapse: boolean,
-    vmixApiUrl: string,
-) {
-    const res = await vMixCall('', {}, vmixApiUrl);
-    if (res.error) {
-        throw new Error('Failed connecting to vMix');
-    }
-
-    // Build preset path
-    const folderName = path.basename(folderPath);
-    const presetPath = path.join(folderPath, `${folderName}.vmix`);
-
-    if (!fs.existsSync(presetPath)) {
-        throw new Error('Please generate vMix preset first.');
-    }
-
-    await vMixCall('StopExternal', {}, vmixApiUrl);
-    await sleep(500);
-    await vMixCall('StopStreaming', {}, vmixApiUrl);
-    await sleep(500);
-    await vMixCall('StopRecording', {}, vmixApiUrl);
-    await sleep(500);
-    await vMixCall('OpenPreset', { Value: presetPath }, vmixApiUrl);
-    await sleep(5000);
-    await vMixCall('StartExternal', {}, vmixApiUrl);
-}
-
-function sleep(ms: number) {
-    return new Promise((res) => setTimeout(res, ms));
-}
 
 // ===== Zooming =====
 

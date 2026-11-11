@@ -22,16 +22,6 @@ contextBridge.exposeInMainWorld('api', {
             collapse,
             customParentFolder,
         }),
-    playFolder: (folderPath: string, enableBus: string, collapse: boolean, vmixApiUrl: string) =>
-        ipcRenderer.invoke('play-folder', {
-            folderPath,
-            enableBus,
-            collapse,
-            vmixApiUrl,
-        }),
-    getVmixState: (vmixApiUrl: string) => ipcRenderer.invoke('get-vmix-state', vmixApiUrl),
-    vMixCall: (func: string, params: any = {}, vmixApiUrl: string) =>
-        ipcRenderer.invoke('vmix-call', { func, params, vmixApiUrl }),
     getFolderFiles: (folderPath: string) => ipcRenderer.invoke('get-folder-files', folderPath),
     getFolderPreviewImages: (folderPath: string) =>
         ipcRenderer.invoke('get-folder-preview-images', folderPath),

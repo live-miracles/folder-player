@@ -1,4 +1,4 @@
-import { capitalize } from './utils.js';
+import { escapeHtml, getAlertItemHtml, getReportSummaryHtml } from './utils.js';
 import type { Alert } from './types.js';
 export const FILE_TYPES = {
     IMAGE: 'Image',
@@ -13,6 +13,13 @@ const VIDEO_PREVIEW_FIRST_FALLBACK_SECONDS = 2;
 const VIDEO_PREVIEW_SECOND_FALLBACK_SECONDS = 5;
 const BLACK_FRAME_LUMA_THRESHOLD = 18;
 const BLACK_FRAME_RATIO_THRESHOLD = 0.96;
+const TYPE_META: Record<string, { tag: string; label: string }> = {
+    Video: { tag: 'tag-video', label: 'Video' },
+    AudioFile: { tag: 'tag-audio', label: 'Audio' },
+    Image: { tag: 'tag-image', label: 'Image' },
+    Photos: { tag: 'tag-photos', label: 'Photos' },
+    PowerPoint: { tag: 'tag-ppt', label: 'PowerPoint' },
+};
 const OPTION_META: Record<string, { icon: string; label: string }> = {
     cam: { icon: 'video', label: 'Camera' },
     mic: { icon: 'mic', label: 'Microphone' },
@@ -95,7 +102,6 @@ function renderConfigContent() {
     configListView.classList.toggle('hidden', configViewMode !== 'list');
     configPreviewScroll.classList.toggle('hidden', configViewMode !== 'preview');
     configPreviewScroll.classList.toggle('block', configViewMode === 'preview');
-    configPreviewView.classList.toggle('hidden', configViewMode !== 'preview');
 
     if (configViewMode === 'preview') renderPreviewConfig(configMap);
     else renderListConfig(configMap);
@@ -114,22 +120,23 @@ function renderListConfig(configMap: Map<string, string[]>) {
         const types = files.map((f) => f.type);
         const optionsHtml = getOptionsHtml(key, types, configMap.get(key) ?? []);
 
-        let rowColor = i++ % 2 === 0 ? 'bg-base-300/30' : '';
+        const rowClass = i++ > 0 ? 'group-start' : '';
 
-        const tab = '&nbsp;&nbsp;&nbsp⤷&nbsp;&nbsp;&nbsp;';
+        const tab = '<span class="mr-2 ml-1 text-ink-faint">↳</span>';
         const applyTab =
             types.filter((t) => t === FILE_TYPES.AUDIO).length +
                 types.filter((t) => t === FILE_TYPES.VIDEO).length ===
             1;
         files.forEach((file, i) => {
-            html += `<tr class="${rowColor}">`;
+            html += `<tr class="${i === 0 ? rowClass : ''} hover:bg-white/[0.015]">`;
             if (i === 0) {
-                html += `<td rowspan="${files.length}" class="align-middle font-semibold">${key}</td>`;
+                html += `<td rowspan="${files.length}" class="font-mono text-[13px] font-medium text-ink-subtle">${escapeHtml(key)}</td>`;
             }
             const subType = file.type !== FILE_TYPES.AUDIO && file.type !== FILE_TYPES.VIDEO;
-            html += `<td class="break-all">${applyTab && subType ? tab : ''}${getFileName(file.path)}</td>`;
-            html += `<td class="break-all w-30">${getFileTypeHtml(file.type, key)}</td>`;
-            if (i === 0) html += `<td class="w-120" rowspan="${files.length}">${optionsHtml}</td>`;
+            html += `<td class="break-all text-ink">${applyTab && subType ? tab : ''}${escapeHtml(getFileName(file.path))}</td>`;
+            html += `<td>${getFileTypeHtml(file.type, key)}</td>`;
+            if (i === 0)
+                html += `<td rowspan="${files.length}"><div class="flex flex-wrap items-center gap-1.5">${optionsHtml}</div></td>`;
             html += `</tr>`;
         });
     }
@@ -172,12 +179,15 @@ async function renderPreviewConfig(configMap: Map<string, string[]>) {
                 }),
             );
 
-            return `<section data-camera-on-top="${cameraOnTop}" class="mb-3 mr-3 inline-block w-full max-w-72 align-top text-left overflow-hidden rounded-lg border border-base-content/15 bg-base-100/80 shadow-sm">
-                <div class="space-y-1 border-b border-base-content/10 p-2">
-                    <div class="flex min-h-8 flex-nowrap items-center justify-end gap-1 overflow-x-auto">${optionsHtml}</div>
+            return `<section data-camera-on-top="${cameraOnTop}" class="panel flex flex-col overflow-hidden text-left">
+                <div class="flex items-center gap-2 border-b border-line px-3 py-2">
+                    <span class="font-mono text-[13px] font-medium text-ink-subtle">${escapeHtml(key)}</span>
+                    <div class="ml-auto flex min-h-7 flex-nowrap items-center gap-1.5 overflow-x-auto">${optionsHtml}</div>
+                </div>
+                <div class="space-y-1.5 px-3 py-2.5">
                     ${files.map((file) => getPreviewFileHeaderHtml(file, key)).join('')}
                 </div>
-                <div class="grid ${previewFiles.length > 1 ? 'grid-cols-2' : 'grid-cols-1'} bg-base-300/30">
+                <div class="mt-auto grid ${previewFiles.length > 1 ? 'grid-cols-2 gap-px' : 'grid-cols-1'} border-t border-line bg-line">
                     ${previewFiles
                         .map((file) =>
                             getPreviewPaneHtml(
@@ -248,55 +258,20 @@ function renderFolderAlerts(alerts: ConfigAlert[]) {
 
     if (errorNum === 0 && warningNum === 0) {
         configAlertsElement.classList.add('hidden');
-        configListViewElement.classList.remove('mt-3');
+        configListViewElement.classList.remove('mt-4');
         configReportSummary.innerHTML = '';
         alertsListElement.innerHTML = ''; // Clear any previous alerts
     } else {
         configAlertsElement.classList.remove('hidden');
-        configListViewElement.classList.add('mt-3');
-        configReportSummary.innerHTML = `
-            <div class="flex justify-start items-center space-x-4">
-                <p class="text-error font-semibold">Errors: <span id="config-error-cnt">${errorNum}</span></p>
-                <p class="text-warning font-semibold">Warnings: <span id="config-warning-cnt">${warningNum}</span></p>
-            </div>
-        `;
-        alertsListElement.innerHTML = alerts
-            .map(
-                (alert) => `
-                    <li class="flex items-start">
-                        <span class="text-error mr-2">${alert.type === ALERT.ERROR ? '❌' : '⚠️'}</span>
-                        <div>
-                            <p><strong>${capitalize(alert.type)}</strong>${alert.key ? ` in <strong>${alert.key}</strong>` : ''}: ${escapeHtml(alert.msg)}</p>
-                            ${getAlertFilesHtml(alert)}
-                        </div>
-                    </li>`,
-            )
-            .join('');
+        configListViewElement.classList.add('mt-4');
+        configReportSummary.innerHTML = getReportSummaryHtml(errorNum, warningNum);
+        alertsListElement.innerHTML = alerts.map(getAlertItemHtml).join('');
     }
 }
 
 function getFileName(path: string) {
     const parts = path.replace(/\\/g, '/').split('/').filter(Boolean);
     return parts.slice(-1)[0];
-}
-
-function escapeHtml(text: string) {
-    return text
-        .replace(/&/g, '&amp;')
-        .replace(/</g, '&lt;')
-        .replace(/>/g, '&gt;')
-        .replace(/"/g, '&quot;')
-        .replace(/'/g, '&#039;');
-}
-
-function getAlertFilesHtml(alert: ConfigAlert) {
-    if (!alert.files || alert.files.length === 0) return '';
-
-    const files = alert.files
-        .map((file) => `<span class="badge badge-soft">${escapeHtml(file)}</span>`)
-        .join('');
-
-    return `<div class="mt-1 flex flex-wrap gap-1">${files}</div>`;
 }
 
 function renderConfigTitle(folder: string, baseFile: string | null) {
@@ -309,7 +284,7 @@ function renderConfigTitle(folder: string, baseFile: string | null) {
 
     title.title = folder;
     title.innerHTML = `<span class="flex min-w-0 max-w-full items-baseline" title="${escapeHtml(folder)}">
-        <span class="min-w-0 overflow-hidden text-ellipsis whitespace-nowrap">${escapeHtml(start)}</span>
+        <span class="min-w-0 overflow-hidden font-normal text-ellipsis whitespace-nowrap text-ink-subtle">${escapeHtml(start)}</span>
         <span class="shrink-0 whitespace-nowrap">${escapeHtml(end)}</span>
     </span>`;
     base.title = baseFile ?? 'Base preset not found';
@@ -330,22 +305,17 @@ function getFileUrl(path: string) {
 function getPreviewFileHeaderHtml(file: ConfigFile, key: string) {
     const name = getFileName(file.path);
 
-    return `<div class="flex min-w-0 items-center gap-2 text-sm">
+    return `<div class="flex min-w-0 items-center gap-2 text-[13px]">
         ${getFileTypeIconHtml(file.type, key)}
-        <span class="truncate" title="${escapeHtml(name)}">${escapeHtml(name)}</span>
+        <span class="truncate text-ink-muted" title="${escapeHtml(name)}">${escapeHtml(name)}</span>
     </div>`;
 }
 
 function getFileTypeIconHtml(type: string, key: string) {
-    let color = '';
-    if (type === FILE_TYPES.AUDIO) color = 'badge-primary';
-    if (type === FILE_TYPES.VIDEO) color = 'badge-secondary';
-    if (type === FILE_TYPES.IMAGE) color = 'badge-accent';
-    if (type === FILE_TYPES.FOLDER) color = 'badge-warning';
-    if (type === FILE_TYPES.POWERPOINT) color = 'badge-info';
+    const meta = TYPE_META[type];
 
-    return `<span class="${key ? 'config-type' : ''} badge badge-soft h-6 w-6 shrink-0 p-0 ${color}" data-key="${key}" data-type="${type}" title="${type}" aria-label="${type}">
-        <i data-lucide="${getPreviewIcon(type)}" class="h-3.5 w-3.5"></i>
+    return `<span class="${key ? 'config-type' : ''} tag tag-icon ${meta?.tag ?? ''} shrink-0" data-key="${key}" data-type="${type}" title="${meta?.label ?? type}" aria-label="${meta?.label ?? type}">
+        <i data-lucide="${getPreviewIcon(type)}"></i>
     </span>`;
 }
 
@@ -364,13 +334,13 @@ function getPreviewPaneHtml(
         : 'bg-black';
 
     if (file.type === FILE_TYPES.IMAGE) {
-        return `<div class="config-preview-media-pane aspect-video flex items-center justify-center overflow-hidden border-base-content/10 ${previewBackgroundClass}">
+        return `<div class="config-preview-media-pane aspect-video flex items-center justify-center overflow-hidden ${previewBackgroundClass}">
             <img src="${src}" alt="${name}" class="max-h-full max-w-full object-contain" loading="lazy" />
         </div>`;
     }
 
     if (file.type === FILE_TYPES.VIDEO) {
-        return `<div class="config-preview-media-pane aspect-video flex items-center justify-center overflow-hidden border-base-content/10 ${previewBackgroundClass}">
+        return `<div class="config-preview-media-pane aspect-video flex items-center justify-center overflow-hidden ${previewBackgroundClass}">
             <video src="${src}" class="config-preview-video max-h-full max-w-full object-contain" muted preload="metadata" playsinline></video>
         </div>`;
     }
@@ -390,9 +360,9 @@ function getPreviewPaneHtml(
         </div>`;
     }
 
-    return `<div class="aspect-video flex flex-col items-center justify-center gap-2 border-base-content/10 p-3 text-base-content/70">
-        <i data-lucide="${getPreviewIcon(file.type)}" class="h-12 w-12"></i>
-        <span class="max-w-full truncate text-sm">${name}</span>
+    return `<div class="aspect-video flex flex-col items-center justify-center gap-2 bg-surface-2 p-3 text-ink-faint">
+        <i data-lucide="${getPreviewIcon(file.type)}" class="h-10 w-10 stroke-[1.5]"></i>
+        <span class="max-w-full truncate text-xs">${name}</span>
     </div>`;
 }
 
@@ -514,36 +484,26 @@ function getBoolOptionHtml(name: string, value: string, key: string) {
 
     const meta = OPTION_META[name] ?? { icon: 'circle', label: name };
 
-    return `<label class="swap ml-2 shrink-0">
+    return `<label class="opt-toggle" title="${meta.label}" aria-label="${meta.label}">
             <input data-key="${key}" data-name="${name}" class="config-option" type="checkbox" ${value === 'true' ? 'checked="checked"' : ''} />
-            <div class="swap-on" title="${meta.label}" aria-label="${meta.label}">
-                <span class="badge badge-primary h-7 w-7 p-0"><i data-lucide="${meta.icon}" class="h-4 w-4"></i></span>
-            </div>
-            <div class="swap-off" title="${meta.label}" aria-label="${meta.label}">
-                <span class="badge h-7 w-7 p-0"><i data-lucide="${meta.icon}" class="h-4 w-4"></i></span>
-            </div>
+            <span><i data-lucide="${meta.icon}"></i></span>
         </label>`;
 }
 
 function getNumberOptionHtml(name: string, value: string, key: string, min: number, max: number) {
     if (key === '') return '';
 
-    return `<label class="ml-2 flex shrink-0 items-center gap-1 whitespace-nowrap">
+    return `<label class="ml-1 flex shrink-0 items-center gap-1 whitespace-nowrap" title="${name === '%' ? 'Volume' : 'Seconds per slide'}">
         <input data-key="${key}" data-name="${name}" type="number" min="${min}" max="${max}"
-         class="config-option input input-sm w-14" value="${value}" />
-        <span>${name}</span>
+         class="config-option input input-sm w-16 text-right tabular-nums" value="${value}" />
+        <span class="text-xs text-ink-subtle">${name}</span>
     </label>`;
 }
 
 function getFileTypeHtml(type: string, key: string) {
-    let color = '';
-    if (type === FILE_TYPES.AUDIO) color = 'badge-primary';
-    if (type === FILE_TYPES.VIDEO) color = 'badge-secondary';
-    if (type === FILE_TYPES.IMAGE) color = 'badge-accent';
-    if (type === FILE_TYPES.FOLDER) color = 'badge-warning';
-    if (type === FILE_TYPES.POWERPOINT) color = 'badge-info';
+    const meta = TYPE_META[type];
 
-    return `<span class="${key ? 'config-type' : ''} badge badge-soft ${color}" data-key="${key}">${type}</span>`;
+    return `<span class="${key ? 'config-type' : ''} tag ${meta?.tag ?? ''}" data-key="${key}" data-type="${type}">${meta?.label ?? type}</span>`;
 }
 
 export function getTableConfig() {
@@ -689,8 +649,8 @@ function syncCurrentConfigFromDom() {
 }
 
 function updateConfigViewButtons() {
-    configListViewBtn.classList.toggle('btn-primary', configViewMode === 'list');
-    configPreviewViewBtn.classList.toggle('btn-primary', configViewMode === 'preview');
+    configListViewBtn.classList.toggle('is-active', configViewMode === 'list');
+    configPreviewViewBtn.classList.toggle('is-active', configViewMode === 'preview');
 }
 
 function updateConfigPageLayout() {
