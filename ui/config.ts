@@ -40,8 +40,6 @@ type ConfigState = {
 type ConfigViewMode = 'list' | 'preview';
 const CONFIG_VIEW_STORAGE_KEY = 'configViewMode';
 
-const configCard = document.getElementById('config-card')!;
-const configCardBody = document.getElementById('config-card-body')!;
 const configListView = document.getElementById('config-list-view')!;
 const configPreviewScroll = document.getElementById('config-preview-scroll')!;
 const configPreviewView = document.getElementById('config-preview-view')!;
@@ -98,7 +96,6 @@ function renderConfigContent() {
     const configMap = new Map(currentConfigState.config);
 
     updateConfigViewButtons();
-    updateConfigPageLayout();
     configListView.classList.toggle('hidden', configViewMode !== 'list');
     configPreviewScroll.classList.toggle('hidden', configViewMode !== 'preview');
     configPreviewScroll.classList.toggle('block', configViewMode === 'preview');
@@ -181,7 +178,6 @@ async function renderPreviewConfig(configMap: Map<string, string[]>) {
 
             return `<section data-camera-on-top="${cameraOnTop}" class="panel flex flex-col overflow-hidden text-left">
                 <div class="flex items-center gap-2 border-b border-line px-3 py-2">
-                    <span class="font-mono text-[13px] font-medium text-ink-subtle">${escapeHtml(key)}</span>
                     <div class="ml-auto flex min-h-7 flex-nowrap items-center gap-1.5 overflow-x-auto">${optionsHtml}</div>
                 </div>
                 <div class="space-y-1.5 px-3 py-2.5">
@@ -254,16 +250,13 @@ function renderFolderAlerts(alerts: ConfigAlert[]) {
     const configReportSummary = document.getElementById('config-report-summary')!;
     const alertsListElement = document.getElementById('config-alerts-list')!;
     const configAlertsElement = document.getElementById('config-alerts')!;
-    const configListViewElement = document.getElementById('config-list-view')!;
 
     if (errorNum === 0 && warningNum === 0) {
         configAlertsElement.classList.add('hidden');
-        configListViewElement.classList.remove('mt-4');
         configReportSummary.innerHTML = '';
         alertsListElement.innerHTML = ''; // Clear any previous alerts
     } else {
         configAlertsElement.classList.remove('hidden');
-        configListViewElement.classList.add('mt-4');
         configReportSummary.innerHTML = getReportSummaryHtml(errorNum, warningNum);
         alertsListElement.innerHTML = alerts.map(getAlertItemHtml).join('');
     }
@@ -651,14 +644,6 @@ function syncCurrentConfigFromDom() {
 function updateConfigViewButtons() {
     configListViewBtn.classList.toggle('is-active', configViewMode === 'list');
     configPreviewViewBtn.classList.toggle('is-active', configViewMode === 'preview');
-}
-
-function updateConfigPageLayout() {
-    const isPreview = configViewMode === 'preview';
-
-    configCard.classList.toggle('flex-1', !isPreview);
-    configCard.classList.toggle('shrink-0', isPreview);
-    configCardBody.classList.toggle('flex-1', !isPreview);
 }
 
 function renderDynamicIcons() {

@@ -196,10 +196,8 @@
             </div>
           </header>
 
-          <div class="mx-auto flex min-h-0 w-full max-w-300 flex-1 flex-col px-6 py-5">
-            <div id="config-card" class="flex min-h-0 flex-1 flex-col">
-              <div id="config-card-body" class="min-h-0 flex-1 overflow-y-auto">
-                <div id="config-alerts" class="panel p-4">
+          <div class="flex min-h-0 w-full flex-1 flex-col gap-4 overflow-y-auto px-6 py-5">
+                <div id="config-alerts" class="panel shrink-0 p-4">
                   <div class="mb-3 flex items-center justify-between">
                     <h2 class="eyebrow">Report</h2>
                     <div id="config-report-summary"></div>
@@ -207,7 +205,7 @@
                   <ul id="config-alerts-list" class="max-h-50 space-y-2.5 overflow-y-auto pr-1"></ul>
                 </div>
 
-                <div id="config-list-view" class="panel overflow-hidden">
+                <div id="config-list-view" class="panel shrink-0 overflow-hidden">
                   <table class="data-table">
                     <thead>
                       <tr>
@@ -220,11 +218,9 @@
                     <tbody id="config-table"></tbody>
                   </table>
                 </div>
-              </div>
-            </div>
 
-            <div id="config-preview-scroll" class="mt-4 hidden min-h-0 w-full flex-1 overflow-y-auto">
-              <div id="config-preview-view" class="grid grid-cols-[repeat(auto-fill,minmax(260px,1fr))] gap-3 pb-3"></div>
+            <div id="config-preview-scroll" class="hidden w-full shrink-0">
+              <div id="config-preview-view" class="grid grid-cols-[repeat(auto-fill,minmax(260px,1fr))] gap-3"></div>
             </div>
           </div>
         </div>
