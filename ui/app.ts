@@ -429,10 +429,12 @@ saveConfigBtn.addEventListener('click', async () => {
         const config = getTableConfig();
         await (window as any).api.saveFolderConfig({ folderPath: folderPath, text: config });
         showSuccessAlert('Config Saved');
+        // Reload so the saved options, alerts and Save button state all reflect the file
+        renderConfigPage(await (window as any).api.getFolderState(folderPath));
     } catch (err) {
         showErrorAlert(err);
+        saveConfigBtn.disabled = false;
     }
-    saveConfigBtn.disabled = false;
 });
 
 init();

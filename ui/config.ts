@@ -48,6 +48,10 @@ const configPreviewViewBtn = document.getElementById(
     'config-preview-view-btn',
 ) as HTMLButtonElement;
 const configTable = document.getElementById('config-table') as HTMLTableSectionElement;
+const saveConfigBtn = document.getElementById('save-config-btn') as HTMLButtonElement;
+
+// Config text as last loaded or saved; Save is only enabled when the page differs from it
+let savedConfigText: string | null | undefined; // undefined while the page is rendering
 
 let currentConfigState: ConfigState | null = null;
 let configViewMode: ConfigViewMode = getStoredConfigViewMode();
@@ -99,9 +103,19 @@ function renderConfigContent() {
     configListView.classList.toggle('hidden', configViewMode !== 'list');
     configPreviewScroll.classList.toggle('hidden', configViewMode !== 'preview');
     configPreviewScroll.classList.toggle('block', configViewMode === 'preview');
+    // List view keeps a readable max width; the block grid uses the full width
+    const configAlerts = document.getElementById('config-alerts')!;
+    for (const cls of ['mx-auto', 'w-full', 'max-w-300']) {
+        configAlerts.classList.toggle(cls, configViewMode === 'list');
+    }
 
-    if (configViewMode === 'preview') renderPreviewConfig(configMap);
-    else renderListConfig(configMap);
+    saveConfigBtn.disabled = true;
+    savedConfigText = undefined;
+    if (configViewMode === 'preview') renderPreviewConfig(configMap).then(markConfigSaved);
+    else {
+        renderListConfig(configMap);
+        markConfigSaved();
+    }
 
     setupCamMicLogic();
     setupVideoPreviewFrames();
@@ -496,8 +510,29 @@ function getNumberOptionHtml(name: string, value: string, key: string, min: numb
 function getFileTypeHtml(type: string, key: string) {
     const meta = TYPE_META[type];
 
-    return `<span class="${key ? 'config-type' : ''} tag ${meta?.tag ?? ''}" data-key="${key}" data-type="${type}">${meta?.label ?? type}</span>`;
+    return `<span class="${key ? 'config-type' : ''} tag tag-labeled-icon ${meta?.tag ?? ''}" data-key="${key}" data-type="${type}"><i data-lucide="${getPreviewIcon(type)}"></i>${meta?.label ?? type}</span>`;
 }
+
+function getCurrentConfigText() {
+    try {
+        return getTableConfig();
+    } catch {
+        return null; // invalid input counts as a change, so Save can report the error
+    }
+}
+
+export function markConfigSaved() {
+    savedConfigText = getCurrentConfigText();
+    updateSaveButton();
+}
+
+function updateSaveButton() {
+    saveConfigBtn.disabled =
+        savedConfigText === undefined || getCurrentConfigText() === savedConfigText;
+}
+
+document.getElementById('config-page')!.addEventListener('input', updateSaveButton);
+document.getElementById('config-page')!.addEventListener('change', updateSaveButton);
 
 export function getTableConfig() {
     const types = document.querySelectorAll('.config-type') as NodeListOf<HTMLInputElement>;

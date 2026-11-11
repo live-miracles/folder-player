@@ -230,6 +230,12 @@
     .btn-primary:active {
         background: var(--color-accent);
     }
+    .btn-primary:disabled {
+        background: var(--color-surface-2);
+        border-color: var(--color-line);
+        color: var(--color-ink-subtle);
+        opacity: 1;
+    }
 
     .btn-danger {
         background: var(--color-live);
@@ -547,6 +553,15 @@
     .tag-icon svg {
         width: 14px;
         height: 14px;
+    }
+    /* Tag with a type icon in place of the dot */
+    .tag-labeled-icon::before {
+        display: none;
+    }
+    .tag-labeled-icon svg {
+        width: 13px;
+        height: 13px;
+        color: var(--tag);
     }
     .tag-audio {
         --tag: var(--color-tag-audio);
