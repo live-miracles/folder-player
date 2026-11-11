@@ -18,6 +18,10 @@ jobs:
                   node-version: 24
                   cache: npm
 
+            # npm 12 on the runner rejects this lockfile; npm 11 installs it as before
+            - name: Use npm 11
+              run: npm install -g npm@11
+
             - name: Install dependencies
               run: npm ci
 
