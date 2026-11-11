@@ -1,6 +1,6 @@
 {
     "name": "vmix-folder-player",
-    "version": "5.0.3",
+    "version": "6.0.0",
     "description": "Turn a folder of numbered media files into a ready-to-open vMix preset.",
     "main": "dist/main.js",
     "scripts": {
