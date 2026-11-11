@@ -486,10 +486,10 @@ function getBoolOptionHtml(name: string, value: string, key: string) {
 function getNumberOptionHtml(name: string, value: string, key: string, min: number, max: number) {
     if (key === '') return '';
 
-    return `<label class="ml-1 flex shrink-0 items-center gap-1 whitespace-nowrap" title="${name === '%' ? 'Volume' : 'Seconds per slide'}">
+    return `<label class="input-affix ml-1 w-18" title="${name === '%' ? 'Volume' : 'Seconds per slide'}">
         <input data-key="${key}" data-name="${name}" type="number" min="${min}" max="${max}"
-         class="config-option input input-sm w-16 text-right tabular-nums" value="${value}" />
-        <span class="text-xs text-ink-subtle">${name}</span>
+         class="config-option text-right tabular-nums" value="${value}" />
+        <span class="input-affix-unit">${name}</span>
     </label>`;
 }
 

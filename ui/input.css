@@ -392,6 +392,51 @@
         font-size: 13px;
     }
 
+    /* Small number input with its unit (%, s) inside the same box */
+    .input-affix {
+        display: inline-flex;
+        flex-shrink: 0;
+        align-items: center;
+        gap: 2px;
+        height: 28px;
+        padding: 0 8px;
+        border-radius: 6px;
+        border: 1px solid var(--color-line);
+        background: var(--color-canvas);
+        font-size: 13px;
+        cursor: text;
+        transition:
+            border-color 120ms,
+            box-shadow 120ms;
+    }
+    .input-affix:hover {
+        border-color: var(--color-line-strong);
+    }
+    .input-affix:focus-within {
+        border-color: var(--color-accent);
+        box-shadow: 0 0 0 3px color-mix(in oklab, var(--color-accent) 25%, transparent);
+    }
+    .input-affix input {
+        min-width: 0;
+        flex: 1;
+        border: 0;
+        background: transparent;
+        color: var(--color-ink);
+        font: inherit;
+        outline: none;
+        appearance: textfield;
+    }
+    .input-affix input::-webkit-inner-spin-button,
+    .input-affix input::-webkit-outer-spin-button {
+        appearance: none;
+        margin: 0;
+    }
+    .input-affix-unit {
+        color: var(--color-ink-subtle);
+        font-size: 12px;
+        user-select: none;
+    }
+
     /* Icon toggle used for cam / mic / loop options */
     .opt-toggle {
         position: relative;

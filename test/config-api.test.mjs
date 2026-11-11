@@ -171,3 +171,48 @@ test('getFolderState reports each missing base camera or microphone input once',
         fs.rmSync(folderPath, { recursive: true, force: true });
     }
 });
+
+test('getFolderState warns about extra .vmix presets besides base and generated', () => {
+    const parentPath = fs.mkdtempSync(path.join(os.tmpdir(), 'folder-player-config-extra-vmix-'));
+    const folderPath = path.join(parentPath, 'Session');
+
+    try {
+        fs.mkdirSync(folderPath);
+        fs.writeFileSync(path.join(folderPath, 'base.vmix'), '<XML><State /></XML>');
+        fs.writeFileSync(path.join(folderPath, 'Session.vmix'), '');
+        fs.writeFileSync(path.join(folderPath, 'Old copy.vmix'), '');
+        fs.writeFileSync(path.join(folderPath, '01 Video.mp4'), '');
+
+        const state = getFolderState(folderPath);
+        const extra = state.alerts.filter((alert) =>
+            alert.msg.includes('additional .vmix presets'),
+        );
+
+        assert.equal(extra.length, 1);
+        assert.equal(extra[0].type, 'warning');
+        assert.deepEqual(extra[0].files, ['Old copy.vmix']);
+    } finally {
+        fs.rmSync(parentPath, { recursive: true, force: true });
+    }
+});
+
+test('getFolderState does not warn when only base and generated presets exist', () => {
+    const parentPath = fs.mkdtempSync(path.join(os.tmpdir(), 'folder-player-config-only-vmix-'));
+    const folderPath = path.join(parentPath, 'Session');
+
+    try {
+        fs.mkdirSync(folderPath);
+        fs.writeFileSync(path.join(folderPath, 'Base Studio.vmix'), '<XML><State /></XML>');
+        fs.writeFileSync(path.join(folderPath, 'session.VMIX'), '');
+        fs.writeFileSync(path.join(folderPath, '01 Video.mp4'), '');
+
+        const state = getFolderState(folderPath);
+
+        assert.equal(
+            state.alerts.some((alert) => alert.msg.includes('additional .vmix presets')),
+            false,
+        );
+    } finally {
+        fs.rmSync(parentPath, { recursive: true, force: true });
+    }
+});

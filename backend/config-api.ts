@@ -119,6 +119,16 @@ function getAlerts(
         }
     }
 
+    const extraPresets = getExtraPresetNames(folderPath);
+    if (extraPresets.length > 0) {
+        alerts.push({
+            key: '',
+            type: ALERT.WARNING,
+            msg: `Folder has additional .vmix presets besides the base and the generated one. This can be confusing for operators.`,
+            files: extraPresets,
+        });
+    }
+
     // Check for config keys that don't have corresponding files
     for (const [key, options] of configMap.entries()) {
         if (key === '__options__') continue;
@@ -274,6 +284,19 @@ function getBaseFileNames(folderPath: string) {
     if (parentPath === folderPath) return [];
 
     return fs.readdirSync(parentPath).filter((file) => regex.test(file));
+}
+
+// .vmix files in the folder that are neither a base preset nor the preset this app generates
+function getExtraPresetNames(folderPath: string) {
+    const baseRegex = /^base(\s.*)?\.vmix$/i;
+    const generatedName = `${path.basename(folderPath)}.vmix`.toLowerCase();
+
+    return fs
+        .readdirSync(folderPath, { withFileTypes: true })
+        .filter((entry) => entry.isFile() && /\.vmix$/i.test(entry.name))
+        .map((entry) => entry.name)
+        .filter((name) => !baseRegex.test(name) && name.toLowerCase() !== generatedName)
+        .sort();
 }
 
 function getFileNames(files: FolderFile[]) {
