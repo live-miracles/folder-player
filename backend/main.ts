@@ -5,7 +5,7 @@ import { fileURLToPath } from 'url';
 
 import { createPresetFileRecursively } from './preset-generator.js';
 import { getFolderFiles, getFolderPreviewImages } from './file-manager.js';
-import { ALERT, getFolderState, saveFolderConfig } from './config-api.js';
+import { ALERT, getConfigSubfolders, getFolderState, saveFolderConfig } from './config-api.js';
 
 import updater from 'electron-updater';
 const { autoUpdater } = updater;
@@ -101,9 +101,16 @@ ipcMain.handle('get-folder-state', async (_, folderPath) => {
     if (state === null) {
         return null;
     }
-    if (state.config === null) {
-        state.config = new Map();
-        state.alerts.push({
+    const hasConfig = state.config !== null;
+    const subfolders = hasConfig ? [] : getConfigSubfolders(folderPath);
+    // A folder with no config and no media that only groups playlists in its subfolders
+    const isContainer = !hasConfig && state.files.size === 0 && subfolders.length > 0;
+
+    let alerts = state.alerts;
+    if (isContainer) {
+        alerts = []; // base preset and config checks don't apply to a grouping folder
+    } else if (!hasConfig) {
+        alerts.push({
             key: '',
             type: ALERT.WARNING,
             msg: 'No config file in the folder.',
@@ -113,8 +120,11 @@ ipcMain.handle('get-folder-state', async (_, folderPath) => {
         folder: state.folder,
         baseFile: state.baseFile,
         files: Array.from(state.files.entries()),
-        config: Array.from(state.config.entries()),
-        alerts: state.alerts,
+        config: Array.from((state.config ?? new Map()).entries()),
+        alerts,
+        hasConfig,
+        isContainer,
+        subfolders,
     };
 });
 ipcMain.handle('save-folder-config', async (_, { folderPath, text }) =>

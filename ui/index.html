@@ -178,7 +178,7 @@
             </div>
 
             <div class="flex shrink-0 items-center gap-2">
-              <div class="seg seg-icon" aria-label="Config view">
+              <div id="config-view-toggle" class="seg seg-icon" aria-label="Config view">
                 <button id="config-list-view-btn" type="button" title="List view" aria-label="List view">
                   <i data-lucide="list"></i>
                 </button>
@@ -197,27 +197,38 @@
           </header>
 
           <div class="flex min-h-0 w-full flex-1 flex-col gap-4 overflow-y-auto px-6 py-5">
-                <div id="config-alerts" class="panel shrink-0 p-4">
-                  <div class="mb-3 flex items-center justify-between">
-                    <h2 class="eyebrow">Report</h2>
-                    <div id="config-report-summary"></div>
-                  </div>
-                  <ul id="config-alerts-list" class="max-h-50 space-y-2.5 overflow-y-auto pr-1"></ul>
-                </div>
+            <div id="config-alerts" class="panel shrink-0 p-4">
+              <div class="mb-3 flex items-center justify-between">
+                <h2 class="eyebrow">Report</h2>
+                <div id="config-report-summary"></div>
+              </div>
+              <ul id="config-alerts-list" class="max-h-50 space-y-2.5 overflow-y-auto pr-1"></ul>
+            </div>
 
-                <div id="config-list-view" class="panel mx-auto w-full max-w-300 shrink-0 overflow-hidden">
-                  <table class="data-table">
-                    <thead>
-                      <tr>
-                        <th class="w-16">#</th>
-                        <th>File</th>
-                        <th class="w-32">Type</th>
-                        <th class="w-104">Options</th>
-                      </tr>
-                    </thead>
-                    <tbody id="config-table"></tbody>
-                  </table>
+            <div id="config-subfolders" class="panel mx-auto hidden w-full max-w-300 shrink-0 overflow-hidden">
+              <div class="px-5 pt-4 pb-2">
+                <div class="flex items-center justify-between">
+                  <h2 class="eyebrow">Playlists in subfolders</h2>
+                  <span id="config-subfolders-count" class="text-xs text-ink-faint tabular-nums"></span>
                 </div>
+                <p id="config-subfolders-note" class="mt-1 text-[13px] text-ink-subtle"></p>
+              </div>
+              <ul id="config-subfolders-list" class="max-h-90 overflow-y-auto px-2 pb-2"></ul>
+            </div>
+
+            <div id="config-list-view" class="panel mx-auto w-full max-w-300 shrink-0 overflow-hidden">
+              <table class="data-table">
+                <thead>
+                  <tr>
+                    <th class="w-16">#</th>
+                    <th>File</th>
+                    <th class="w-32">Type</th>
+                    <th class="w-104">Options</th>
+                  </tr>
+                </thead>
+                <tbody id="config-table"></tbody>
+              </table>
+            </div>
 
             <div id="config-preview-scroll" class="hidden w-full shrink-0">
               <div id="config-preview-view" class="grid grid-cols-[repeat(auto-fill,minmax(260px,1fr))] gap-3"></div>

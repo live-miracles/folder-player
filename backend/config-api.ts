@@ -67,6 +67,60 @@ function getFolderConfig(folderPath: string) {
     return map;
 }
 
+const MAX_SUBFOLDER_SCAN = 1000;
+
+export type ConfigSubfolder = {
+    path: string;
+    relative: string;
+    errors: number;
+    warnings: number;
+};
+
+// Descendant folders that have their own config file, so a folder without one can link to them
+export function getConfigSubfolders(folderPath: string) {
+    const result: ConfigSubfolder[] = [];
+    let scanned = 0;
+
+    function visit(currentPath: string) {
+        let entries: fs.Dirent[];
+        try {
+            entries = fs.readdirSync(currentPath, { withFileTypes: true });
+        } catch {
+            return; // unreadable folder: skip it
+        }
+
+        for (const entry of entries) {
+            if (!entry.isDirectory()) continue;
+            if (++scanned > MAX_SUBFOLDER_SCAN) return;
+
+            const subPath = path.join(currentPath, entry.name);
+            if (fs.existsSync(path.join(subPath, CONFIG_FILE_NAME))) {
+                let errors = 0;
+                let warnings = 0;
+                try {
+                    const alerts = getFolderState(subPath).alerts;
+                    errors = alerts.filter((a) => a.type === ALERT.ERROR).length;
+                    warnings = alerts.filter((a) => a.type === ALERT.WARNING).length;
+                } catch {
+                    errors = 1;
+                }
+                result.push({
+                    path: subPath,
+                    relative: path.relative(folderPath, subPath),
+                    errors,
+                    warnings,
+                });
+            }
+            visit(subPath);
+        }
+    }
+
+    visit(folderPath);
+    return result.sort((a, b) =>
+        a.relative.localeCompare(b.relative, undefined, { numeric: true, sensitivity: 'base' }),
+    );
+}
+
 export function saveFolderConfig(folderPath: string, text: string) {
     if (!fs.existsSync(folderPath)) {
         throw new Error('Folder does not exist');

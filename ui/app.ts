@@ -277,6 +277,8 @@ editConfigBtn.addEventListener('click', async () => {
     editConfigBtn.disabled = true;
     try {
         const state = await (window as any).api.getFolderState(folderPath);
+        configFolderStack = [folderPath];
+        updateConfigBackButton();
         renderConfigPage(state);
         addRecentFolder(folderPath);
         goToConfigPage();
@@ -394,12 +396,56 @@ createPresetBtn.addEventListener('click', async () => {
 
 // ===== Config Page =====
 
-document.getElementById('cancel-config-btn')!.addEventListener('click', goToHomePage);
+// Folders opened on the config page; the last one is shown. Subfolder playlists push onto it.
+let configFolderStack: string[] = [];
+const cancelConfigBtn = document.getElementById('cancel-config-btn') as HTMLButtonElement;
+
+function getConfigFolder() {
+    return configFolderStack[configFolderStack.length - 1] ?? playFolderInput.value;
+}
+
+function updateConfigBackButton() {
+    const label = configFolderStack.length > 1 ? 'Back to parent folder' : 'Back';
+    cancelConfigBtn.title = label;
+    cancelConfigBtn.setAttribute('aria-label', label);
+}
+
+async function showConfigFolder(folderPath: string) {
+    const state = await (window as any).api.getFolderState(folderPath);
+    renderConfigPage(state);
+    updateConfigBackButton();
+}
+
+cancelConfigBtn.addEventListener('click', async () => {
+    if (configFolderStack.length <= 1) {
+        configFolderStack = [];
+        goToHomePage();
+        return;
+    }
+    configFolderStack.pop();
+    try {
+        await showConfigFolder(getConfigFolder());
+    } catch (err) {
+        showErrorAlert(err);
+    }
+});
+
+document.addEventListener('open-config-folder', async (event) => {
+    const folderPath = (event as CustomEvent<string>).detail;
+    configFolderStack.push(folderPath);
+    try {
+        await showConfigFolder(folderPath);
+        document.querySelector('#config-page .overflow-y-auto')?.scrollTo(0, 0);
+    } catch (err) {
+        configFolderStack.pop();
+        showErrorAlert(err);
+    }
+});
 
 const saveConfigBtn = document.getElementById('save-config-btn') as HTMLButtonElement;
 const refreshConfigBtn = document.getElementById('refresh-config-btn') as HTMLButtonElement;
 refreshConfigBtn.addEventListener('click', async () => {
-    const folderPath = playFolderInput.value;
+    const folderPath = getConfigFolder();
 
     if (!folderPath) {
         showErrorAlert('Content folder is not found.');
@@ -418,7 +464,7 @@ refreshConfigBtn.addEventListener('click', async () => {
 });
 
 saveConfigBtn.addEventListener('click', async () => {
-    const folderPath = playFolderInput.value;
+    const folderPath = getConfigFolder();
 
     if (!folderPath) {
         showErrorAlert('Content folder is not found.');

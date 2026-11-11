@@ -36,7 +36,11 @@ type ConfigState = {
     files: ConfigEntry[];
     config: [string, string[]][] | null;
     alerts: ConfigAlert[];
+    hasConfig?: boolean;
+    isContainer?: boolean;
+    subfolders?: ConfigSubfolder[];
 };
+type ConfigSubfolder = { path: string; relative: string; errors: number; warnings: number };
 type ConfigViewMode = 'list' | 'preview';
 const CONFIG_VIEW_STORAGE_KEY = 'configViewMode';
 
@@ -47,6 +51,7 @@ const configListViewBtn = document.getElementById('config-list-view-btn') as HTM
 const configPreviewViewBtn = document.getElementById(
     'config-preview-view-btn',
 ) as HTMLButtonElement;
+const configViewToggle = document.getElementById('config-view-toggle')!;
 const configTable = document.getElementById('config-table') as HTMLTableSectionElement;
 const saveConfigBtn = document.getElementById('save-config-btn') as HTMLButtonElement;
 
@@ -84,10 +89,69 @@ function getStoredConfigViewMode(): ConfigViewMode {
 export function renderConfigPage(state: ConfigState) {
     currentConfigState = state;
     renderConfigTitle(state.folder, state.baseFile);
+    document.getElementById('config-base')!.classList.toggle('hidden', !!state.isContainer);
 
     renderFolderAlerts(state.alerts);
+    renderSubfolders(state);
 
     renderConfigContent();
+}
+
+function renderSubfolders(state: ConfigState) {
+    const panel = document.getElementById('config-subfolders')!;
+    const list = document.getElementById('config-subfolders-list')!;
+    const subfolders = state.subfolders ?? [];
+
+    panel.classList.toggle('hidden', subfolders.length === 0);
+    list.innerHTML = '';
+    if (subfolders.length === 0) return;
+
+    document.getElementById('config-subfolders-count')!.textContent = String(subfolders.length);
+    document.getElementById('config-subfolders-note')!.textContent = state.isContainer
+        ? 'This folder has no config of its own. Open one of the playlists below.'
+        : 'This folder has no config yet, but these subfolders do.';
+
+    for (const sub of subfolders) {
+        const li = document.createElement('li');
+        li.className =
+            'group flex cursor-pointer items-center gap-3 rounded-lg px-3 py-2 transition-colors hover:bg-surface-3';
+        li.title = sub.path;
+        li.tabIndex = 0;
+        li.setAttribute('role', 'button');
+
+        const chips = [];
+        if (sub.errors)
+            chips.push(
+                `<span class="chip chip-danger">${sub.errors} ${sub.errors === 1 ? 'error' : 'errors'}</span>`,
+            );
+        if (sub.warnings)
+            chips.push(
+                `<span class="chip chip-warning">${sub.warnings} ${sub.warnings === 1 ? 'warning' : 'warnings'}</span>`,
+            );
+        const status = chips.length
+            ? chips.join('')
+            : '<span class="chip chip-success">No issues</span>';
+        const name = sub.relative
+            .split(/[\\/]/)
+            .map(escapeHtml)
+            .join('<span class="mx-1.5 text-ink-faint">›</span>');
+        li.innerHTML = `
+            <i data-lucide="folder" class="h-4 w-4 shrink-0 text-ink-faint"></i>
+            <span class="min-w-0 flex-1 truncate text-[13px] text-ink">${name}</span>
+            <span class="flex shrink-0 items-center gap-1.5">${status}</span>
+            <i data-lucide="chevron-right" class="h-4 w-4 shrink-0 text-ink-faint group-hover:text-ink"></i>`;
+
+        const open = () =>
+            document.dispatchEvent(new CustomEvent('open-config-folder', { detail: sub.path }));
+        li.addEventListener('click', open);
+        li.addEventListener('keydown', (event) => {
+            if (event.key === 'Enter' || event.key === ' ') {
+                event.preventDefault();
+                open();
+            }
+        });
+        list.appendChild(li);
+    }
 }
 
 function renderConfigContent() {
@@ -100,9 +164,12 @@ function renderConfigContent() {
     const configMap = new Map(currentConfigState.config);
 
     updateConfigViewButtons();
-    configListView.classList.toggle('hidden', configViewMode !== 'list');
-    configPreviewScroll.classList.toggle('hidden', configViewMode !== 'preview');
-    configPreviewScroll.classList.toggle('block', configViewMode === 'preview');
+    // A grouping folder has no media of its own, so only the subfolder list is shown
+    const isContainer = !!currentConfigState.isContainer;
+    configViewToggle.classList.toggle('hidden', isContainer);
+    configListView.classList.toggle('hidden', isContainer || configViewMode !== 'list');
+    configPreviewScroll.classList.toggle('hidden', isContainer || configViewMode !== 'preview');
+    configPreviewScroll.classList.toggle('block', !isContainer && configViewMode === 'preview');
     // List view keeps a readable max width; the block grid uses the full width
     const configAlerts = document.getElementById('config-alerts')!;
     for (const cls of ['mx-auto', 'w-full', 'max-w-300']) {

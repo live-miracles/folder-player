@@ -4,7 +4,7 @@ import os from 'node:os';
 import path from 'node:path';
 import test from 'node:test';
 
-import { getFolderState } from '../dist/config-api.js';
+import { getConfigSubfolders, getFolderState } from '../dist/config-api.js';
 
 test('getFolderState includes issue file names in file-specific alerts', () => {
     const folderPath = fs.mkdtempSync(path.join(os.tmpdir(), 'folder-player-config-'));
@@ -214,5 +214,31 @@ test('getFolderState does not warn when only base and generated presets exist', 
         );
     } finally {
         fs.rmSync(parentPath, { recursive: true, force: true });
+    }
+});
+
+test('getConfigSubfolders lists nested folders that have a config file', () => {
+    const root = fs.mkdtempSync(path.join(os.tmpdir(), 'folder-player-subs-'));
+
+    try {
+        fs.mkdirSync(path.join(root, 'Day 2'));
+        fs.mkdirSync(path.join(root, 'Day 10'));
+        fs.mkdirSync(path.join(root, 'Day 2', 'Evening'));
+        fs.mkdirSync(path.join(root, 'No config'));
+        fs.writeFileSync(path.join(root, 'Day 2', 'folder-player.txt'), '');
+        fs.writeFileSync(path.join(root, 'Day 10', 'folder-player.txt'), '');
+        fs.writeFileSync(path.join(root, 'Day 2', 'Evening', 'folder-player.txt'), '');
+
+        const subfolders = getConfigSubfolders(root);
+
+        assert.deepEqual(
+            subfolders.map((sub) => sub.relative),
+            ['Day 2', path.join('Day 2', 'Evening'), 'Day 10'],
+        );
+        assert.equal(subfolders[0].path, path.join(root, 'Day 2'));
+        // No base preset anywhere, so each playlist reports an error
+        assert.ok(subfolders.every((sub) => sub.errors > 0));
+    } finally {
+        fs.rmSync(root, { recursive: true, force: true });
     }
 });
