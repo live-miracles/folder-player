@@ -14,9 +14,9 @@ _Number your files. Get a ready-to-run vMix playlist._
 | [Download](#download) | [Documentation](https://live-miracles.github.io/projects/folder-player/docs/) | [Report a bug](https://github.com/live-miracles/folder-player/issues/new) |
 | --------------------- | ----------------------------------------------------------------------------- | ------------------------------------------------------------------------- |
 
-[![vMix Folder Player: pick a folder, review the playlist, turn on the camera for one item, save, and create the vMix preset](assets/folder-player-demo.gif)](assets/folder-player-config-preview.png)
+[![vMix Folder Player: pick a folder, review the playlist, turn on the camera and mic for the host's lower third, save, and create the vMix preset](assets/folder-player-demo.gif)](assets/folder-player-config-preview.png)
 
-_Pick a folder, review the playlist, turn on the camera for one item, save, and create the preset. Demo media: Blender Foundation open movies ([credits](assets/CREDITS.md)). Select the demo for a full-size still._
+_Pick a folder, review the playlist, turn on the camera and mic for the host's lower third, save, and create the preset. Demo media: Blender Foundation open movies ([credits](assets/CREDITS.md)). Select the demo for a full-size still._
 
 **Saves you setup time before every session? [Download Folder Player](https://github.com/live-miracles/folder-player/releases/latest) and [give it a star](https://github.com/live-miracles/folder-player) to help other vMix operators find it.**
 
@@ -25,7 +25,7 @@ _Pick a folder, review the playlist, turn on the camera for one item, save, and 
 ## Features
 
 - **The folder is the playlist.** File names set the order: `01`, `02`, `03`… Anything without a number, like `Notes.txt`, is ignored.
-- **Overlays by naming.** Give an image the same number as an audio or video file and it becomes that item's overlay. `04+06 Lyrics.png` reuses one overlay on items 4 and 6.
+- **Overlays by naming.** Give an image the same number as an audio or video file and it becomes that item's overlay. `06+07 Now Playing.png` reuses one overlay on items 6 and 7.
 - **Every common input type.** Images, video, audio, folders of photos (played as a slideshow) and PowerPoint `.pptx` decks.
 - **Camera and mic layers.** Turn the `Cam` and `Mic` inputs from your base preset on or off for each item, set its volume and loop, and set the slide time for slideshows.
 - **Your base preset, extended.** Your cameras, mics and outputs stay as you set them up in `base.vmix`; the playlist is added on top.
@@ -41,13 +41,12 @@ Film Night
   |-- 01_1 Welcome.png          <- 01_1 and 01_2 play in order as item 1
   |-- 01_2 Program.png
   |-- 02 Sintel Trailer.mp4
-  |-- 03 Host Introduction.mp3
-  |-- 03 Host Slide.jpg         <- same number: overlay on the audio
+  |-- 03 Host Lower Third.png   <- transparent PNG: turn on Cam and Mic to put the host on camera
   |-- 04 Tears of Steel.mp4
   |-- 05 Behind the Scenes      <- folder of photos: slideshow
   |-- 06 Interval Music.mp3
   |-- 07 Closing Music.mp3
-  |-- 06+07 Now Playing.png     <- one overlay reused on items 6 and 7
+  |-- 06+07 Now Playing.png     <- overlay on the audio, reused on items 6 and 7
   |-- Notes.txt                 <- no number: ignored
 ```
 
