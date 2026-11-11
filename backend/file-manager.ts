@@ -20,8 +20,6 @@ export function getLeadingNumbers(text: string) {
 }
 
 export function getLeadingKeys(text: string) {
-    if (text.startsWith('__options__ ')) return ['__options__'];
-
     const match = text.match(/^[\d_+]+/);
     if (!match) return [''];
 

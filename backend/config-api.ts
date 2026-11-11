@@ -185,8 +185,6 @@ function getAlerts(
 
     // Check for config keys that don't have corresponding files
     for (const [key, options] of configMap.entries()) {
-        if (key === '__options__') continue;
-
         if (!fileMap.has(key)) {
             alerts.push({
                 key,
