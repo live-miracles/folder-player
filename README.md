@@ -20,7 +20,7 @@ _Pick a folder, review the playlist, turn on the camera and mic for the host's l
 
 **Saves you setup time before every session? [Download Folder Player](https://github.com/live-miracles/folder-player/releases/latest) and [give it a star](https://github.com/live-miracles/folder-player) to help other vMix operators find it.**
 
-**Who it's for:** vMix operators, live stream and church-tech teams, and anyone who rebuilds a similar playlist for every event: a welcome slide, a video, a talk with a background image, a photo slideshow, closing music. **Who it isn't for:** controlling vMix live (it writes a preset you open in vMix; it doesn't run alongside it) or playout on other software.
+**Who it's for:** vMix operators, live stream and AV teams, and anyone who rebuilds a similar playlist for every event: a welcome slide, a video, a talk with a background image, a photo slideshow, closing music. **Who it isn't for:** controlling vMix live (it writes a preset you open in vMix; it doesn't run alongside it) or playout on other software.
 
 ## Features
 
