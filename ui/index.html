@@ -54,6 +54,19 @@
       </div>
     </dialog>
 
+    <dialog id="discard-changes-dialog" class="modal" style="width: min(440px, calc(100vw - 48px))">
+      <form method="dialog">
+        <div class="space-y-1.5 px-5 pt-5 pb-4">
+          <h2 class="text-base font-semibold tracking-tight">Discard unsaved changes?</h2>
+          <p class="text-[13px] text-ink-muted">The options you changed on this page haven't been saved.</p>
+        </div>
+        <div class="flex justify-end gap-2 border-t border-line px-5 py-3">
+          <button value="keep" class="btn btn-sm" autofocus>Keep editing</button>
+          <button value="discard" class="btn btn-sm btn-danger">Discard changes</button>
+        </div>
+      </form>
+    </dialog>
+
     <div class="relative h-full w-full">
       <!-- HOME PAGE -->
       <div id="home-page" class="absolute inset-0 overflow-y-auto">

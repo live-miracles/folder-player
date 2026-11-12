@@ -522,6 +522,12 @@ function finishRendering() {
     updateSaveButton();
 }
 
+// Whether leaving or reloading the page would lose edits; an invalid value counts as an edit
+export function hasUnsavedChanges() {
+    if (savedConfigJson === undefined || isRendering) return false;
+    return JSON.stringify(getEditedConfig()) !== savedConfigJson;
+}
+
 function updateSaveButton() {
     saveConfigBtn.disabled = isRendering || JSON.stringify(getEditedConfig()) === savedConfigJson;
 }

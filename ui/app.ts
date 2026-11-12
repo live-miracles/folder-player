@@ -1,4 +1,4 @@
-import { getEditedConfig, renderConfigPage } from './config.js';
+import { getEditedConfig, hasUnsavedChanges, renderConfigPage } from './config.js';
 import {
     showErrorAlert,
     showSuccessAlert,
@@ -414,7 +414,26 @@ async function showConfigFolder(folderPath: string) {
     updateConfigBackButton();
 }
 
+const discardChangesDialog = document.getElementById('discard-changes-dialog') as HTMLDialogElement;
+
+// True when nothing is unsaved or the user chooses to discard it; Escape keeps editing
+function confirmDiscardChanges(): Promise<boolean> {
+    if (!hasUnsavedChanges()) return Promise.resolve(true);
+
+    return new Promise((resolve) => {
+        discardChangesDialog.returnValue = '';
+        discardChangesDialog.addEventListener(
+            'close',
+            () => resolve(discardChangesDialog.returnValue === 'discard'),
+            { once: true },
+        );
+        discardChangesDialog.showModal();
+    });
+}
+
 cancelConfigBtn.addEventListener('click', async () => {
+    if (!(await confirmDiscardChanges())) return;
+
     if (configFolderStack.length <= 1) {
         configFolderStack = [];
         goToHomePage();
@@ -430,6 +449,8 @@ cancelConfigBtn.addEventListener('click', async () => {
 
 document.addEventListener('open-config-folder', async (event) => {
     const folderPath = (event as CustomEvent<string>).detail;
+    if (!(await confirmDiscardChanges())) return;
+
     configFolderStack.push(folderPath);
     try {
         await showConfigFolder(folderPath);
@@ -449,6 +470,7 @@ refreshConfigBtn.addEventListener('click', async () => {
         showErrorAlert('Content folder is not found.');
         return;
     }
+    if (!(await confirmDiscardChanges())) return;
 
     refreshConfigBtn.disabled = true;
     try {
