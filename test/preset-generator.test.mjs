@@ -264,6 +264,31 @@ test('createPresetFileRecursively puts camera directly on PowerPoint inputs', ()
     }
 });
 
+test('createPresetFileRecursively reads seconds and volume from item options', () => {
+    const folderPath = fs.mkdtempSync(path.join(os.tmpdir(), 'folder-player-item-options-'));
+
+    try {
+        fs.writeFileSync(path.join(folderPath, 'base.vmix'), '<Preset>\r\n<State />\r\n</Preset>');
+        fs.writeFileSync(
+            path.join(folderPath, 'folder-player.txt'),
+            '1 Photos 5s\r\n2 AudioFile 50%',
+        );
+        fs.mkdirSync(path.join(folderPath, '01 Photos'));
+        fs.writeFileSync(path.join(folderPath, '02 Audio.mp3'), '');
+
+        createPresetFileRecursively(folderPath, '', false);
+        const output = fs.readFileSync(
+            path.join(folderPath, `${path.basename(folderPath)}.vmix`),
+            'utf-8',
+        );
+
+        assert.match(output, /Type="2"[^>]*PictureTransition="5"/s);
+        assert.match(output, /Type="13"[^>]*VolumeF="0.50"/s);
+    } finally {
+        fs.rmSync(folderPath, { recursive: true, force: true });
+    }
+});
+
 function escapeRegExp(text) {
     return text.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
 }

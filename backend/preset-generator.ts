@@ -3,6 +3,12 @@ import path from 'path';
 
 import { getFolderState } from './config-api.js';
 import { getFolderFiles, FILE_TYPES, compareFiles } from './file-manager.js';
+import {
+    defaultItemOptions,
+    getItemOptions,
+    type FolderConfig,
+    type ItemOptions,
+} from './config-file.js';
 import type { Alert } from './types.js';
 
 type PresetFile = { path: string; type: string; id: string };
@@ -104,7 +110,7 @@ function createPresetFile(
     base: string,
     enableBus: string,
     collapse: boolean,
-    config: Map<string, string[]>,
+    config: FolderConfig,
     customParentFolder: string,
 ) {
     console.log('Reading base file: ' + base);
@@ -120,7 +126,9 @@ function createPresetFile(
 
     const otherFiles = fileMap.get('') ?? [];
     otherFiles.forEach((f) =>
-        otherInputsXML.push(getFileXML(rewriteFilePath(f), [], ['collapsed'], enableBus)),
+        otherInputsXML.push(
+            getFileXML(rewriteFilePath(f), [], defaultItemOptions(), true, enableBus),
+        ),
     );
     fileMap.delete('');
 
@@ -130,18 +138,15 @@ function createPresetFile(
         const key = sortedKeys[i];
         const files = fileMap.get(key)!;
 
-        const options = config.get(key) ?? [];
-        if (collapse) options.push('collapsed');
+        const options = getItemOptions(config, key);
 
         const layers: string[] = [];
-        const hasCam = options.includes('cam');
-        const hasMic = options.includes('mic');
 
-        if (hasMic) {
+        if (options.mic) {
             const micId = getTitleId(baseXML, 'Mic');
             if (micId) layers.push(micId);
         }
-        if (hasCam) {
+        if (options.cam) {
             const camId = getTitleId(baseXML, 'Cam');
             if (camId) layers.push(camId);
         }
@@ -161,7 +166,9 @@ function createPresetFile(
         if (audios.length + videos.length > 1 || visuals.length > 1) {
             // Ignore any strange cases
             files.forEach((f) =>
-                inputsXML.push(getFileXML(rewriteFilePath(f), layers, options, enableBus)),
+                inputsXML.push(
+                    getFileXML(rewriteFilePath(f), layers, options, collapse, enableBus),
+                ),
             );
         } else if (audios.length > 0 || videos.length > 0) {
             const base = rewriteFilePath(audios[0] ?? videos[0]);
@@ -169,21 +176,23 @@ function createPresetFile(
             if (top) {
                 // Keep the camera as the first overlay, followed by the content visual.
                 layers.push(top.id);
-                helperInputsXML.push(getFileXML(top, [], [...options, 'collapsed'], enableBus));
+                helperInputsXML.push(getFileXML(top, [], options, true, enableBus));
             }
-            inputsXML.push(getFileXML(base, layers, options, enableBus));
+            inputsXML.push(getFileXML(base, layers, options, collapse, enableBus));
         } else {
             // Images need a colour input so the camera can be the visible base layer.
             // Slideshow folders and PowerPoint inputs receive the camera layer directly.
-            if (images.length > 0 && options.includes('cam')) {
+            if (images.length > 0 && options.cam) {
                 layers.push(images[0].id);
                 const visual = rewriteFilePath(images[0]);
                 const filename = path.parse(visual.path).name;
-                inputsXML.push(getColorXML(filename, layers, options));
-                helperInputsXML.push(getFileXML(visual, [], [...options, 'collapsed'], enableBus));
+                inputsXML.push(getColorXML(filename, layers, collapse));
+                helperInputsXML.push(getFileXML(visual, [], options, true, enableBus));
             } else {
                 files.forEach((f) =>
-                    inputsXML.push(getFileXML(rewriteFilePath(f), layers, options, enableBus)),
+                    inputsXML.push(
+                        getFileXML(rewriteFilePath(f), layers, options, collapse, enableBus),
+                    ),
                 );
             }
         }
@@ -239,10 +248,7 @@ function getLayersText(layers: string[]) {
     return layers.map((layer, i) => `Overlay${i}="${layer}"`).join(' ');
 }
 
-function getAudioOptions(options: string[]) {
-    const token = options.find((opt) => opt.endsWith('%')) ?? '100%';
-    let volume = parseInt(token.replace('%', ''));
-    volume = isNaN(volume) ? 100 : volume;
+function getAudioOptions(volume: number) {
     const fraq = (volume / 100).toFixed(2);
     return {
         volume: volume > 100 ? '1' : fraq,
@@ -250,24 +256,30 @@ function getAudioOptions(options: string[]) {
     };
 }
 
-function getFileXML(file: PresetFile, layers: string[], options: string[], enableBus: string) {
+function getFileXML(
+    file: PresetFile,
+    layers: string[],
+    options: ItemOptions,
+    isCollapsed: boolean,
+    enableBus: string,
+) {
     if (file.type === FILE_TYPES.IMAGE) {
-        return getImageXML(file, layers, options);
+        return getImageXML(file, layers, isCollapsed);
     } else if (file.type === FILE_TYPES.VIDEO) {
-        return getVideoXML(file, layers, options, enableBus);
+        return getVideoXML(file, layers, options, isCollapsed, enableBus);
     } else if (file.type === FILE_TYPES.AUDIO) {
-        return getAudioXML(file, layers, options, enableBus);
+        return getAudioXML(file, layers, options, isCollapsed, enableBus);
     } else if (file.type === FILE_TYPES.FOLDER) {
-        return getPhotosXML(file, layers, options);
+        return getPhotosXML(file, layers, options, isCollapsed);
     } else if (file.type === FILE_TYPES.POWERPOINT) {
-        return getPptxInput(file, layers, options);
+        return getPptxInput(file, layers, options, isCollapsed);
     }
 
     return '';
 }
 
-function getImageXML(file: { path: string; id: string }, layers: string[], options: string[]) {
-    const collapsed = options.includes('collapsed') ? 'True' : 'False';
+function getImageXML(file: { path: string; id: string }, layers: string[], isCollapsed: boolean) {
+    const collapsed = isCollapsed ? 'True' : 'False';
 
     return `<Input Type="1" Position="0" RangeStart="0" RangeStop="0" State="1" OriginalTitle=""
       ShortcutMappings="" Key="${file.id}" Loop="False" VolumeF="1" Muted="True"
@@ -282,13 +294,14 @@ function getImageXML(file: { path: string; id: string }, layers: string[], optio
 function getVideoXML(
     file: { path: string; id: string },
     layers: string[],
-    options: string[],
+    options: ItemOptions,
+    isCollapsed: boolean,
     enableBus: string,
 ) {
-    const { volume, gain } = getAudioOptions(options);
-    const loop = options.includes('loop') ? 'True' : 'False';
+    const { volume, gain } = getAudioOptions(options.volume);
+    const loop = options.loop ? 'True' : 'False';
     const enableBusText = enableBus ? `Bus${enableBus}="True"` : '';
-    const collapsed = options.includes('collapsed') ? 'True' : 'False';
+    const collapsed = isCollapsed ? 'True' : 'False';
 
     return `<Input Type="0" Position="0" RangeStart="0" RangeStop="0" State="1" OriginalTitle=""
         ShortcutMappings="" Key="${file.id}" Loop="${loop}" VolumeF="${volume}" Muted="True" BalanceF="0" AspectRatio="100" Category="0"
@@ -315,13 +328,14 @@ function getVideoXML(
 function getAudioXML(
     file: { path: string; id: string },
     layers: string[],
-    options: string[],
+    options: ItemOptions,
+    isCollapsed: boolean,
     enableBus: string,
 ) {
-    const { volume, gain } = getAudioOptions(options);
-    const loop = options.includes('loop') ? 'True' : 'False';
+    const { volume, gain } = getAudioOptions(options.volume);
+    const loop = options.loop ? 'True' : 'False';
     const enableBusText = enableBus ? `Bus${enableBus}="True"` : '';
-    const collapsed = options.includes('collapsed') ? 'True' : 'False';
+    const collapsed = isCollapsed ? 'True' : 'False';
 
     return `<Input Type="13" Position="0" RangeStart="0" RangeStop="0" State="1" OriginalTitle=""
         ShortcutMappings="" Key="${file.id}" Loop="${loop}" VolumeF="${volume}" Muted="True" BalanceF="0" AspectRatio="100"
@@ -348,10 +362,14 @@ function getAudioXML(
         VideoShader_ClippingY2="1" VideoShader_PremultipliedAlpha="False">${escapeXML(file.path)}</Input>`;
 }
 
-function getPhotosXML(file: { path: string; id: string }, layers: string[], options: string[]) {
-    const slideshowTime = options.find((opt) => opt.endsWith('s')) ?? '10s';
-    const time = parseInt(slideshowTime) ?? 10;
-    const collapsed = options.includes('collapsed') ? 'True' : 'False';
+function getPhotosXML(
+    file: { path: string; id: string },
+    layers: string[],
+    options: ItemOptions,
+    isCollapsed: boolean,
+) {
+    const time = options.seconds;
+    const collapsed = isCollapsed ? 'True' : 'False';
 
     return `<Input Type="2" Position="0" RangeStart="0" RangeStop="0" State="1" OriginalTitle=""
         ShortcutMappings="" Key="${file.id}" Loop="True" VolumeF="1" Muted="True" BalanceF="0" AspectRatio="100" Category="0"
@@ -372,8 +390,8 @@ function getPhotosXML(file: { path: string; id: string }, layers: string[], opti
         VideoShader_ClippingX2="1" VideoShader_ClippingY1="0" VideoShader_ClippingY2="1" VideoShader_PremultipliedAlpha="False">${escapeXML(file.path)}</Input>`;
 }
 
-function getColorXML(name: string, layers: string[], options: string[]) {
-    const collapsed = options.includes('collapsed') ? 'True' : 'False';
+function getColorXML(name: string, layers: string[], isCollapsed: boolean) {
+    const collapsed = isCollapsed ? 'True' : 'False';
 
     return `<Input Type="12" Position="0" RangeStart="0" RangeStop="0" State="1" Title="${name}" OriginalTitle="Colour" ShortcutMappings=""
         Key="${crypto.randomUUID()}" Loop="False" VolumeF="1" Muted="True" BalanceF="0" AspectRatio="100" Category="0" MouseClickAction="0"
@@ -393,10 +411,14 @@ function getColorXML(name: string, layers: string[], options: string[]) {
         VideoShader_ClippingY2="1" VideoShader_PremultipliedAlpha="False"></Input>`;
 }
 
-function getPptxInput(file: { path: string; id: string }, layers: string[], options: string[]) {
-    const slideshowTime = options.find((opt) => opt.endsWith('s')) ?? '10s';
-    const time = parseInt(slideshowTime) ?? 10;
-    const collapsed = options.includes('collapsed') ? 'True' : 'False';
+function getPptxInput(
+    file: { path: string; id: string },
+    layers: string[],
+    options: ItemOptions,
+    isCollapsed: boolean,
+) {
+    const time = options.seconds;
+    const collapsed = isCollapsed ? 'True' : 'False';
 
     return `<Input Type="3" Position="0" RangeStart="0" RangeStop="0" State="1" OriginalTitle="Practice Instructions Module.pptx" ShortcutMappings=""
       Key="${file.id}" Loop="True" VolumeF="1" Muted="True" BalanceF="0" AspectRatio="100" Category="0" MouseClickAction="0"

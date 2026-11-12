@@ -5,7 +5,11 @@ export function showErrorAlert(error: any) {
     const alertElem = document.getElementById('error-alert');
     if (!alertElem) return;
     alertElem.classList.remove('hidden');
-    document.getElementById('error-msg')!.innerText = String(error);
+    // Errors thrown in the main process arrive wrapped by Electron's IPC
+    document.getElementById('error-msg')!.innerText = String(error).replace(
+        /^Error: Error invoking remote method '[^']+': (Error: )?/,
+        '',
+    );
     console.error(error);
     const alertId = ++alertCount;
     setTimeout(() => {

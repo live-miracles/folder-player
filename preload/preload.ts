@@ -26,7 +26,7 @@ contextBridge.exposeInMainWorld('api', {
     getFolderPreviewImages: (folderPath: string) =>
         ipcRenderer.invoke('get-folder-preview-images', folderPath),
     getFolderState: (folderPath: string) => ipcRenderer.invoke('get-folder-state', folderPath),
-    saveFolderConfig: (data: { folderPath: string; text: string }) =>
+    saveFolderConfig: (data: { folderPath: string; config: [string, unknown][] }) =>
         ipcRenderer.invoke('save-folder-config', data),
     zoomIn: () => ipcRenderer.send('zoom-in'),
     zoomOut: () => ipcRenderer.send('zoom-out'),

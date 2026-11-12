@@ -1,4 +1,4 @@
-import { getTableConfig, renderConfigPage } from './config.js';
+import { getEditedConfig, renderConfigPage } from './config.js';
 import {
     showErrorAlert,
     showSuccessAlert,
@@ -472,8 +472,8 @@ saveConfigBtn.addEventListener('click', async () => {
     }
     saveConfigBtn.disabled = true;
     try {
-        const config = getTableConfig();
-        await (window as any).api.saveFolderConfig({ folderPath: folderPath, text: config });
+        const config = getEditedConfig();
+        await (window as any).api.saveFolderConfig({ folderPath, config });
         showSuccessAlert('Config Saved');
         // Reload so the saved options, alerts and Save button state all reflect the file
         renderConfigPage(await (window as any).api.getFolderState(folderPath));

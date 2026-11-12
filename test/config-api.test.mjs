@@ -242,3 +242,28 @@ test('getConfigSubfolders lists nested folders that have a config file', () => {
         fs.rmSync(root, { recursive: true, force: true });
     }
 });
+
+test('getFolderState warns about out-of-range values in the config file', () => {
+    const folderPath = fs.mkdtempSync(path.join(os.tmpdir(), 'folder-player-config-range-'));
+
+    try {
+        fs.writeFileSync(path.join(folderPath, 'base.vmix'), '<Preset><State /></Preset>');
+        fs.writeFileSync(
+            path.join(folderPath, 'folder-player.txt'),
+            '1 AudioFile Image loop 2000%',
+        );
+        fs.writeFileSync(path.join(folderPath, '01 Audio.mp3'), '');
+        fs.writeFileSync(path.join(folderPath, '01 Slide.png'), '');
+
+        const state = getFolderState(folderPath);
+
+        assert.equal(state.config.get('1').volume, 100);
+        assert.deepEqual(
+            state.alerts.map((alert) => [alert.key, alert.type]),
+            [['1', 'warning']],
+        );
+        assert.match(state.alerts[0].msg, /Volume 2000% is out of range/);
+    } finally {
+        fs.rmSync(folderPath, { recursive: true, force: true });
+    }
+});

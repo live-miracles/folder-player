@@ -5,7 +5,8 @@ import { fileURLToPath } from 'url';
 
 import { createPresetFileRecursively } from './preset-generator.js';
 import { getFolderFiles, getFolderPreviewImages } from './file-manager.js';
-import { ALERT, getConfigSubfolders, getFolderState, saveFolderConfig } from './config-api.js';
+import { ALERT, getConfigSubfolders, getFolderState } from './config-api.js';
+import { getItemOptions, writeConfig, type ItemOptions } from './config-file.js';
 
 import updater from 'electron-updater';
 const { autoUpdater } = updater;
@@ -120,15 +121,20 @@ ipcMain.handle('get-folder-state', async (_, folderPath) => {
         folder: state.folder,
         baseFile: state.baseFile,
         files: Array.from(state.files.entries()),
-        config: Array.from((state.config ?? new Map()).entries()),
+        // Every key with files or config, defaults filled in, so the page never needs its own
+        config: Array.from(new Set([...state.files.keys(), ...(state.config?.keys() ?? [])]))
+            .filter((key) => key !== '')
+            .map((key) => [key, getItemOptions(state.config, key)]),
         alerts,
         hasConfig,
         isContainer,
         subfolders,
     };
 });
-ipcMain.handle('save-folder-config', async (_, { folderPath, text }) =>
-    saveFolderConfig(folderPath, text),
+ipcMain.handle(
+    'save-folder-config',
+    async (_, { folderPath, config }: { folderPath: string; config: [string, ItemOptions][] }) =>
+        writeConfig(folderPath, new Map(config)),
 );
 
 // ===== Zooming =====

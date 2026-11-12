@@ -1,5 +1,5 @@
 import { escapeHtml, getAlertItemHtml, getReportSummaryHtml } from './utils.js';
-import type { Alert } from './types.js';
+import type { Alert, ItemOptions } from './types.js';
 export const FILE_TYPES = {
     IMAGE: 'Image',
     VIDEO: 'Video',
@@ -34,7 +34,7 @@ type ConfigState = {
     folder: string;
     baseFile: string | null;
     files: ConfigEntry[];
-    config: [string, string[]][] | null;
+    config: [string, ItemOptions][]; // every key, defaults filled in by the backend
     alerts: ConfigAlert[];
     hasConfig?: boolean;
     isContainer?: boolean;
@@ -55,8 +55,10 @@ const configViewToggle = document.getElementById('config-view-toggle')!;
 const configTable = document.getElementById('config-table') as HTMLTableSectionElement;
 const saveConfigBtn = document.getElementById('save-config-btn') as HTMLButtonElement;
 
-// Config text as last loaded or saved; Save is only enabled when the page differs from it
-let savedConfigText: string | null | undefined; // undefined while the page is rendering
+// The edited config as first rendered after loading; Save is only enabled when the page differs.
+// Kept across list/preview switches so unsaved edits still count as changes.
+let savedConfigJson: string | undefined;
+let isRendering = false;
 
 let currentConfigState: ConfigState | null = null;
 let configViewMode: ConfigViewMode = getStoredConfigViewMode();
@@ -74,7 +76,7 @@ function getLeadingNumbers(text: string) {
 function compareFiles(a: string, b: string) {
     const [a1, a2] = getLeadingNumbers(a);
     const [b1, b2] = getLeadingNumbers(b);
-    if (a1 === -1 && a2 === -1) return 0;
+    if (a1 === -1 && b1 === -1) return 0;
     if (a1 === -1) return 1;
     if (b1 === -1) return -1;
     if (a1 !== b1) return a1 - b1;
@@ -88,6 +90,7 @@ function getStoredConfigViewMode(): ConfigViewMode {
 
 export function renderConfigPage(state: ConfigState) {
     currentConfigState = state;
+    savedConfigJson = undefined;
     renderConfigTitle(state.folder, state.baseFile);
     document.getElementById('config-base')!.classList.toggle('hidden', !!state.isContainer);
 
@@ -176,12 +179,12 @@ function renderConfigContent() {
         configAlerts.classList.toggle(cls, configViewMode === 'list');
     }
 
-    saveConfigBtn.disabled = true;
-    savedConfigText = undefined;
-    if (configViewMode === 'preview') renderPreviewConfig(configMap).then(markConfigSaved);
+    isRendering = true;
+    updateSaveButton();
+    if (configViewMode === 'preview') renderPreviewConfig(configMap).then(finishRendering);
     else {
         renderListConfig(configMap);
-        markConfigSaved();
+        finishRendering();
     }
 
     setupCamMicLogic();
@@ -189,14 +192,14 @@ function renderConfigContent() {
     renderDynamicIcons();
 }
 
-function renderListConfig(configMap: Map<string, string[]>) {
+function renderListConfig(configMap: Map<string, ItemOptions>) {
     let html = '';
 
     let i = 0;
     for (const [key, files] of currentConfigState!.files) {
         files.sort((a: any, b: any) => (TYPE_MAP as any)[a.type] - (TYPE_MAP as any)[b.type]);
         const types = files.map((f) => f.type);
-        const optionsHtml = getOptionsHtml(key, types, configMap.get(key) ?? []);
+        const optionsHtml = getOptionsHtml(key, types, configMap.get(key)!);
 
         const rowClass = i++ > 0 ? 'group-start' : '';
 
@@ -222,15 +225,15 @@ function renderListConfig(configMap: Map<string, string[]>) {
     configTable.innerHTML = html;
 }
 
-async function renderPreviewConfig(configMap: Map<string, string[]>) {
+async function renderPreviewConfig(configMap: Map<string, ItemOptions>) {
     const sections = await Promise.all(
         currentConfigState!.files.map(async ([key, files]) => {
             files.sort((a: any, b: any) => (TYPE_MAP as any)[a.type] - (TYPE_MAP as any)[b.type]);
             const types = files.map((f) => f.type);
-            const selectedOptions = configMap.get(key) ?? [];
-            const optionsHtml = getOptionsHtml(key, types, selectedOptions);
+            const item = configMap.get(key)!;
+            const optionsHtml = getOptionsHtml(key, types, item);
             const previewFiles = getPreviewFiles(files);
-            const hasCameraBackground = selectedOptions.includes('cam');
+            const hasCameraBackground = item.cam;
             const hasBaseMedia = types.some(
                 (type) => type === FILE_TYPES.AUDIO || type === FILE_TYPES.VIDEO,
             );
@@ -286,42 +289,26 @@ async function renderPreviewConfig(configMap: Map<string, string[]>) {
     renderDynamicIcons();
 }
 
-function getOptionsHtml(key: string, types: string[], selectedOptions: string[]) {
+function getOptionsHtml(key: string, types: string[], item: ItemOptions) {
     let optionsHtml = '';
 
-    const isCam = selectedOptions.includes('cam') ? 'true' : 'false';
-    optionsHtml += getBoolOptionHtml('cam', isCam, key);
-
-    const isMic = selectedOptions.includes('mic') ? 'true' : 'false';
-    optionsHtml += getBoolOptionHtml('mic', isMic, key);
+    optionsHtml += getBoolOptionHtml('cam', String(item.cam), key);
+    optionsHtml += getBoolOptionHtml('mic', String(item.mic), key);
 
     if (types.includes(FILE_TYPES.AUDIO) || types.includes(FILE_TYPES.VIDEO)) {
-        const isLoop = selectedOptions.includes('loop') ? 'true' : 'false';
-        optionsHtml += getBoolOptionHtml('loop', isLoop, key);
-
-        const opt = selectedOptions.find((opt) => opt.endsWith('%')) ?? '100';
-        const parsed = parseInt(opt);
-        optionsHtml += getNumberOptionHtml(
-            '%',
-            isNaN(parsed) ? '100' : String(parsed),
-            key,
-            0,
-            1000,
-        );
+        optionsHtml += getBoolOptionHtml('loop', String(item.loop), key);
+        optionsHtml += getNumberOptionHtml('%', numberText(item.volume), key, 0, 1000);
     }
     if (types.includes(FILE_TYPES.FOLDER) || types.includes(FILE_TYPES.POWERPOINT)) {
-        const opt = selectedOptions.find((opt) => opt.endsWith('s')) ?? '10';
-        const parsed = parseInt(opt);
-        optionsHtml += getNumberOptionHtml(
-            's',
-            isNaN(parsed) ? '10' : String(parsed),
-            key,
-            1,
-            1000,
-        );
+        optionsHtml += getNumberOptionHtml('s', numberText(item.seconds), key, 1, 1000);
     }
 
     return optionsHtml;
+}
+
+// An emptied number field is kept as NaN until saved, so it renders empty again
+function numberText(value: number) {
+    return Number.isNaN(value) ? '' : String(value);
 }
 
 function renderFolderAlerts(alerts: ConfigAlert[]) {
@@ -580,111 +567,53 @@ function getFileTypeHtml(type: string, key: string) {
     return `<span class="${key ? 'config-type' : ''} tag tag-labeled-icon ${meta?.tag ?? ''}" data-key="${key}" data-type="${type}"><i data-lucide="${getPreviewIcon(type)}"></i>${meta?.label ?? type}</span>`;
 }
 
-function getCurrentConfigText() {
-    try {
-        return getTableConfig();
-    } catch {
-        return null; // invalid input counts as a change, so Save can report the error
-    }
-}
-
-export function markConfigSaved() {
-    savedConfigText = getCurrentConfigText();
+function finishRendering() {
+    isRendering = false;
+    // The first render after loading is the baseline; list/preview switches keep it
+    savedConfigJson ??= JSON.stringify(getEditedConfig());
     updateSaveButton();
 }
 
 function updateSaveButton() {
-    saveConfigBtn.disabled =
-        savedConfigText === undefined || getCurrentConfigText() === savedConfigText;
+    saveConfigBtn.disabled = isRendering || JSON.stringify(getEditedConfig()) === savedConfigJson;
 }
 
 document.getElementById('config-page')!.addEventListener('input', updateSaveButton);
 document.getElementById('config-page')!.addEventListener('change', updateSaveButton);
 
-export function getTableConfig() {
-    const types = document.querySelectorAll('.config-type') as NodeListOf<HTMLInputElement>;
-    const typeMap = new Map<string, string[]>();
+// The loaded item options with the page's inputs applied. The backend checks the values
+// and writes the config file, so this knows nothing about the file format.
+export function getEditedConfig(): [string, ItemOptions][] {
+    const config = new Map(
+        (currentConfigState?.config ?? []).map(([key, item]): [string, ItemOptions] => [
+            key,
+            { ...item, types: [...item.types], extra: [...item.extra] },
+        ]),
+    );
 
-    types.forEach((elem) => {
-        const key = elem.dataset.key;
-        if (!key) {
-            throw new Error('Type key is not defined. ' + JSON.stringify(elem.dataset));
-        }
-        const type = elem.dataset.type ?? elem.innerText;
-        if (!typeMap.get(key)) typeMap.set(key, []);
-        typeMap.get(key)!.push(type);
+    const typesByKey = new Map<string, string[]>();
+    document.querySelectorAll<HTMLElement>('.config-type').forEach((elem) => {
+        const { key, type } = elem.dataset;
+        if (!key || !type) return;
+        if (!typesByKey.has(key)) typesByKey.set(key, []);
+        typesByKey.get(key)!.push(type);
     });
-
-    for (const [key, types] of typeMap.entries()) {
-        if (types.length > 2) {
-            typeMap.delete(key);
-            continue;
-        }
-
-        if (types.length === 2) {
-            if (types[0] === types[1]) {
-                typeMap.delete(key);
-                continue;
-            }
-
-            if (types.includes(FILE_TYPES.VIDEO) && types.includes(FILE_TYPES.AUDIO)) {
-                typeMap.delete(key);
-                continue;
-            }
-
-            if (types[1] === FILE_TYPES.AUDIO || types[1] === FILE_TYPES.VIDEO) {
-                typeMap.set(key, [types[1], types[0]]);
-            }
-        }
+    for (const [key, types] of typesByKey) {
+        const item = config.get(key);
+        if (item) item.types = types; // the folder's current types, as before
     }
 
-    const options = document.querySelectorAll('.config-option') as NodeListOf<HTMLInputElement>;
-    const configMap = new Map<string, string[]>();
-    options.forEach((opt) => {
-        const key = opt.dataset.key;
-        if (!key) {
-            throw new Error('Option key is not defined. ' + opt);
-        }
+    document.querySelectorAll<HTMLInputElement>('.config-option').forEach((input) => {
+        const item = config.get(input.dataset.key ?? '');
+        const name = input.dataset.name;
+        if (!item || !name) return;
 
-        const name = opt.dataset.name;
-        if (!name) {
-            throw new Error('Option name is not defined. ' + opt);
-        }
-
-        if (opt.type === 'checkbox') {
-            if (opt.checked) {
-                if (!configMap.get(key)) configMap.set(key, []);
-                configMap.get(key)!.push(name);
-            }
-        } else {
-            const value = parseInt(opt.value);
-            if (isNaN(value)) {
-                throw new Error('Option value is NaN. ' + opt);
-            }
-            if (name === 's' && value !== 10) {
-                if (1 > value || value > 1000)
-                    throw new Error('Slideshow time must be between 1 and 1000 sec');
-                if (!configMap.get(key)) configMap.set(key, []);
-                configMap.get(key)!.push(value + name);
-            } else if (name === '%' && value !== 100) {
-                if (0 > value || value > 1000)
-                    throw new Error('Volume value must be between 0 and 10000 %');
-                if (!configMap.get(key)) configMap.set(key, []);
-                configMap.get(key)!.push(value + name);
-            }
-        }
+        if (name === 'cam' || name === 'mic' || name === 'loop') item[name] = input.checked;
+        else if (name === '%') item.volume = parseInt(input.value);
+        else if (name === 's') item.seconds = parseInt(input.value);
     });
 
-    const list = Array.from(configMap).sort((a, b) => compareFiles(a[0], b[0]));
-    const text = list
-        .map((elem) => {
-            const types = typeMap.get(elem[0]) ?? [];
-            return (
-                elem[0] + ' ' + types.join(' ') + (types.length > 0 ? ' ' : '') + elem[1].join(' ')
-            );
-        })
-        .join('\r\n');
-    return text;
+    return Array.from(config);
 }
 
 function setupCamMicLogic() {
@@ -713,34 +642,10 @@ configPreviewViewBtn.addEventListener('click', () => setConfigViewMode('preview'
 function setConfigViewMode(mode: ConfigViewMode) {
     if (configViewMode === mode) return;
 
-    syncCurrentConfigFromDom();
+    if (currentConfigState) currentConfigState.config = getEditedConfig();
     configViewMode = mode;
     localStorage.setItem(CONFIG_VIEW_STORAGE_KEY, mode);
     renderConfigContent();
-}
-
-function syncCurrentConfigFromDom() {
-    if (!currentConfigState) return;
-
-    const options = document.querySelectorAll('.config-option') as NodeListOf<HTMLInputElement>;
-    const configMap = new Map<string, string[]>();
-
-    options.forEach((opt) => {
-        const key = opt.dataset.key;
-        const name = opt.dataset.name;
-        if (!key || !name) return;
-
-        if (opt.type === 'checkbox') {
-            if (!opt.checked) return;
-        } else if (!opt.value.trim()) {
-            return;
-        }
-
-        if (!configMap.get(key)) configMap.set(key, []);
-        configMap.get(key)!.push(opt.type === 'checkbox' ? name : opt.value + name);
-    });
-
-    currentConfigState.config = Array.from(configMap);
 }
 
 function updateConfigViewButtons() {

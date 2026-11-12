@@ -4,19 +4,23 @@ import path from 'path';
 import {
     getFolderFiles,
     getBaseFile,
-    getLeadingKeys,
     FILE_TYPES,
     compareFiles,
     getLeadingNumbers,
 } from './file-manager.js';
+import {
+    CONFIG_FILE_NAME,
+    formatItemOptions,
+    getItemOptions,
+    readConfig,
+    type FolderConfig,
+} from './config-file.js';
 import type { Alert } from './types.js';
 export const ALERT = { ERROR: 'error', WARNING: 'warning' };
 
-export const CONFIG_FILE_NAME = 'folder-player.txt';
-
 type FolderFile = { path: string; type: string; id: string };
 export function getFolderState(folderPath: string) {
-    const configMap = getFolderConfig(folderPath);
+    const configFile = readConfig(folderPath);
     let fileMap: Map<string, { path: string; type: string; id: string }[]>;
     try {
         fileMap = getFolderFiles(folderPath);
@@ -27,44 +31,17 @@ export function getFolderState(folderPath: string) {
         throw err;
     }
     const baseFile = getBaseFile(folderPath);
-    const alerts = getAlerts(configMap ?? new Map(), fileMap, baseFile, folderPath);
+    const config = configFile?.config ?? null;
+    const alerts = getAlerts(config ?? new Map(), fileMap, baseFile, folderPath);
+    alerts.push(...(configFile?.alerts ?? []));
+    alerts.sort((a, b) => compareFiles(a.key, b.key));
 
-    return { folder: folderPath, config: configMap, files: fileMap, alerts, baseFile };
+    return { folder: folderPath, config, files: fileMap, alerts, baseFile };
 }
 
 function isFolderReadError(error: unknown) {
     const code = (error as NodeJS.ErrnoException)?.code;
     return ['ENOENT', 'ENOTDIR', 'EACCES', 'EPERM', 'UNKNOWN'].includes(code ?? '');
-}
-
-function getFolderConfig(folderPath: string) {
-    const filePath = path.join(folderPath, CONFIG_FILE_NAME);
-
-    const map = new Map<string, string[]>();
-
-    let content: string;
-    try {
-        content = fs.readFileSync(filePath, 'utf-8');
-    } catch {
-        return null; // file doesn't exist or can't be read
-    }
-    const lines = content.split(/\r?\n/);
-
-    for (const line of lines) {
-        const trimmed = line.trim();
-        if (!trimmed) continue;
-        const values = trimmed.split(/\s+/).slice(1);
-
-        for (const key of getLeadingKeys(trimmed)) {
-            if (key === '') continue;
-
-            if (!map.has(key)) map.set(key, []);
-
-            map.get(key)!.push(...values);
-        }
-    }
-
-    return map;
 }
 
 const MAX_SUBFOLDER_SCAN = 1000;
@@ -121,16 +98,8 @@ export function getConfigSubfolders(folderPath: string) {
     );
 }
 
-export function saveFolderConfig(folderPath: string, text: string) {
-    if (!fs.existsSync(folderPath)) {
-        throw new Error('Folder does not exist');
-    }
-    const filePath = path.join(folderPath, CONFIG_FILE_NAME);
-    fs.writeFileSync(filePath, text, 'utf-8');
-}
-
 function getAlerts(
-    configMap: Map<string, string[]>,
+    configMap: FolderConfig,
     fileMap: Map<string, FolderFile[]>,
     baseFile: string | null,
     folderPath: string,
@@ -157,14 +126,14 @@ function getAlerts(
         const hasMic = /<Input[^>]*?Title="Mic"[^>]*?>/.test(baseXML);
         const hasCam = /<Input[^>]*?Title="Cam"[^>]*?>/.test(baseXML);
 
-        if (!hasMic && Array.from(configMap.values()).some((options) => options.includes('mic'))) {
+        if (!hasMic && Array.from(configMap.values()).some((item) => item.mic)) {
             alerts.push({
                 key: '',
                 type: ALERT.ERROR,
                 msg: `Microphone is selected, but the base preset is missing the 'Mic' input.`,
             });
         }
-        if (!hasCam && Array.from(configMap.values()).some((options) => options.includes('cam'))) {
+        if (!hasCam && Array.from(configMap.values()).some((item) => item.cam)) {
             alerts.push({
                 key: '',
                 type: ALERT.ERROR,
@@ -184,12 +153,12 @@ function getAlerts(
     }
 
     // Check for config keys that don't have corresponding files
-    for (const [key, options] of configMap.entries()) {
+    for (const [key, item] of configMap.entries()) {
         if (!fileMap.has(key)) {
             alerts.push({
                 key,
                 type: ALERT.ERROR,
-                msg: `Config exists (${options.join(' ')}), but no file with such number.`,
+                msg: `Config exists (${formatItemOptions(item)}), but no file with such number.`,
             });
         }
     }
@@ -266,7 +235,7 @@ function getAlerts(
         const hasVideo = types.includes(FILE_TYPES.VIDEO);
         const visualTypes = [FILE_TYPES.IMAGE, FILE_TYPES.FOLDER, FILE_TYPES.POWERPOINT];
         const visualFiles = files.filter((file) => visualTypes.includes(file.type));
-        const options = configMap.get(key) ?? [];
+        const options = getItemOptions(configMap, key);
 
         if (hasAudio && hasVideo) {
             alerts.push({
@@ -288,7 +257,7 @@ function getAlerts(
             });
         }
 
-        if (hasAudio && files.length === 1 && !options.includes('cam')) {
+        if (hasAudio && files.length === 1 && !options.cam) {
             alerts.push({
                 key,
                 type: ALERT.WARNING,
@@ -311,7 +280,7 @@ function getAlerts(
             FILE_TYPES.FOLDER,
             FILE_TYPES.POWERPOINT,
         ];
-        const configTypes = allTypes.filter((type) => options.includes(type)).join('+');
+        const configTypes = allTypes.filter((type) => options.types.includes(type)).join('+');
         const folderTypes = allTypes.filter((type) => types.includes(type)).join('+');
 
         if (configTypes && configTypes !== folderTypes) {
