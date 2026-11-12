@@ -7,6 +7,14 @@ tool folder.
 - `app-demo` - record the README demo GIF/video and screenshots by driving the
   real app with a scripted scenario, using openly licensed demo media.
 
+## Releases
+
+Follow the Publishing steps in `README.md`. After the release workflow
+finishes, write release notes on the GitHub release with
+`gh release edit vX.Y.Z --notes-file <file>`. Summarise what changed for users
+in plain language, leave out docs, tooling and refactor-only commits, and end
+with a link to the compare view from the previous tag.
+
 ## Agent skills
 
 ### Issue tracker
