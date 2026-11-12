@@ -9,7 +9,6 @@ import {
 import type { Alert } from './types.js';
 
 const RECENT_FOLDERS_LIMIT = 50;
-type ReportAlert = Alert;
 
 // ===== Updates =====
 const updateText = document.getElementById('update-text')!;
@@ -23,7 +22,7 @@ function showToast() {
     updateToast.classList.remove('hidden');
 }
 
-(window as any).api.onUpdateAvailable(() => {
+window.api.onUpdateAvailable(() => {
     showToast();
     updateText.innerText = 'A new version is ready to download.';
     updateProgress.classList.add('hidden');
@@ -32,12 +31,12 @@ function showToast() {
     updateDismissBtn.classList.remove('hidden');
 });
 
-(window as any).api.onUpdateProgress((p: number) => {
+window.api.onUpdateProgress((p: number) => {
     updateProgress.value = p;
     updateText.innerText = 'Downloading: ' + p.toFixed(1) + '%';
 });
 
-(window as any).api.onUpdateReady(() => {
+window.api.onUpdateReady(() => {
     updateText.innerText = 'Downloaded';
     updateProgress.classList.add('hidden');
     updateBtn.classList.remove('hidden');
@@ -51,10 +50,10 @@ updateDownloadBtn.onclick = () => {
     updateProgress.classList.remove('hidden');
     updateDownloadBtn.classList.add('hidden');
     updateDismissBtn.classList.add('hidden');
-    (window as any).api.downloadUpdate();
+    window.api.downloadUpdate();
 };
 updateDismissBtn.onclick = () => updateToast.classList.add('hidden');
-updateBtn.onclick = () => (window as any).api.installUpdate();
+updateBtn.onclick = () => window.api.installUpdate();
 
 // ===== UI Elements =====
 const playFolderInput = document.getElementById('play-folder-input') as HTMLTextAreaElement;
@@ -177,11 +176,11 @@ function show() {
 }
 
 // Button handlers
-btnIn.onclick = () => (window as any).api.zoomIn();
-btnOut.onclick = () => (window as any).api.zoomOut();
+btnIn.onclick = () => window.api.zoomIn();
+btnOut.onclick = () => window.api.zoomOut();
 
 // Listen to zoom updates
-(window as any).api.onChange((z: number) => {
+window.api.onChange((z: number) => {
     zoomLabel.textContent = `${Math.round(z * 100)}%`;
     show();
 });
@@ -195,17 +194,17 @@ window.addEventListener('keydown', (e) => {
 
     if (key === '=' || key === '+') {
         e.preventDefault();
-        (window as any).api.zoomIn();
+        window.api.zoomIn();
     }
 
     if (key === '-') {
         e.preventDefault();
-        (window as any).api.zoomOut();
+        window.api.zoomOut();
     }
 
     if (e.code === 'Digit0' || e.code === 'Numpad0') {
         e.preventDefault();
-        (window as any).api.zoomReset();
+        window.api.zoomReset();
     }
 });
 
@@ -276,7 +275,7 @@ editConfigBtn.addEventListener('click', async () => {
 
     editConfigBtn.disabled = true;
     try {
-        const state = await (window as any).api.getFolderState(folderPath);
+        const state = await window.api.getFolderState(folderPath);
         configFolderStack = [folderPath];
         updateConfigBackButton();
         renderConfigPage(state);
@@ -300,7 +299,7 @@ selectPlayFolderBtn.addEventListener('click', async () => {
     selectPlayFolderBtn.disabled = true;
 
     try {
-        const folder = await (window as any).api.selectPlayFolder(playFolderInput.value.trim());
+        const folder = await window.api.selectPlayFolder(playFolderInput.value.trim());
 
         if (folder) {
             setPlayFolder(folder);
@@ -332,13 +331,12 @@ createPresetBtn.addEventListener('click', async () => {
     const collapse = collapseInputsInput.value === '1';
     const customParentFolder = customParentFolderInput.value.trim();
     try {
-        const reports: { folder: string; baseFile: string | null; alerts: ReportAlert[] }[] =
-            await (window as any).api.createPreset(
-                folderPath,
-                enableBus,
-                collapse,
-                customParentFolder,
-            );
+        const reports = await window.api.createPreset(
+            folderPath,
+            enableBus,
+            collapse,
+            customParentFolder,
+        );
 
         const alertsList = document.getElementById('home-alerts-list')!;
         alertsList.innerHTML = ''; // Clear previous alerts
@@ -411,7 +409,7 @@ function updateConfigBackButton() {
 }
 
 async function showConfigFolder(folderPath: string) {
-    const state = await (window as any).api.getFolderState(folderPath);
+    const state = await window.api.getFolderState(folderPath);
     renderConfigPage(state);
     updateConfigBackButton();
 }
@@ -454,7 +452,7 @@ refreshConfigBtn.addEventListener('click', async () => {
 
     refreshConfigBtn.disabled = true;
     try {
-        const state = await (window as any).api.getFolderState(folderPath);
+        const state = await window.api.getFolderState(folderPath);
         renderConfigPage(state);
     } catch (err) {
         showErrorAlert(err);
@@ -473,10 +471,10 @@ saveConfigBtn.addEventListener('click', async () => {
     saveConfigBtn.disabled = true;
     try {
         const config = getEditedConfig();
-        await (window as any).api.saveFolderConfig({ folderPath, config });
+        await window.api.saveFolderConfig({ folderPath, config });
         showSuccessAlert('Config Saved');
         // Reload so the saved options, alerts and Save button state all reflect the file
-        renderConfigPage(await (window as any).api.getFolderState(folderPath));
+        renderConfigPage(await window.api.getFolderState(folderPath));
     } catch (err) {
         showErrorAlert(err);
         saveConfigBtn.disabled = false;

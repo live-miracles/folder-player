@@ -7,42 +7,10 @@ import test from 'node:test';
 import {
     compareFiles,
     FILE_TYPES,
-    getBaseFile,
     getFolderFiles,
     getLeadingKeys,
     getLeadingNumbers,
 } from '../dist/file-manager.js';
-
-test('getBaseFile searches the current and parent folders without crossing the filesystem root', () => {
-    const rootPath = fs.mkdtempSync(path.join(os.tmpdir(), 'folder-player-base-search-'));
-    const folderPath = path.join(rootPath, 'child');
-
-    try {
-        fs.mkdirSync(folderPath, { recursive: true });
-        const basePath = path.join(rootPath, 'base.vmix');
-        fs.writeFileSync(basePath, '');
-
-        assert.equal(getBaseFile(folderPath), basePath);
-        assert.equal(getBaseFile(path.parse(rootPath).root), null);
-    } finally {
-        fs.rmSync(rootPath, { recursive: true, force: true });
-    }
-});
-
-test('getBaseFile returns no preset when multiple bases exist in the closest folder', () => {
-    const rootPath = fs.mkdtempSync(path.join(os.tmpdir(), 'folder-player-base-ambiguous-'));
-    const folderPath = path.join(rootPath, 'child');
-
-    try {
-        fs.mkdirSync(folderPath);
-        fs.writeFileSync(path.join(folderPath, 'base.vmix'), '');
-        fs.writeFileSync(path.join(folderPath, 'base alternate.vmix'), '');
-
-        assert.equal(getBaseFile(folderPath), null);
-    } finally {
-        fs.rmSync(rootPath, { recursive: true, force: true });
-    }
-});
 
 test('getLeadingNumbers parses primary and secondary numeric prefixes', () => {
     assert.deepEqual(getLeadingNumbers('04_Sadhguru_IECO and Possiblities.mp4'), [4, -1]);

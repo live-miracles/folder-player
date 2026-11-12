@@ -1,5 +1,6 @@
 import { contextBridge, ipcRenderer } from 'electron';
 
+// Keep in step with FolderPlayerApi in ui/types.ts
 contextBridge.exposeInMainWorld('api', {
     onUpdateAvailable: (cb: () => void) => ipcRenderer.on('update-available', cb),
     onUpdateProgress: (cb: (progress: number) => void) =>
@@ -22,7 +23,6 @@ contextBridge.exposeInMainWorld('api', {
             collapse,
             customParentFolder,
         }),
-    getFolderFiles: (folderPath: string) => ipcRenderer.invoke('get-folder-files', folderPath),
     getFolderPreviewImages: (folderPath: string) =>
         ipcRenderer.invoke('get-folder-preview-images', folderPath),
     getFolderState: (folderPath: string) => ipcRenderer.invoke('get-folder-state', folderPath),

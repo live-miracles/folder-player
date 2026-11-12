@@ -45,10 +45,8 @@ export function escapeHtml(text: string) {
         .replace(/'/g, '&#039;');
 }
 
-type ReportAlert = Alert;
-
 /** One row of a folder report: icon, "Error in 03: message", then affected files as chips. */
-export function getAlertItemHtml(alert: ReportAlert) {
+export function getAlertItemHtml(alert: Alert) {
     const isError = alert.type === 'error';
     const files = alert.files?.length
         ? `<div class="mt-1.5 flex flex-wrap gap-1">${alert.files

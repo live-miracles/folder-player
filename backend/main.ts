@@ -4,9 +4,9 @@ import fs from 'fs';
 import { fileURLToPath } from 'url';
 
 import { createPresetFileRecursively } from './preset-generator.js';
-import { getFolderFiles, getFolderPreviewImages } from './file-manager.js';
-import { ALERT, getConfigSubfolders, getFolderState } from './config-api.js';
-import { getItemOptions, writeConfig, type ItemOptions } from './config-file.js';
+import { getFolderPreviewImages } from './file-manager.js';
+import { getFolderView } from './config-api.js';
+import { writeConfig, type ItemOptions } from './config-file.js';
 
 import updater from 'electron-updater';
 const { autoUpdater } = updater;
@@ -93,44 +93,10 @@ ipcMain.handle('create-preset', (_, { folderPath, enableBus, collapse, customPar
     return createPresetFileRecursively(folderPath, enableBus, collapse, customParentFolder);
 });
 
-ipcMain.handle('get-folder-files', async (_, folderPath) => Array.from(getFolderFiles(folderPath)));
 ipcMain.handle('get-folder-preview-images', async (_, folderPath) =>
     getFolderPreviewImages(folderPath),
 );
-ipcMain.handle('get-folder-state', async (_, folderPath) => {
-    const state = getFolderState(folderPath);
-    if (state === null) {
-        return null;
-    }
-    const hasConfig = state.config !== null;
-    const subfolders = hasConfig ? [] : getConfigSubfolders(folderPath);
-    // A folder with no config and no media that only groups playlists in its subfolders
-    const isContainer = !hasConfig && state.files.size === 0 && subfolders.length > 0;
-
-    let alerts = state.alerts;
-    if (isContainer) {
-        alerts = []; // base preset and config checks don't apply to a grouping folder
-    } else if (!hasConfig) {
-        alerts.push({
-            key: '',
-            type: ALERT.WARNING,
-            msg: 'No config file in the folder.',
-        });
-    }
-    return {
-        folder: state.folder,
-        baseFile: state.baseFile,
-        files: Array.from(state.files.entries()),
-        // Every key with files or config, defaults filled in, so the page never needs its own
-        config: Array.from(new Set([...state.files.keys(), ...(state.config?.keys() ?? [])]))
-            .filter((key) => key !== '')
-            .map((key) => [key, getItemOptions(state.config, key)]),
-        alerts,
-        hasConfig,
-        isContainer,
-        subfolders,
-    };
-});
+ipcMain.handle('get-folder-state', async (_, folderPath) => getFolderView(folderPath));
 ipcMain.handle(
     'save-folder-config',
     async (_, { folderPath, config }: { folderPath: string; config: [string, ItemOptions][] }) =>

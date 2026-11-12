@@ -1,5 +1,5 @@
 import { escapeHtml, getAlertItemHtml, getReportSummaryHtml } from './utils.js';
-import type { Alert, ItemOptions } from './types.js';
+import type { Alert, FolderView, ItemOptions, PlaylistItem } from './types.js';
 export const FILE_TYPES = {
     IMAGE: 'Image',
     VIDEO: 'Video',
@@ -7,7 +7,6 @@ export const FILE_TYPES = {
     FOLDER: 'Photos',
     POWERPOINT: 'PowerPoint',
 };
-const TYPE_MAP = { Video: 1, AudioFile: 2, Image: 3, Photos: 4, PowerPoint: 5 };
 const ALERT = { ERROR: 'error', WARNING: 'warning' };
 const VIDEO_PREVIEW_FIRST_FALLBACK_SECONDS = 2;
 const VIDEO_PREVIEW_SECOND_FALLBACK_SECONDS = 5;
@@ -26,21 +25,9 @@ const OPTION_META: Record<string, { icon: string; label: string }> = {
     loop: { icon: 'repeat', label: 'Loop' },
 };
 
-type ConfigFile = { path: string; type: string };
-type ConfigEntry = [string, ConfigFile[]];
 type FolderPreview = { paths: string[]; total: number };
-type ConfigAlert = Alert & { key: string };
-type ConfigState = {
-    folder: string;
-    baseFile: string | null;
-    files: ConfigEntry[];
-    config: [string, ItemOptions][]; // every key, defaults filled in by the backend
-    alerts: ConfigAlert[];
-    hasConfig?: boolean;
-    isContainer?: boolean;
-    subfolders?: ConfigSubfolder[];
-};
-type ConfigSubfolder = { path: string; relative: string; errors: number; warnings: number };
+type ConfigState = FolderView;
+type ConfigFile = PlaylistItem['files'][number];
 type ConfigViewMode = 'list' | 'preview';
 const CONFIG_VIEW_STORAGE_KEY = 'configViewMode';
 
@@ -62,27 +49,6 @@ let isRendering = false;
 
 let currentConfigState: ConfigState | null = null;
 let configViewMode: ConfigViewMode = getStoredConfigViewMode();
-
-function getLeadingNumbers(text: string) {
-    const match = text.match(/^(\d+)(?:_(\d+))?/);
-    if (!match) return [-1, -1];
-
-    const first = Number(match[1]);
-    const second = match[2] !== undefined ? Number(match[2]) : -1;
-
-    return [first, second];
-}
-
-function compareFiles(a: string, b: string) {
-    const [a1, a2] = getLeadingNumbers(a);
-    const [b1, b2] = getLeadingNumbers(b);
-    if (a1 === -1 && b1 === -1) return 0;
-    if (a1 === -1) return 1;
-    if (b1 === -1) return -1;
-    if (a1 !== b1) return a1 - b1;
-    if (a2 !== b2) return a2 - b2;
-    return a.localeCompare(b);
-}
 
 function getStoredConfigViewMode(): ConfigViewMode {
     return localStorage.getItem(CONFIG_VIEW_STORAGE_KEY) === 'preview' ? 'preview' : 'list';
@@ -163,7 +129,6 @@ function renderConfigContent() {
     configTable.innerHTML = '';
     configPreviewView.innerHTML = '';
 
-    currentConfigState.files.sort((a, b) => compareFiles(a[0], b[0]));
     const configMap = new Map(currentConfigState.config);
 
     updateConfigViewButtons();
@@ -196,25 +161,21 @@ function renderListConfig(configMap: Map<string, ItemOptions>) {
     let html = '';
 
     let i = 0;
-    for (const [key, files] of currentConfigState!.files) {
-        files.sort((a: any, b: any) => (TYPE_MAP as any)[a.type] - (TYPE_MAP as any)[b.type]);
+    for (const { key, files, overlay } of currentConfigState!.items) {
         const types = files.map((f) => f.type);
         const optionsHtml = getOptionsHtml(key, types, configMap.get(key)!);
 
         const rowClass = i++ > 0 ? 'group-start' : '';
 
         const tab = '<span class="mr-2 ml-1 text-ink-faint">↳</span>';
-        const applyTab =
-            types.filter((t) => t === FILE_TYPES.AUDIO).length +
-                types.filter((t) => t === FILE_TYPES.VIDEO).length ===
-            1;
         files.forEach((file, i) => {
             html += `<tr class="${i === 0 ? rowClass : ''} hover:bg-white/[0.015]">`;
             if (i === 0) {
                 html += `<td rowspan="${files.length}" class="font-mono text-[13px] font-medium text-ink-subtle">${escapeHtml(key)}</td>`;
             }
-            const subType = file.type !== FILE_TYPES.AUDIO && file.type !== FILE_TYPES.VIDEO;
-            html += `<td class="break-all text-ink">${applyTab && subType ? tab : ''}${escapeHtml(getFileName(file.path))}</td>`;
+            // Indent an overlay under its main file; a camera image's overlay has no file above it
+            const isIndented = file.id === overlay?.id && files.length > 1;
+            html += `<td class="break-all text-ink">${isIndented ? tab : ''}${escapeHtml(getFileName(file.path))}</td>`;
             html += `<td>${getFileTypeHtml(file.type, key)}</td>`;
             if (i === 0)
                 html += `<td rowspan="${files.length}"><div class="flex flex-wrap items-center gap-1.5">${optionsHtml}</div></td>`;
@@ -227,31 +188,18 @@ function renderListConfig(configMap: Map<string, ItemOptions>) {
 
 async function renderPreviewConfig(configMap: Map<string, ItemOptions>) {
     const sections = await Promise.all(
-        currentConfigState!.files.map(async ([key, files]) => {
-            files.sort((a: any, b: any) => (TYPE_MAP as any)[a.type] - (TYPE_MAP as any)[b.type]);
+        currentConfigState!.items.map(async ({ key, files, cameraOnTop }) => {
             const types = files.map((f) => f.type);
             const item = configMap.get(key)!;
             const optionsHtml = getOptionsHtml(key, types, item);
             const previewFiles = getPreviewFiles(files);
             const hasCameraBackground = item.cam;
-            const hasBaseMedia = types.some(
-                (type) => type === FILE_TYPES.AUDIO || type === FILE_TYPES.VIDEO,
-            );
-            const hasVisualOverlay = types.some(
-                (type) =>
-                    type === FILE_TYPES.IMAGE ||
-                    type === FILE_TYPES.FOLDER ||
-                    type === FILE_TYPES.POWERPOINT,
-            );
-            const cameraOnTop =
-                !(files.length === 1 && files[0].type === FILE_TYPES.IMAGE) &&
-                !(hasBaseMedia && hasVisualOverlay);
 
             const folderPreviews = await Promise.all(
                 files.map(async (file) => {
                     if (file.type !== FILE_TYPES.FOLDER) return null;
                     try {
-                        return (await (window as any).api.getFolderPreviewImages(
+                        return (await window.api.getFolderPreviewImages(
                             file.path,
                         )) as FolderPreview;
                     } catch {
@@ -311,7 +259,7 @@ function numberText(value: number) {
     return Number.isNaN(value) ? '' : String(value);
 }
 
-function renderFolderAlerts(alerts: ConfigAlert[]) {
+function renderFolderAlerts(alerts: Alert[]) {
     const errorNum = alerts.filter((a) => a.type === ALERT.ERROR).length;
     const warningNum = alerts.filter((a) => a.type === ALERT.WARNING).length;
 

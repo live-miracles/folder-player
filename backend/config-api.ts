@@ -1,42 +1,90 @@
 import fs from 'fs';
 import path from 'path';
 
-import {
-    getFolderFiles,
-    getBaseFile,
-    FILE_TYPES,
-    compareFiles,
-    getLeadingNumbers,
-} from './file-manager.js';
-import {
-    CONFIG_FILE_NAME,
-    formatItemOptions,
-    getItemOptions,
-    readConfig,
-    type FolderConfig,
-} from './config-file.js';
+import { getFolderFiles, compareFiles } from './file-manager.js';
+import { CONFIG_FILE_NAME, getItemOptions, readConfig } from './config-file.js';
+import { findBasePreset, getBasePresetAlerts, getExtraPresetNames } from './base-preset.js';
+import { buildPlaylist } from './playlist.js';
 import type { Alert } from './types.js';
 export const ALERT = { ERROR: 'error', WARNING: 'warning' };
 
-type FolderFile = { path: string; type: string; id: string };
 export function getFolderState(folderPath: string) {
     const configFile = readConfig(folderPath);
-    let fileMap: Map<string, { path: string; type: string; id: string }[]>;
+    let files: ReturnType<typeof getFolderFiles>;
     try {
-        fileMap = getFolderFiles(folderPath);
+        files = getFolderFiles(folderPath);
     } catch (err) {
         if (isFolderReadError(err)) {
             throw new Error(`Content folder is not found or cannot be opened: ${folderPath}`);
         }
         throw err;
     }
-    const baseFile = getBaseFile(folderPath);
     const config = configFile?.config ?? null;
-    const alerts = getAlerts(config ?? new Map(), fileMap, baseFile, folderPath);
-    alerts.push(...(configFile?.alerts ?? []));
-    alerts.sort((a, b) => compareFiles(a.key, b.key));
+    const basePreset = findBasePreset(folderPath);
+    const playlist = buildPlaylist(files, config);
 
-    return { folder: folderPath, config, files: fileMap, alerts, baseFile };
+    const alerts: Alert[] = [
+        ...getBasePresetAlerts(basePreset, config ?? new Map()),
+        ...getExtraPresetAlerts(folderPath),
+        ...playlist.alerts,
+        ...(configFile?.alerts ?? []),
+    ].sort((a, b) => compareFiles(a.key, b.key));
+
+    return {
+        folder: folderPath,
+        config,
+        files,
+        items: playlist.items,
+        alerts,
+        basePreset,
+        baseFile: basePreset.status === 'found' ? basePreset.path : null,
+    };
+}
+
+// What the config page shows for a folder, as plain data for IPC
+export function getFolderView(folderPath: string) {
+    const state = getFolderState(folderPath);
+    const hasConfig = state.config !== null;
+    const subfolders = hasConfig ? [] : getConfigSubfolders(folderPath);
+    // A folder with no config and no media that only groups playlists in its subfolders
+    const isContainer = !hasConfig && state.items.length === 0 && subfolders.length > 0;
+
+    let alerts = state.alerts;
+    if (isContainer) {
+        alerts = []; // base preset and config checks don't apply to a grouping folder
+    } else if (!hasConfig) {
+        alerts = [
+            ...alerts,
+            { key: '', type: ALERT.WARNING, msg: 'No config file in the folder.' },
+        ];
+    }
+
+    // Every key with files or config, defaults filled in, so the page never needs its own
+    const keys = new Set([...state.items.map((item) => item.key), ...(state.config?.keys() ?? [])]);
+
+    return {
+        folder: state.folder,
+        baseFile: state.baseFile,
+        items: state.items,
+        config: Array.from(keys).map((key) => [key, getItemOptions(state.config, key)]),
+        alerts,
+        hasConfig,
+        isContainer,
+        subfolders,
+    };
+}
+
+function getExtraPresetAlerts(folderPath: string): Alert[] {
+    const extraPresets = getExtraPresetNames(folderPath);
+    if (extraPresets.length === 0) return [];
+    return [
+        {
+            key: '',
+            type: ALERT.WARNING,
+            msg: `Folder has additional .vmix presets besides the base and the generated one. This can be confusing for operators.`,
+            files: extraPresets,
+        },
+    ];
 }
 
 function isFolderReadError(error: unknown) {
@@ -96,230 +144,4 @@ export function getConfigSubfolders(folderPath: string) {
     return result.sort((a, b) =>
         a.relative.localeCompare(b.relative, undefined, { numeric: true, sensitivity: 'base' }),
     );
-}
-
-function getAlerts(
-    configMap: FolderConfig,
-    fileMap: Map<string, FolderFile[]>,
-    baseFile: string | null,
-    folderPath: string,
-) {
-    const alerts: Alert[] = [];
-
-    if (!baseFile) {
-        const baseFileNames = getBaseFileNames(folderPath);
-        if (baseFileNames.length > 1) {
-            alerts.push({
-                key: '',
-                type: ALERT.ERROR,
-                msg: `Multiple base presets found in the same folder (${baseFileNames.join(', ')}). Please keep only one base preset.`,
-            });
-        } else {
-            alerts.push({
-                key: '',
-                type: ALERT.ERROR,
-                msg: `Not able to find the base preset. Please create a 'base.vmix' file in the folder or its parent folder.`,
-            });
-        }
-    } else {
-        const baseXML = fs.readFileSync(baseFile, 'utf-8');
-        const hasMic = /<Input[^>]*?Title="Mic"[^>]*?>/.test(baseXML);
-        const hasCam = /<Input[^>]*?Title="Cam"[^>]*?>/.test(baseXML);
-
-        if (!hasMic && Array.from(configMap.values()).some((item) => item.mic)) {
-            alerts.push({
-                key: '',
-                type: ALERT.ERROR,
-                msg: `Microphone is selected, but the base preset is missing the 'Mic' input.`,
-            });
-        }
-        if (!hasCam && Array.from(configMap.values()).some((item) => item.cam)) {
-            alerts.push({
-                key: '',
-                type: ALERT.ERROR,
-                msg: `Camera is selected, but the base preset is missing the 'Cam' input.`,
-            });
-        }
-    }
-
-    const extraPresets = getExtraPresetNames(folderPath);
-    if (extraPresets.length > 0) {
-        alerts.push({
-            key: '',
-            type: ALERT.WARNING,
-            msg: `Folder has additional .vmix presets besides the base and the generated one. This can be confusing for operators.`,
-            files: extraPresets,
-        });
-    }
-
-    // Check for config keys that don't have corresponding files
-    for (const [key, item] of configMap.entries()) {
-        if (!fileMap.has(key)) {
-            alerts.push({
-                key,
-                type: ALERT.ERROR,
-                msg: `Config exists (${formatItemOptions(item)}), but no file with such number.`,
-            });
-        }
-    }
-
-    // Check for gaps between keys
-    const keys = Array.from(fileMap.keys()).sort(compareFiles);
-    for (let i = 1; i < keys.length; i++) {
-        const prevKey = keys[i - 1];
-        const currKey = keys[i];
-        const [p1, p2] = getLeadingNumbers(prevKey);
-        const [c1, c2] = getLeadingNumbers(currKey);
-
-        if (p1 === -1 || c1 === -1) continue;
-
-        if (c1 > p1) {
-            if (c1 > p1 + 1) {
-                alerts.push({
-                    key: `${p1 + 1}`,
-                    type: ALERT.WARNING,
-                    msg: `Sequence number is missing.`,
-                });
-            }
-        } else {
-            console.assert(p1 === c1, `Key mismatch: ${prevKey} vs ${currKey}`);
-            if (p2 === -1) continue;
-            if (c2 > p2 + 1) {
-                alerts.push({
-                    key: `${p1}_${p2 + 1}`,
-                    type: ALERT.WARNING,
-                    msg: `Sequence number is missing.`,
-                });
-            }
-        }
-    }
-
-    // Check file combinations for each key
-    for (const [key, files] of fileMap.entries()) {
-        if (key === '') continue;
-
-        const types = files.map((f) => f.type);
-        const typeCounts = types.reduce(
-            (acc, type) => {
-                acc[type] = (acc[type] || 0) + 1;
-                return acc;
-            },
-            {} as Record<string, number>,
-        );
-
-        // Max one layer
-        if (files.length > 2) {
-            alerts.push({
-                key,
-                type: ALERT.ERROR,
-                msg: `${files.length} files with the same number.`,
-                files: getFileNames(files),
-            });
-            continue;
-        }
-
-        // Check for duplicate file types
-        for (const type in typeCounts) {
-            if (typeCounts[type] > 1) {
-                alerts.push({
-                    key,
-                    type: ALERT.ERROR,
-                    msg: `Two files of type '${type}'.`,
-                    files: getFileNames(files.filter((file) => file.type === type)),
-                });
-            }
-            continue;
-        }
-
-        const hasAudio = types.includes(FILE_TYPES.AUDIO);
-        const hasVideo = types.includes(FILE_TYPES.VIDEO);
-        const visualTypes = [FILE_TYPES.IMAGE, FILE_TYPES.FOLDER, FILE_TYPES.POWERPOINT];
-        const visualFiles = files.filter((file) => visualTypes.includes(file.type));
-        const options = getItemOptions(configMap, key);
-
-        if (hasAudio && hasVideo) {
-            alerts.push({
-                key,
-                type: ALERT.ERROR,
-                msg: `Audio and video files have the same number.`,
-                files: getFileNames(files),
-            });
-            continue;
-        }
-
-        const hasDuplicateVisualType = visualFiles.some((file) => typeCounts[file.type] > 1);
-        if (visualFiles.length > 1 && !hasDuplicateVisualType) {
-            alerts.push({
-                key,
-                type: ALERT.ERROR,
-                msg: `Multiple visual files have the same number.`,
-                files: getFileNames(visualFiles),
-            });
-        }
-
-        if (hasAudio && files.length === 1 && !options.cam) {
-            alerts.push({
-                key,
-                type: ALERT.WARNING,
-                msg: `Audio file without an image or slideshow.`,
-                files: getFileNames(files),
-            });
-        } else if (hasVideo && files.length === 2 && typeCounts[FILE_TYPES.VIDEO] === 1) {
-            alerts.push({
-                key,
-                type: ALERT.WARNING,
-                msg: `Video file overlaid by an image or slideshow.`,
-                files: getFileNames(files),
-            });
-        }
-
-        const allTypes = [
-            FILE_TYPES.AUDIO,
-            FILE_TYPES.VIDEO,
-            FILE_TYPES.IMAGE,
-            FILE_TYPES.FOLDER,
-            FILE_TYPES.POWERPOINT,
-        ];
-        const configTypes = allTypes.filter((type) => options.types.includes(type)).join('+');
-        const folderTypes = allTypes.filter((type) => types.includes(type)).join('+');
-
-        if (configTypes && configTypes !== folderTypes) {
-            alerts.push({
-                key,
-                type: ALERT.ERROR,
-                msg: `Config type "${configTypes}" do not match the actual type "${folderTypes}".`,
-                files: getFileNames(files),
-            });
-        }
-    }
-
-    return alerts.sort((a, b) => compareFiles(a.key, b.key));
-}
-
-function getBaseFileNames(folderPath: string) {
-    const regex = /^base(\s.*)?\.vmix$/i;
-    const currentFiles = fs.readdirSync(folderPath).filter((file) => regex.test(file));
-    if (currentFiles.length > 0) return currentFiles;
-
-    const parentPath = path.dirname(folderPath);
-    if (parentPath === folderPath) return [];
-
-    return fs.readdirSync(parentPath).filter((file) => regex.test(file));
-}
-
-// .vmix files in the folder that are neither a base preset nor the preset this app generates
-function getExtraPresetNames(folderPath: string) {
-    const baseRegex = /^base(\s.*)?\.vmix$/i;
-    const generatedName = `${path.basename(folderPath)}.vmix`.toLowerCase();
-
-    return fs
-        .readdirSync(folderPath, { withFileTypes: true })
-        .filter((entry) => entry.isFile() && /\.vmix$/i.test(entry.name))
-        .map((entry) => entry.name)
-        .filter((name) => !baseRegex.test(name) && name.toLowerCase() !== generatedName)
-        .sort();
-}
-
-function getFileNames(files: FolderFile[]) {
-    return files.map((file) => path.basename(file.path));
 }

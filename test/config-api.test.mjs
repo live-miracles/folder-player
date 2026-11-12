@@ -4,7 +4,7 @@ import os from 'node:os';
 import path from 'node:path';
 import test from 'node:test';
 
-import { getConfigSubfolders, getFolderState } from '../dist/config-api.js';
+import { getConfigSubfolders, getFolderState, getFolderView } from '../dist/config-api.js';
 
 test('getFolderState includes issue file names in file-specific alerts', () => {
     const folderPath = fs.mkdtempSync(path.join(os.tmpdir(), 'folder-player-config-'));
@@ -263,6 +263,55 @@ test('getFolderState warns about out-of-range values in the config file', () => 
             [['1', 'warning']],
         );
         assert.match(state.alerts[0].msg, /Volume 2000% is out of range/);
+    } finally {
+        fs.rmSync(folderPath, { recursive: true, force: true });
+    }
+});
+
+test('getFolderView treats a folder that only groups configured subfolders as a container', () => {
+    const rootPath = fs.mkdtempSync(path.join(os.tmpdir(), 'folder-player-view-container-'));
+
+    try {
+        fs.mkdirSync(path.join(rootPath, 'Day 1'));
+        fs.writeFileSync(path.join(rootPath, 'Day 1', 'folder-player.txt'), '');
+
+        const view = getFolderView(rootPath);
+
+        assert.equal(view.isContainer, true);
+        assert.deepEqual(view.alerts, []);
+        assert.deepEqual(
+            view.subfolders.map((sub) => sub.relative),
+            ['Day 1'],
+        );
+    } finally {
+        fs.rmSync(rootPath, { recursive: true, force: true });
+    }
+});
+
+test('getFolderView warns last about a missing config file and sends playlist items', () => {
+    const folderPath = fs.mkdtempSync(path.join(os.tmpdir(), 'folder-player-view-no-config-'));
+
+    try {
+        fs.writeFileSync(path.join(folderPath, 'base.vmix'), '<Preset><State /></Preset>');
+        fs.writeFileSync(path.join(folderPath, '01 Video.mp4'), '');
+        fs.writeFileSync(path.join(folderPath, '03 Talk.mp3'), '');
+        fs.writeFileSync(path.join(folderPath, '03 Slide.png'), '');
+
+        const view = getFolderView(folderPath);
+
+        assert.equal(view.isContainer, false);
+        assert.equal(view.alerts.at(-1).msg, 'No config file in the folder.');
+        assert.deepEqual(
+            view.items.map((item) => [item.key, item.overlay?.type ?? null]),
+            [
+                ['1', null],
+                ['3', 'Image'],
+            ],
+        );
+        assert.deepEqual(
+            view.config.map(([key]) => key),
+            ['1', '3'],
+        );
     } finally {
         fs.rmSync(folderPath, { recursive: true, force: true });
     }

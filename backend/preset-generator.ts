@@ -2,38 +2,15 @@ import fs from 'fs';
 import path from 'path';
 
 import { getFolderState } from './config-api.js';
-import { getFolderFiles, FILE_TYPES, compareFiles } from './file-manager.js';
-import {
-    defaultItemOptions,
-    getItemOptions,
-    type FolderConfig,
-    type ItemOptions,
-} from './config-file.js';
+import { FILE_TYPES } from './file-manager.js';
+import type { ItemOptions } from './config-file.js';
+import { addInputs, type BasePreset } from './base-preset.js';
+import type { PlaylistItem } from './playlist.js';
 import type { Alert } from './types.js';
 
 type PresetFile = { path: string; type: string; id: string };
 const MAX_TRAVERSED_DIRECTORIES = 1000;
 const MAX_DIRECTORY_ENTRIES = 1000;
-
-function getTitleId(xml: string, title: string) {
-    const regex = new RegExp(`<Input[^>]*?Title="${title}"[^>]*?>`);
-    const inputMatch = xml.match(regex);
-    if (!inputMatch) return null;
-
-    const keyMatch = inputMatch[0].match(/Key="([^"]+)"/);
-    return keyMatch ? keyMatch[1] : null;
-}
-
-function getFullXML(xml: string, inputs: string[]) {
-    const matches = xml.match(/<State/g);
-    const cnt = matches?.length ?? 0;
-
-    if (cnt === 0) throw new Error('Error parsing the base file, <State /> tag not found.');
-    else if (cnt > 1)
-        throw new Error('Error parsing the base file, multiple <State /> tags found.');
-
-    return xml.replace(/(\s*)<State/, `$1${inputs.join('\r\n')}\r\n$1<State`);
-}
 
 export function createPresetFileRecursively(
     folderPath: string,
@@ -66,28 +43,17 @@ export function createPresetFileRecursively(
 
         const state = getFolderState(currentPath);
         if (state.config !== null) {
-            const baseFile = state.baseFile;
-            if (!baseFile) {
-                report.push({
-                    folder: currentPath,
-                    baseFile,
-                    alerts: state.alerts,
-                });
-            } else {
+            if (state.basePreset.status === 'found') {
                 createPresetFile(
                     currentPath,
-                    baseFile,
+                    state.basePreset,
+                    state.items,
                     enableBus,
                     collapse,
-                    state.config,
                     customParentFolder,
                 );
-                report.push({
-                    folder: currentPath,
-                    baseFile,
-                    alerts: state.alerts,
-                });
             }
+            report.push({ folder: currentPath, baseFile: state.baseFile, alerts: state.alerts });
         }
 
         // Iterate through entries to find subdirectories and recurse
@@ -107,92 +73,40 @@ export function createPresetFileRecursively(
 
 function createPresetFile(
     folderPath: string,
-    base: string,
+    base: Extract<BasePreset, { status: 'found' }>,
+    items: PlaylistItem[],
     enableBus: string,
     collapse: boolean,
-    config: FolderConfig,
     customParentFolder: string,
 ) {
-    console.log('Reading base file: ' + base);
-    const baseXML = fs.readFileSync(base, 'utf-8');
-
-    const fileMap = getFolderFiles(folderPath);
-    const rewriteSourceParent = path.dirname(path.dirname(base));
+    console.log('Reading base file: ' + base.path);
+    const rewriteSourceParent = path.dirname(path.dirname(base.path));
     const rewriteFilePath = getFilePathRewriter(rewriteSourceParent, customParentFolder);
 
     const inputsXML: string[] = [];
-    const otherInputsXML: string[] = [];
-    const helperInputsXML: string[] = [];
+    const overlayInputsXML: string[] = [];
 
-    const otherFiles = fileMap.get('') ?? [];
-    otherFiles.forEach((f) =>
-        otherInputsXML.push(
-            getFileXML(rewriteFilePath(f), [], defaultItemOptions(), true, enableBus),
-        ),
-    );
-    fileMap.delete('');
+    for (const item of items) {
+        const { options } = item;
+        const overlay = item.overlay ? rewriteFilePath(item.overlay) : null;
+        const layerKeys = item.layers
+            .map((layer) => {
+                if (layer === 'mic') return base.micKey;
+                if (layer === 'cam') return base.camKey;
+                return overlay?.id ?? null;
+            })
+            .filter((key): key is string => key !== null);
 
-    const sortedKeys = Array.from(fileMap.keys()).sort(compareFiles);
+        // An overlay is its own collapsed input, shown as a layer of the item's input
+        if (overlay) overlayInputsXML.push(getFileXML(overlay, [], options, true, enableBus));
 
-    for (let i = 0; i < sortedKeys.length; i++) {
-        const key = sortedKeys[i];
-        const files = fileMap.get(key)!;
-
-        const options = getItemOptions(config, key);
-
-        const layers: string[] = [];
-
-        if (options.mic) {
-            const micId = getTitleId(baseXML, 'Mic');
-            if (micId) layers.push(micId);
-        }
-        if (options.cam) {
-            const camId = getTitleId(baseXML, 'Cam');
-            if (camId) layers.push(camId);
-        }
-
-        const audios = files.filter((f) => f.type === FILE_TYPES.AUDIO);
-        const videos = files.filter((f) => f.type === FILE_TYPES.VIDEO);
-        const visuals = files.filter(
-            (f) =>
-                f.type === FILE_TYPES.IMAGE ||
-                f.type === FILE_TYPES.FOLDER ||
-                f.type === FILE_TYPES.POWERPOINT,
-        );
-        const images = files.filter((f) => f.type === FILE_TYPES.IMAGE);
-
-        console.assert(files.length > 0, `No files found for key ${key}.`);
-
-        if (audios.length + videos.length > 1 || visuals.length > 1) {
-            // Ignore any strange cases
-            files.forEach((f) =>
-                inputsXML.push(
-                    getFileXML(rewriteFilePath(f), layers, options, collapse, enableBus),
-                ),
-            );
-        } else if (audios.length > 0 || videos.length > 0) {
-            const base = rewriteFilePath(audios[0] ?? videos[0]);
-            const top = visuals[0] ? rewriteFilePath(visuals[0]) : undefined;
-            if (top) {
-                // Keep the camera as the first overlay, followed by the content visual.
-                layers.push(top.id);
-                helperInputsXML.push(getFileXML(top, [], options, true, enableBus));
-            }
-            inputsXML.push(getFileXML(base, layers, options, collapse, enableBus));
+        if (item.input.kind === 'colour') {
+            inputsXML.push(getColorXML(item.input.title, layerKeys, collapse));
         } else {
-            // Images need a colour input so the camera can be the visible base layer.
-            // Slideshow folders and PowerPoint inputs receive the camera layer directly.
-            if (images.length > 0 && options.cam) {
-                layers.push(images[0].id);
-                const visual = rewriteFilePath(images[0]);
-                const filename = path.parse(visual.path).name;
-                inputsXML.push(getColorXML(filename, layers, collapse));
-                helperInputsXML.push(getFileXML(visual, [], options, true, enableBus));
-            } else {
-                files.forEach((f) =>
-                    inputsXML.push(
-                        getFileXML(rewriteFilePath(f), layers, options, collapse, enableBus),
-                    ),
+            const files = item.input.kind === 'file' ? [item.input.file] : item.files;
+            for (const file of files) {
+                inputsXML.push(
+                    getFileXML(rewriteFilePath(file), layerKeys, options, collapse, enableBus),
                 );
             }
         }
@@ -200,10 +114,7 @@ function createPresetFile(
 
     const folderName = path.basename(folderPath);
     const outputPath = path.join(folderPath, `${folderName}.vmix`);
-
-    // Save file
-    const newXML = getFullXML(baseXML, [...inputsXML, ...otherInputsXML, ...helperInputsXML]);
-    fs.writeFileSync(outputPath, newXML, 'utf-8');
+    fs.writeFileSync(outputPath, addInputs(base.xml, [...inputsXML, ...overlayInputsXML]), 'utf-8');
 }
 
 export function getRewrittenFilePath(
@@ -435,26 +346,4 @@ function getPptxInput(
       VideoShader_ToleranceGreenGap="0" VideoShader_GreenFilter="False" VideoShader_GreenFilterTransparencyThreshold="1" VideoShader_LumaKeyThreshold="0"
       VideoShader_AntiAliasing="False" VideoShader_AntiAliasingFilter="0" VideoShader_ClippingX1="0" VideoShader_ClippingX2="1" VideoShader_ClippingY1="0"
       VideoShader_ClippingY2="1" VideoShader_PremultipliedAlpha="False">${escapeXML(file.path)}</Input>`;
-}
-
-function getVirtualInput(file: { id: string; newId: string; title: string }, layers: string[]) {
-    return `<Input Type="22" Position="0" RangeStart="0" RangeStop="0" State="1" Title="${file.title}" OriginalTitle=""
-        ShortcutMappings="" Key="${file.newId}" Loop="False" VolumeF="1" Muted="True" BalanceF="0" AspectRatio="100"
-        Category="0" MouseClickAction="0" GOClickAction="20" Collapsed="False" Solo="False" BusMVolumeF="1"
-        HeadphonesVolumeF="1" BusAVolumeF="1" BusBVolumeF="1" BusCVolumeF="1" BusDVolumeF="1" BusEVolumeF="1"
-        BusFVolumeF="1" BusGVolumeF="1" BusMaster="True" FrameDelay="0"  TallyCOMPort="None" TallyNumber="0"
-        AutoAudioMixing="True" AutoPause="True" AutoRestart="True" AutoPlay="True" Mirror="False" SelectedIndex="0"
-        Rate="1" FlattenLayers="False" ${getLayersText(layers)} XML="" ShaderSource="${file.id}"
-        PTZProvider="" PTZConnection="" PTZAutoConnect="False" PTZDefaultPanTiltSpeed="0.5" PTZDefaultZoomSpeed="0.5"
-        PTZDefaultPositionSpeed="1" PTZDefaultFocusSpeed="0.5" PTZDefaultFocusEnabled="False" PTZDefaultTallyEnabled="False"
-        PTZAlwaysShowThumbnail="False" VirtualInputKey="${file.id}" UseSourceRenderEffects="True"
-        VideoShader_ColorCorrectionSourceEnabled="-1" VideoShader_White="1" VideoShader_Black="0" VideoShader_Red="0"
-        VideoShader_Green="0" VideoShader_Blue="0" VideoShader_Alpha="1" VideoShader_Saturation="1" VideoShader_CCLiftR="0"
-        VideoShader_CCLiftG="0" VideoShader_CCLiftB="0" VideoShader_CCGammaR="1" VideoShader_CCGammaG="1" VideoShader_CCGammaB="1"
-        VideoShader_CCGainR="1" VideoShader_CCGainG="1" VideoShader_CCGainB="1" VideoShader_Saturation2="0" VideoShader_Hue="0"
-        VideoShader_Rec601Fix="False" VideoShader_ColorKey="0" VideoShader_Deinterlace="False" VideoShader_Sharpen="False"
-        VideoShader_ToleranceRed="0" VideoShader_ToleranceGreen="0" VideoShader_ToleranceBlue="0" VideoShader_ToleranceGreenGap="0"
-        VideoShader_GreenFilter="False" VideoShader_GreenFilterTransparencyThreshold="1" VideoShader_LumaKeyThreshold="0"
-        VideoShader_AntiAliasing="False" VideoShader_AntiAliasingFilter="0" VideoShader_ClippingX1="0" VideoShader_ClippingX2="1"
-        VideoShader_ClippingY1="0" VideoShader_ClippingY2="1" VideoShader_PremultipliedAlpha="False"></Input>`;
 }
