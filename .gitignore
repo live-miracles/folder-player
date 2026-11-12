@@ -6,4 +6,5 @@ bundle.json
 .idea
 dist/
 .env
-release/__pycache__/
+release/
+__pycache__/
