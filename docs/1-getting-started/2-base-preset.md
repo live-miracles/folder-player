@@ -28,6 +28,8 @@ Cam  -> camera input
 Mic  -> microphone input
 ```
 
+![The demo base.vmix open in vMix: a live camera feed, the Cam and Mic inputs, and a Black input](https://raw.githubusercontent.com/live-miracles/folder-player/master/assets/folder-player-base-preset.png)
+
 The config page warns you when an item uses the camera or the microphone but the base
 preset has no input with that title.
 

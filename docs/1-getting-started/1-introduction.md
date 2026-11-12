@@ -10,12 +10,10 @@ number them in the order they should play, and the app generates a vMix preset f
    (see [Numbering files](../2-content-folder/1-numbering.md)). Put a `base.vmix` with your
    cameras, mics and outputs in the folder or its parent (see [Base vMix preset](2-base-preset.md)).
 
-    ![A content folder with numbered files](https://github.com/user-attachments/assets/afef7944-2613-40db-9f27-616060984ef6)
+    ![The Film Night content folder in File Explorer: numbered images, videos, music and a photo folder, plus base.vmix, the generated Film Night.vmix, the folder-player.txt config and an unnumbered Notes.txt](https://raw.githubusercontent.com/live-miracles/folder-player/master/assets/folder-player-explorer.png)
 
 2. Open the folder in the app and click **Open Config**. The config page lists every
    playlist item with its type and options, with a report of any problems above the list.
-
-    ![The config page in list view: every playlist item with its type and options](https://raw.githubusercontent.com/live-miracles/folder-player/master/assets/folder-player-config-list.png)
 
 3. Review the playlist. For each item you can turn the camera and microphone on or off (for
    example, to put the host on camera over a lower-third image), and set loop, volume or
@@ -32,7 +30,7 @@ number them in the order they should play, and the app generates a vMix preset f
 
 5. Open that preset in vMix.
 
-    ![The generated playlist open in vMix](https://github.com/user-attachments/assets/388d5a8e-7926-4ed0-9c16-cb1ba75a84a1)
+    ![The generated Film Night preset open in vMix, with the playlist inputs after the Cam and Mic inputs from the base preset](https://raw.githubusercontent.com/live-miracles/folder-player/master/assets/folder-player-vmix.png)
 
 ## Supported inputs
 
