@@ -169,7 +169,7 @@ function renderListConfig(configMap: Map<string, ItemOptions>) {
 
         const tab = '<span class="mr-2 ml-1 text-ink-faint">↳</span>';
         files.forEach((file, i) => {
-            html += `<tr class="${i === 0 ? rowClass : ''} hover:bg-white/[0.015]">`;
+            html += `<tr class="${i === 0 ? rowClass : ''} hover:bg-ink/[0.03]">`;
             if (i === 0) {
                 html += `<td rowspan="${files.length}" class="font-mono text-[13px] font-medium text-ink-subtle">${escapeHtml(key)}</td>`;
             }

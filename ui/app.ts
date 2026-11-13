@@ -1,3 +1,4 @@
+import './theme.js';
 import { getEditedConfig, hasUnsavedChanges, renderConfigPage } from './config.js';
 import {
     showErrorAlert,

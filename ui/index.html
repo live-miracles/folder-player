@@ -3,6 +3,12 @@
   <head>
     <meta charset="UTF-8" />
     <link href="./dist/output.css" rel="stylesheet" />
+    <script>
+      // Apply the saved theme before first paint so a light window doesn't flash dark (ui/theme.ts)
+      try {
+        document.documentElement.dataset.theme = localStorage.getItem('theme') === 'light' ? 'light' : 'dark';
+      } catch {}
+    </script>
   </head>
 
   <body class="h-screen overflow-hidden">
@@ -17,7 +23,7 @@
       <span id="success-msg"></span>
     </div>
 
-    <div id="update-toast" class="panel fixed bottom-4 left-4 z-9999 hidden w-80 flex-col gap-3 p-4 shadow-2xl shadow-black/60">
+    <div id="update-toast" class="panel panel-float fixed bottom-4 left-4 z-9999 hidden w-80 flex-col gap-3 p-4">
       <div class="flex items-center gap-2 font-semibold">
         <i data-lucide="arrow-down-circle" class="h-4 w-4 text-accent-ink"></i>
         Update available
@@ -32,7 +38,7 @@
     </div>
 
     <div id="zoom-ui" class="fixed top-4 right-4 z-999 hidden scale-90 opacity-0 transition-all duration-200">
-      <div class="panel flex items-center gap-1 p-1 shadow-2xl shadow-black/60">
+      <div class="panel panel-float flex items-center gap-1 p-1">
         <button id="zoom-out" class="btn btn-sm btn-ghost btn-icon" aria-label="Zoom out"><i data-lucide="minus"></i></button>
         <span id="zoom-level" class="w-12 text-center text-[13px] tabular-nums">100%</span>
         <button id="zoom-in" class="btn btn-sm btn-ghost btn-icon" aria-label="Zoom in"><i data-lucide="plus"></i></button>
@@ -76,7 +82,11 @@
             <span class="font-semibold tracking-tight">Folder Player</span>
             <span class="chip h-5 px-1.5 text-[11px]">vMix</span>
           </div>
-          <div class="flex flex-1 justify-end">
+          <div class="flex flex-1 items-center justify-end gap-2">
+            <button id="theme-toggle-btn" class="btn btn-sm btn-ghost btn-icon" title="Switch to light theme" aria-label="Switch to light theme">
+              <i data-lucide="sun" class="in-data-[theme=light]:hidden"></i>
+              <i data-lucide="moon" class="in-data-[theme=dark]:hidden"></i>
+            </button>
             <a
               href="https://live-miracles.github.io/projects/folder-player/docs/"
               target="_blank"
