@@ -121,6 +121,7 @@ publishes a GitHub release for that tag.
 
 ## Links
 
+- [Why we built it](https://live-miracles.github.io/blog/stop-hand-building-vmix-presets/): our vMix presets kept breaking on renamed files, so we stopped building them by hand
 - [vMix API documentation](https://www.vmix.com/help29/DeveloperAPI.html)
 
 ## License
