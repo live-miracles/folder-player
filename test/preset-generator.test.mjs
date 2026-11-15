@@ -142,7 +142,10 @@ test('createPresetFileRecursively builds the selected folder without a config fi
             report.map(({ folder }) => folder),
             [folderPath],
         );
-        assert.equal(fs.existsSync(path.join(folderPath, `${path.basename(folderPath)}.vmix`)), true);
+        assert.equal(
+            fs.existsSync(path.join(folderPath, `${path.basename(folderPath)}.vmix`)),
+            true,
+        );
         assert.equal(fs.existsSync(path.join(photosPath, '02 Photos.vmix')), false);
     } finally {
         fs.rmSync(folderPath, { recursive: true, force: true });

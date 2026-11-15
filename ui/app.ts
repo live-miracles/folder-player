@@ -343,7 +343,9 @@ createPresetBtn.addEventListener('click', async () => {
         alertsList.innerHTML = ''; // Clear previous alerts
 
         if (!reports || reports.length === 0) {
-            showErrorAlert('No media files or `folder-player.txt` config file found in this folder.');
+            showErrorAlert(
+                'No media files or `folder-player.txt` config file found in this folder.',
+            );
             return;
         }
 
