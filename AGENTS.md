@@ -7,6 +7,12 @@ tool folder.
 - `app-demo` - record the README demo GIF/video and screenshots by driving the
   real app with a scripted scenario, using openly licensed demo media.
 
+## Before committing
+
+Run `npm test` (build and all tests) and `npm run format:check` (Prettier) and
+make sure both pass before every commit. If Prettier fails, run `npm run format`
+and re-check. CI runs both, so a commit that skips either can break CI.
+
 ## Releases
 
 Follow the Publishing steps in `README.md`. After the release workflow
