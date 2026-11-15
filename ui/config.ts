@@ -529,7 +529,11 @@ export function hasUnsavedChanges() {
 }
 
 function updateSaveButton() {
-    saveConfigBtn.disabled = isRendering || JSON.stringify(getEditedConfig()) === savedConfigJson;
+    // With no config file yet, Save creates it from the defaults even without edits
+    const canCreate =
+        !!currentConfigState && !currentConfigState.hasConfig && !currentConfigState.isContainer;
+    saveConfigBtn.disabled =
+        isRendering || (!canCreate && JSON.stringify(getEditedConfig()) === savedConfigJson);
 }
 
 document.getElementById('config-page')!.addEventListener('input', updateSaveButton);

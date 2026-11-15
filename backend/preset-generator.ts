@@ -42,7 +42,11 @@ export function createPresetFileRecursively(
         }
 
         const state = getFolderState(currentPath);
-        if (state.config !== null) {
+        // The selected folder is a playlist even before it has a config file (defaults apply);
+        // below it, only folders with their own config are, since the rest are photo folders etc.
+        const isPlaylist =
+            state.config !== null || (currentPath === folderPath && state.items.length > 0);
+        if (isPlaylist) {
             if (state.basePreset.status === 'found') {
                 createPresetFile(
                     currentPath,

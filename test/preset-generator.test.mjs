@@ -126,6 +126,29 @@ test('createPresetFileRecursively reports missing bases per folder and continues
     }
 });
 
+test('createPresetFileRecursively builds the selected folder without a config file, but not subfolders', () => {
+    const folderPath = fs.mkdtempSync(path.join(os.tmpdir(), 'folder-player-no-config-'));
+    const photosPath = path.join(folderPath, '02 Photos');
+
+    try {
+        fs.mkdirSync(photosPath);
+        fs.writeFileSync(path.join(folderPath, 'base.vmix'), '<Preset>\r\n<State />\r\n</Preset>');
+        fs.writeFileSync(path.join(folderPath, '01 Video.mp4'), '');
+        fs.writeFileSync(path.join(photosPath, 'a.jpg'), '');
+
+        const report = createPresetFileRecursively(folderPath, '', false);
+
+        assert.deepEqual(
+            report.map(({ folder }) => folder),
+            [folderPath],
+        );
+        assert.equal(fs.existsSync(path.join(folderPath, `${path.basename(folderPath)}.vmix`)), true);
+        assert.equal(fs.existsSync(path.join(photosPath, '02 Photos.vmix')), false);
+    } finally {
+        fs.rmSync(folderPath, { recursive: true, force: true });
+    }
+});
+
 test('createPresetFileRecursively rejects filesystem roots', () => {
     const filesystemRoot = path.parse(process.cwd()).root;
 
